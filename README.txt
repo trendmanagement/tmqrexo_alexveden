@@ -1,5 +1,5 @@
-This is a PyCharm 5 project with GIT repository inside, you can download Community edition of PyCharm for free
-(https://www.jetbrains.com/pycharm/download/#section=windows). But PyCharm is not required, for this code execution,
+﻿This is a PyCharm 5 project with GIT repository inside, you can download Community edition of PyCharm for free
+(https://www.jetbrains.com/pycharm/download/#section=windows). But PyCharm is not required for code execution,
 you can run it into a browser or in command line.
 
 HOW TO INSTALL AND RUN
