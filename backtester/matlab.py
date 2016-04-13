@@ -1,6 +1,7 @@
-from scipy.io import loadmat  # this is the SciPy module that loads mat-files
+from scipy.io import loadmat, savemat  # this is the SciPy module that loads and saves mat-files
 import pandas as pd
 from datetime import datetime, timedelta
+import numpy as np
 
 
 def loaddata(path):
@@ -36,4 +37,34 @@ def loaddata(path):
 
     # Return Pandas DataFrame object and information about spread
     return pd.DataFrame({'exo': exo}, index=dates), info
+
+
+def exportdata(path, date, data_dict):
+    """
+    Exports Pandas.Series to .mat file
+    :param path: path to file
+    :param date: python datetime array
+    :param data_dict: dictionary of pandas.Series to export
+    :return: Empty
+    """
+    mdict = {}
+
+    def convert_date_to_mat(dt):
+        """
+        Python to Matlab date convert helper function
+        """
+        mdn = dt + timedelta(days=366)
+        frac = (dt-datetime(dt.year, dt.month, dt.day, 0, 0, 0)).seconds / (24.0 * 60.0 * 60.0)
+        return mdn.toordinal() + frac
+
+    mdict['date'] = np.array(list(map(convert_date_to_mat, date)))
+    # Converting Pandas.Series to NumPy array
+    for key, value in data_dict.items():
+        # Check length equality
+        if len(date) != len(value):
+            raise ValueError('Length of all arrays must be equal')
+        mdict[key] = value.values
+
+    # Saving data to .mat file
+    savemat(path, mdict=mdict)
 
