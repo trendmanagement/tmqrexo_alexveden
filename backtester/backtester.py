@@ -15,8 +15,8 @@ def backtest(data, entry_rule, exit_rule, direction):
     """
 
     price = data['exo']
-    pl = pd.Series(index=price.index)
-    inpositon = pd.Series(index=price.index)
+    pl = pd.Series(np.zeros(len(price.index)), index=price.index)
+    inpositon = pd.Series(np.zeros(len(price.index)), index=price.index)
 
     inpos = False
 
