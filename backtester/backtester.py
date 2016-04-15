@@ -77,6 +77,6 @@ def stats(pl, inposition):
         'std': np.std(trades),
         'count': len(trades),
         'winrate': len(trades[trades > 0]) / len(trades),
-        'maxdd': (equity - pd.expanding_max(equity)).min(),
+        'maxdd': (equity - equity.expanding().max()).min(),
     }
     return equity, statsistics
