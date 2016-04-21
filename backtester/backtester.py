@@ -80,3 +80,30 @@ def stats(pl, inposition):
         'maxdd': (equity - equity.expanding().max()).min(),
     }
     return equity, statsistics
+
+
+def trades(pl, inposition):
+    """
+    Calculate closed trades array
+    :param pl: Profit-loss array (returned by backtest())
+    :param inposition: In-position array (returned by backtest())
+    :return: trades array
+    """
+    # Calculate trade-by-trade payoffs
+    trades = np.empty(len(pl))
+    trades.fill(np.nan)
+
+    profit = 0.0
+    for i, v in enumerate(inposition):
+        if i == 0:
+            continue
+        # Calculate cumulative profit inside particular trade
+        if inposition.values[i] == 1:
+            profit += pl.values[i]
+        # Store result
+        if inposition.values[i] == 0 and inposition.values[i-1] == 1:
+            trades[i] = profit
+            profit = 0.0
+
+    return pd.Series(trades, index=pl.index)
+
