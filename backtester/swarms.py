@@ -6,7 +6,7 @@ class SwarmManager(object):
     """
     Swarm picking algorithms class
     """
-    def __init__(self, rebalancetime, rankerfunc, positionsizing, context=None):
+    def __init__(self, rebalancetime, rankerfunc, context=None):
         """
         Initialize picking engine with context
         :param rebalancetime: Pandas Series object, boolean with equal to swarm index
@@ -18,16 +18,13 @@ class SwarmManager(object):
         self.rebalancetime = rebalancetime
         self.rankerfunc = rankerfunc
         self.context = context
-        self.positionsizing = positionsizing
 
     @staticmethod
     def get_average_swarm(swarm):
         eq_changes = swarm.diff()
         return eq_changes.mean(axis=1).cumsum()
 
-
-    def backtest(self, swarm, global_filter=None, rabalance_costs=None):
-
+    def backtest(self, swarm, global_filter=None):
         if 'nsystems' not in self.context:
             raise ValueError('nsystems parameter must be in context dic()')
 
@@ -57,12 +54,12 @@ class SwarmManager(object):
 
                 # Filter early trades
                 if nbest.sum() == 0:
-                    nbest[:] = False
+                    nbest[:] = 0.0
                     continue
 
                 # Flagging picked trading systems
-                nbest[-nSystems:] = True
-                nbest[:-nSystems] = False
+                nbest[-nSystems:] = 1.0
+                nbest[:-nSystems] = 0.0
                 is_picked_df.iloc[i] = nbest
 
             else:
@@ -83,8 +80,9 @@ class SwarmRanker(object):
         :return: Series of metric which is used in ranking for swarm members
         '''
 
-        result = np.full_like(eqty, np.nan)
 
+        """
+        result = np.full_like(eqty, np.nan)
         for i in range(len(eqty)):
             # Skip first 30 days
             if i < 100:
@@ -95,10 +93,12 @@ class SwarmRanker(object):
 
             # Skip periods without trades
             e = np.unique(eqty[i-90:i+1])
-            if len(e) < 15:
+            e_cnt = len(e)
+            if e_cnt < 15:
                 result[i] = np.nan
                 continue
             # Recalculate last 14 period returns
-            result[i] = e[len(e) - 1] - e[len(e) - 14]
+            result[i] = e[-1] - e[-14]
+        """
 
-        return pd.Series(result, index=eqty.index)
+        return pd.Series(eqty.diff(periods=14), index=eqty.index)

@@ -59,11 +59,11 @@ class StrategyBase(object):
         # Calculate position size adjusted to volatility of EXO
         # Dollar risk per 1 volatility unit
         risk_perunit = 100
-        risk_vola_period = 10
+        risk_vola_period = 100
 
         # Calculate volatility unit
         # In this case we use 10-period rolling median of EXO changes
-        vola = abs(px - px.shift(1)).rolling(risk_vola_period).median()
+        vola = abs(px.diff()).rolling(risk_vola_period).median()
         # We want to risk 100$ per 1 volatility unit
         #
         # This type of position sizing used for calibration of swarm members

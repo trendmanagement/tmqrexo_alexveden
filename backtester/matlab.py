@@ -22,8 +22,10 @@ def loaddata(path):
 
     # Getting date and exo series from .mat container
     mat_date = mat['optStr']['seriesDates'][0][0][0]
-    exo = mat['optStr']['entrySignalingSeries'][0][0][3]
+    exo = mat['optStr']['entrySignalingSeries'][0][0][3] / mat['optStr']['tickIncrement'][0][0][0][0] * mat['optStr']['tickValue'][0][0][0][0]
     dates = list(map(convert_mat_date, mat_date))
+
+    #print(mat['optStr'].dtype.names)
 
     info = {
         'name': mat['optStr']['cfgName'][0][0][0],
