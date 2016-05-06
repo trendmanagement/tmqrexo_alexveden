@@ -87,7 +87,7 @@ def stats(pl, inposition, positionsize=None, costs=None):
             # Apply transaction costs
             # Apply on entry point
             if costs is not None and i == entry_i:
-                profit += -np.abs(costs.values[i]) * psize
+                profit += (-np.abs(costs.values[i]) * psize * 2)
 
             profit += pl.values[i] * psize
 
@@ -100,10 +100,12 @@ def stats(pl, inposition, positionsize=None, costs=None):
             if inposition.values[i-1] == 1:
                 # Apply transaction costs
                 if costs is not None:
-                    profit += -np.abs(costs.values[i-1]) * psize
-                    mae = min(profit, mae)
-                    # Taking costs into account at exit
-                    equity[i-1] = equity[entry_i] + profit
+                    # Taking all costs at trade open
+                    #profit += -np.abs(costs.values[i-1]) * psize
+                    pass
+                mae = min(profit, mae)
+                # Taking costs into account at exit
+                equity[i-1] = equity[entry_i] + profit
 
                 summae += mae
                 barsintrade += (i-1)-entry_i
@@ -117,7 +119,7 @@ def stats(pl, inposition, positionsize=None, costs=None):
     trades = pd.Series(trades)
 
     equity = pd.Series(equity, index=inposition.index)
-    trades_equity = trades.cumsum();
+    trades_equity = trades.cumsum()
 
     # Calculate summary statistics
     if len(trades) == 0:

@@ -35,7 +35,7 @@ class SwarmManager(object):
         #
         ranks = swarm.apply(lambda x: self.rankerfunc(x, self.rebalancetime)).rank(axis=1, pct=True)
 
-        is_picked_df = pd.DataFrame(False, index=swarm.index, columns=swarm.columns)
+        is_picked_df = pd.DataFrame(0, index=swarm.index, columns=swarm.columns, dtype=np.int8)
         nbest = None
 
         for i in range(len(self.rebalancetime)):
@@ -54,19 +54,19 @@ class SwarmManager(object):
 
                 # Filter early trades
                 if nbest.sum() == 0:
-                    nbest[:] = 0.0
+                    nbest[:] = 0
                     continue
 
                 # Flagging picked trading systems
-                nbest[-nSystems:] = 1.0
-                nbest[:-nSystems] = 0.0
+                nbest[-nSystems:] = 1
+                nbest[:-nSystems] = 0
                 is_picked_df.iloc[i] = nbest
 
             else:
                 # Flag last picked swarm members until new self.rebalancetime
                 if nbest is not None:
                     is_picked_df.iloc[i] = nbest
-        return is_picked_df
+        return is_picked_df.astype(np.int8)
 
 
 class SwarmRanker(object):

@@ -76,6 +76,8 @@ class StrategyBase(object):
         Brute force all steps of self.opts and calculate base stats
         '''
         result = {}
+        result_stats = {}
+        result_inpos = {}
 
         # Get position size (vola adjusted)
         # All portfolio sizing will be done in the future steps
@@ -95,7 +97,10 @@ class StrategyBase(object):
 
             # Storing swarm in the dictionary
             result[swarm_name] = equity
-        return pd.DataFrame.from_dict(result)
+            result_stats[swarm_name] = stats
+            result_inpos[swarm_name] = inposition
+
+        return pd.DataFrame.from_dict(result), pd.DataFrame.from_dict(result_stats, dtype=np.float).T, pd.DataFrame.from_dict(result_inpos, dtype=np.int8)
 
     def calculate(self, params=None):
         """
