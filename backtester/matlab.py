@@ -35,6 +35,7 @@ def loaddata(path):
         'pcf': mat['optStr']['pcf'][0][0][0],
         'pcfqty': mat['optStr']['cfgContracts'][0][0][0],
         'legs': mat['optStr']['legs'][0][0][0][0],
+        'margin': mat['optStr']['margin'][0][0][0][0],
     }
 
     # Return Pandas DataFrame object and information about spread
