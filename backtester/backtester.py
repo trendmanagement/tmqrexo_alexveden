@@ -15,8 +15,8 @@ def backtest(data, entry_rule, exit_rule, direction):
     """
 
     price = data['exo']
-    pl = pd.Series(np.zeros(len(price.index)), index=price.index)
-    inpositon = pd.Series(np.zeros(len(price.index)), index=price.index)
+    pl = pd.Series(0.0, index=price.index)
+    inpositon = pd.Series(0, index=price.index, dtype=np.uint8)
 
     inpos = False
 
@@ -33,10 +33,12 @@ def backtest(data, entry_rule, exit_rule, direction):
         else:
             # Calculate pl
             pl.values[i] = (price.values[i] - price.values[i-1]) * direction
-            inpositon.values[i] = 1
 
             if exit_rule.values[i] == 1:
                 inpos = False
+                inpositon.values[i] = 0
+            else:
+                inpositon.values[i] = 1
 
     return pl, inpositon
 
@@ -68,52 +70,51 @@ def stats(pl, inposition, positionsize=None, costs=None):
 
         # Calculate cumulative profit inside particular trade
         if inposition.values[i] == 1:
-            if inposition.values[i-1] == 0:
-                # Store index of entry point
-                entry_i = i
-                equity[i] = equity[i-1]
-                mae = 0.0
-
             # Calculate position size it may be used for
             # - Volatility adjusted sizing
             # - Taking into account pointvalue > 1.0
             # For compatibility with old code, we use 1.0 by default
             psize = 1.0
             if positionsize is not None:
-                    if np.isnan(positionsize.values[entry_i]):
-                        continue
-                    psize = positionsize.values[entry_i]
+                if np.isnan(positionsize.values[entry_i]):
+                    continue
+                psize = positionsize.values[entry_i]
+
+
+            if inposition.values[i-1] == 0:
+                # Store index of entry point
+                entry_i = i
+                equity[i] = equity[i-1]
+                mae = 0.0
+                # Important hack!
+                # When we apply global_filter
+                # PL on entry point must be 0
+                profit = 0.0
+            else:
+                profit += pl.values[i] * psize
+
 
             # Apply transaction costs
             # Apply on entry point
             if costs is not None and i == entry_i:
                 profit += (-np.abs(costs.values[i]) * psize * 2)
 
-            profit += pl.values[i] * psize
-
             mae = min(profit, mae)
 
-            equity[i] = equity[entry_i] + profit
+            equity[i] = equity[entry_i-1] + profit
 
         # Store result
         if inposition.values[i] == 0:
             if inposition.values[i-1] == 1:
-                # Apply transaction costs
-                if costs is not None:
-                    # Taking all costs at trade open
-                    #profit += -np.abs(costs.values[i-1]) * psize
-                    pass
-                mae = min(profit, mae)
-                # Taking costs into account at exit
-                equity[i-1] = equity[entry_i] + profit
-
+                profit += pl.values[i] * psize
+                equity[i] = equity[entry_i - 1] + profit
                 summae += mae
                 barsintrade += (i-1)-entry_i
                 trades.append(profit)
                 profit = 0.0
-
-            # Continuing equity line if no trades
-            equity[i] = equity[i-1]
+            else:
+                # Continuing equity line if no trades
+                equity[i] = equity[i-1]
 
 
     trades = pd.Series(trades)

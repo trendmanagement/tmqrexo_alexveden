@@ -2,6 +2,7 @@ import itertools
 import numpy as np
 import pandas as pd
 from backtester import backtester
+from multiprocessing import Pool
 
 class OptParam(object):
     """
@@ -19,20 +20,50 @@ class StrategyBase(object):
     """
     Base class for swarming strategy
     """
-    def __init__(self):
+    def __init__(self, strategy_context):
         self.name = 'BaseStrategy'
         self.opts = None
         self.direction = 0
         self.costs = None
+        self.context = strategy_context
+        self.check_context()
 
+    def check_context(self):
+        if 'strategy' not in self.context:
+            raise ValueError('"strategy" settings not found')
+
+        strategy_settings = self.context['strategy']
+
+        if 'exo_name' not in strategy_settings:
+            raise ValueError('"exo_name" settings not found in strategy settings')
+        if 'direction' not in strategy_settings:
+            raise ValueError('"direction" settings not found in strategy settings')
+        if 'opt_params' not in strategy_settings:
+            raise ValueError('"opt_params" settings not found in strategy settings')
+
+    def get_member_name(self, opt_param):
+        return str(opt_param)
 
     def slice_opts(self):
         if self.opts is None:
             return [None]
         result = []
         for o in self.opts:
-            result.append(np.arange(o.min, o.max, o.step))
-        return itertools.product(*result)
+            # Including last step in sample
+            result.append(np.arange(o.min, o.max+o.step, o.step))
+        params_universe = itertools.product(*result)
+
+        #
+        #   Filtering params universe according to picked swarm members
+        #
+        if self._filtered_swarm is not None:
+            filtered_universe = []
+            for p in params_universe:
+                if self.get_member_name(p) in self._filtered_swarm:
+                    filtered_universe.append(p)
+            return filtered_universe
+
+        return params_universe
 
     def default_opts(self):
         """
@@ -71,7 +102,23 @@ class StrategyBase(object):
         # Tailored for portfolio size and risks of particular client
         return risk_perunit / vola
 
-    def run_swarm(self):
+    def _calc_swarm_member(self, opts):
+        swarm_name, entry_rule, exit_rule = self.calculate(opts)
+
+        # Backtesting routine
+        pl, inposition = backtester.backtest(self.data, entry_rule, exit_rule, self.direction)
+
+        if self._filtered_swarm is not None:
+            filtered_inpos = self._filtered_swarm[self.get_member_name(opts)]
+            # Apply global filter to trading system entries
+            # Binary AND to arrays
+            inposition = inposition & filtered_inpos
+
+        equity, stats = backtester.stats(pl, inposition, self.positionsize, self.costs)
+
+        return (swarm_name, equity, stats, inposition)
+
+    def run_swarm(self, filtered_swarm=None):
         '''
         Brute force all steps of self.opts and calculate base stats
         '''
@@ -79,26 +126,24 @@ class StrategyBase(object):
         result_stats = {}
         result_inpos = {}
 
-        # Get position size (vola adjusted)
-        # All portfolio sizing will be done in the future steps
-        vola_adjusted_size = self.positionsize
+        # Storing temporary filter state
+        self._filtered_swarm = filtered_swarm
 
+        opts_list = self.slice_opts()
 
-        for opts in self.slice_opts():
-            #
-            # Calculation trading system rules
-            #
-            swarm_name, entry_rule, exit_rule = self.calculate(opts)
+        pool = Pool()
+        pool_results = pool.map(self._calc_swarm_member, opts_list)
 
-
-            # Backtesting routine
-            pl, inposition = backtester.backtest(self.data, entry_rule, exit_rule, self.direction)
-            equity, stats = backtester.stats(pl, inposition, vola_adjusted_size, self.costs)
-
-            # Storing swarm in the dictionary
+        for pool_res in pool_results:
+            swarm_name, equity, stats, inposition = pool_res
             result[swarm_name] = equity
             result_stats[swarm_name] = stats
             result_inpos[swarm_name] = inposition
+
+        pool.close()
+        pool.join()
+
+        self._filtered_swarm = None
 
         return pd.DataFrame.from_dict(result), pd.DataFrame.from_dict(result_stats, dtype=np.float).T, pd.DataFrame.from_dict(result_inpos, dtype=np.int8)
 
