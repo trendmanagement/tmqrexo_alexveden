@@ -27,37 +27,12 @@ class StrategyMACrossTrail(StrategyBase):
         # Define optimized params
         self.opts = strategy_context['strategy']['opt_params']
 
-        self.exo_name = strategy_context['strategy']['exo_name']
-
-        self.initialize()
     def check_context(self):
         #
         # Do strategy specific checks
         #
         pass
 
-
-    def initialize(self):
-        #
-        #  Loading EXO quotes from .mat file
-        #
-        self.data, info = matlab.loaddata('../mat/' + self.exo_name + '.mat')
-
-        #
-        # Estimating transaction costs in base points of price
-        #
-
-        # No costs
-        self.costs = pd.Series(0, self.data.index)
-
-        # Flat costs / 1 point of EXO price per side / 2 roundtrip
-        # self.costs = pd.Series(12.0, self.data.index)
-
-        # Dynamic costs (we could utilize dynamic costs models)
-        #  Like slippage calculation on bid/ask data / etc
-        # Some meta code (just in my imagination)
-        # costmanager = CostManager('EXO.Ticker').LoadSlippageFromDB('2000-01-01', now)
-        # self.costs = costmanager.getslippage() + pd.Series(0.1, self.data.index) # Slippage + commission
 
     @property
     def positionsize(self):

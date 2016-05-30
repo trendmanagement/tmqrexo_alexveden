@@ -55,6 +55,7 @@ class SwarmManager(object):
 
         # Initialize strategy class
         self.strategy = strategy_settings['class'](self.context)
+
         # Run strategy swarm
         self.swarm, self.swarm_stats, self.swarm_inposition = self.strategy.run_swarm()
         self.avg_swarm = SwarmManager.get_average_swarm(self.swarm)

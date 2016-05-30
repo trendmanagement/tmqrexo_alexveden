@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from backtester import backtester
 from multiprocessing import Pool
+from backtester import matlab
 
 class OptParam(object):
     """
@@ -26,7 +27,19 @@ class StrategyBase(object):
         self.direction = 0
         self.costs = None
         self.context = strategy_context
+
         self.check_context()
+
+        self.exo_name = strategy_context['strategy']['exo_name']
+
+        self.data, self.exo_info = matlab.loaddata('../mat/' + self.exo_name + '.mat')
+        #
+        # Set costs
+        #
+        if 'costs' in self.context:
+            cost_manager = self.context['costs']['manager'](self.exo_info, self.context)
+            self.costs = cost_manager.get_costs(self.data.exo)
+
 
     def check_context(self):
         if 'strategy' not in self.context:
@@ -40,6 +53,13 @@ class StrategyBase(object):
             raise ValueError('"direction" settings not found in strategy settings')
         if 'opt_params' not in strategy_settings:
             raise ValueError('"opt_params" settings not found in strategy settings')
+
+        if 'costs' in self.context:
+            #
+            # Check the costs manager settings
+            #
+            if 'manager' not in self.context['costs']:
+                raise ValueError('"manager" settings not found in strategy settings')
 
     def get_member_name(self, opt_param):
         return str(opt_param)
