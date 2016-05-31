@@ -4,6 +4,7 @@ import pandas as pd
 from backtester import backtester
 from multiprocessing import Pool
 from backtester import matlab
+from backtester.exoinfo import EXOInfo
 
 class OptParam(object):
     """
@@ -32,12 +33,14 @@ class StrategyBase(object):
 
         self.exo_name = strategy_context['strategy']['exo_name']
 
-        self.data, self.exo_info = matlab.loaddata('../mat/' + self.exo_name + '.mat')
+        self.data, _info = matlab.loaddata('../mat/' + self.exo_name + '.mat')
+
+        self.exoinfo = EXOInfo(self.data, _info)
         #
         # Set costs
         #
         if 'costs' in self.context:
-            cost_manager = self.context['costs']['manager'](self.exo_info, self.context)
+            cost_manager = self.context['costs']['manager'](_info, self.context)
             self.costs = cost_manager.get_costs(self.data.exo)
 
 

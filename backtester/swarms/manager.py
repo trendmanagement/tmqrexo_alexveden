@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from backtester.exoinfo import EXOInfo
 
 
 class SwarmManager(object):
@@ -58,11 +59,14 @@ class SwarmManager(object):
 
         # Run strategy swarm
         self.swarm, self.swarm_stats, self.swarm_inposition = self.strategy.run_swarm()
-        self.avg_swarm = SwarmManager.get_average_swarm(self.swarm)
+        #
+        # Average swarm multiplied by members_count
+        #   for reproduce comparable results 'picked_swarm' vs 'avg_swarm'
+        self.swarm_avg = SwarmManager.get_average_swarm(self.swarm) * self.context['swarm']['members_count']
 
     def _backtest_picked_swarm(self, filtered_swarm):
         swarm, swarm_stats, swarm_inposition = self.strategy.run_swarm(filtered_swarm)
-        return swarm
+        return swarm, swarm_inposition
 
 
     def pick(self):
@@ -88,7 +92,7 @@ class SwarmManager(object):
             if 'global_filter_params' in swarm_settings:
                 params = swarm_settings['global_filter_params']
             # Calculating global filter on Avg swarm equity line
-            avg_swarm_equity = self.avg_swarm
+            avg_swarm_equity = self.swarm_avg
             self.global_filter = gf_func(avg_swarm_equity, params)
 
         #
@@ -140,5 +144,7 @@ class SwarmManager(object):
         picked_swarms_cols = is_picked_df.apply(filt_func).dropna().index
         filered_swarm = is_picked_df[picked_swarms_cols]
 
-        self.is_picked = is_picked_df
-        return self._backtest_picked_swarm(filered_swarm)
+
+        self.swarm_picked, self.swarm_picked_inposition = self._backtest_picked_swarm(filered_swarm)
+        self.swarm_picked_margin = self.swarm_picked_inposition.sum(axis=1) * self.strategy.exoinfo.margin()
+        #return self.swarm_picked
