@@ -36,3 +36,17 @@ class SwarmRanker(object):
         """
 
         return pd.Series(eqty.diff(periods=14), index=eqty.index)
+
+    @staticmethod
+    def highestreturns_max_sharpe(eqty, rebalance_time):
+        '''
+        Sharp based ranking function
+        :param eqty: Swarm member equity
+        :param rebalance_time: rebalance time
+        :return: Series of metric which is used in ranking for swarm members
+        '''
+
+        chg = eqty.diff(periods=14)
+        sharpe = chg.rolling(200).mean() / chg.rolling(200).std()
+
+        return pd.Series(sharpe*100, index=eqty.index)

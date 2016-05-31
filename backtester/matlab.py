@@ -23,6 +23,7 @@ def loaddata(path):
     # Getting date and exo series from .mat container
     mat_date = mat['optStr']['seriesDates'][0][0][0]
     exo = mat['optStr']['entrySignalingSeries'][0][0][3] / mat['optStr']['tickIncrement'][0][0][0][0] * mat['optStr']['tickValue'][0][0][0][0]
+    volume = mat['optStr']['volumeSeries'][0][0][0]
     dates = list(map(convert_mat_date, mat_date))
 
     #print(mat['optStr'].dtype.names)
@@ -39,7 +40,7 @@ def loaddata(path):
     }
 
     # Return Pandas DataFrame object and information about spread
-    return pd.DataFrame({'exo': exo}, index=dates), info
+    return pd.DataFrame({'exo': exo, 'volume': volume}, index=dates), info
 
 
 def exportdata(path, date, data_dict):

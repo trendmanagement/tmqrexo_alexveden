@@ -62,7 +62,7 @@ class StrategyMACrossTrail(StrategyBase):
         # Tailored for portfolio size and risks of particular client
         return risk_perunit / vola
 
-    def calculate(self, params=None):
+    def calculate(self, params=None, save_info=False):
         #
         #
         #  Params is a tripple like (50, 10, 15), where:
@@ -103,7 +103,14 @@ class StrategyMACrossTrail(StrategyBase):
         # We use params values for uniqueness
         swarm_member_name = self.get_member_name(params)
 
-        return swarm_member_name, entry_rule, exit_rule
+        #
+        # Calculation info
+        #
+        calc_info = None
+        if save_info:
+            calc_info = {'trailing_stop': trailing_stop, 'slow_ma': slow_ma, 'fast_ma': fast_ma}
+
+        return swarm_member_name, entry_rule, exit_rule, calc_info
 
 if __name__ == "__main__":
     #

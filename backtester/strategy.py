@@ -126,7 +126,7 @@ class StrategyBase(object):
         return risk_perunit / vola
 
     def _calc_swarm_member(self, opts):
-        swarm_name, entry_rule, exit_rule = self.calculate(opts)
+        swarm_name, entry_rule, exit_rule, calc_info = self.calculate(opts)
 
         # Backtesting routine
         pl, inposition = backtester.backtest(self.data, entry_rule, exit_rule, self.direction)
@@ -170,10 +170,11 @@ class StrategyBase(object):
 
         return pd.DataFrame.from_dict(result), pd.DataFrame.from_dict(result_stats, dtype=np.float).T, pd.DataFrame.from_dict(result_inpos, dtype=np.int8)
 
-    def calculate(self, params=None):
+    def calculate(self, params=None, save_info=False):
         """
         The main method for trading logics calculation
         :param params: tuple-like object with optimizations parameters
+        :param save_info: store calculation information for strategy
         :return:
         tripple (swarm_member_name, entry_rule, exit_rule)
         """

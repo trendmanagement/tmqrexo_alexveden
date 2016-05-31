@@ -93,7 +93,7 @@ class SwarmManager(object):
                 params = swarm_settings['global_filter_params']
             # Calculating global filter on Avg swarm equity line
             avg_swarm_equity = self.swarm_avg
-            self.global_filter = gf_func(avg_swarm_equity, params)
+            self.global_filter, self.global_filter_data = gf_func(avg_swarm_equity, params)
 
         #
         #   Ranking each swarm member's equity
@@ -115,7 +115,7 @@ class SwarmManager(object):
 
             if self.rebalancetime[i]:
                 # Select N best ranked systems to trade
-                nbest = ranks.iloc[i].sort_values()
+                nbest = (ranks.iloc[i].rank(pct=True, na_option='top')*100).sort_values()
 
                 # Filter early trades
                 if nbest.sum() == 0:
