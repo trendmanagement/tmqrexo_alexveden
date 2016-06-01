@@ -17,7 +17,7 @@ class StrategyMACrossTrail(StrategyBase):
         super().__init__(strategy_context)
 
         # Define system's name
-        self.name = 'MA Crossing with trailing stop'
+        self.name = 'MACross'
 
         self.check_context()
 

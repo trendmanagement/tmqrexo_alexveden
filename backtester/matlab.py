@@ -26,7 +26,17 @@ def loaddata(path):
     volume = mat['optStr']['volumeSeries'][0][0][0]
     dates = list(map(convert_mat_date, mat_date))
 
-    #print(mat['optStr'].dtype.names)
+    #
+    #   Continuous future price get
+    #
+    FUTURE = 2
+    iFut = 0
+    pcf = mat['optStr']['pcf'][0][0][0]
+    for pp in range(len(pcf)):
+        if pcf[pp] == FUTURE:
+            iFut = pp
+            break
+    futures_dollar_price = mat['optStr']['priceLegSeries'][0][0][iFut] / mat['optStr']['tickIncrement'][0][0][0][0] * mat['optStr']['tickValue'][0][0][0][0]
 
     info = {
         'name': mat['optStr']['cfgName'][0][0][0],
@@ -40,7 +50,7 @@ def loaddata(path):
     }
 
     # Return Pandas DataFrame object and information about spread
-    return pd.DataFrame({'exo': exo, 'volume': volume}, index=dates), info
+    return pd.DataFrame({'exo': exo, 'volume': volume, 'fut_price': futures_dollar_price}, index=dates), info
 
 
 def exportdata(path, date, data_dict):

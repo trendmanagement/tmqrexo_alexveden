@@ -17,7 +17,7 @@ class StrategyVolaBreakoutBands(StrategyBase):
         super().__init__(strategy_context)
 
         # Define system's name
-        self.name = 'Volatility breakout bands'
+        self.name = 'VolatilityBreakout'
 
         self.check_context()
 

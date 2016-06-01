@@ -1,3 +1,4 @@
+import os
 import itertools
 import numpy as np
 import pandas as pd
@@ -33,16 +34,21 @@ class StrategyBase(object):
 
         self.exo_name = strategy_context['strategy']['exo_name']
 
-        self.data, _info = matlab.loaddata('../mat/' + self.exo_name + '.mat')
+        self.load_exodata()
 
-        self.exoinfo = EXOInfo(self.data, _info)
+        self.exoinfo = EXOInfo(self.data, self.exo_dict)
         #
         # Set costs
         #
         if 'costs' in self.context:
-            cost_manager = self.context['costs']['manager'](_info, self.context)
+            cost_manager = self.context['costs']['manager'](self.exo_dict, self.context)
             self.costs = cost_manager.get_costs(self.data.exo)
 
+    def load_exodata(self):
+        if os.path.exists(self.exo_name):
+            self.data, self.exo_dict = matlab.loaddata(self.exo_name)
+        else:
+            self.data, self.exo_dict = matlab.loaddata('../mat/' + self.exo_name + '.mat')
 
     def check_context(self):
         if 'strategy' not in self.context:
@@ -109,21 +115,7 @@ class StrategyBase(object):
         """
         # Defining EXO price
         px = self.data.exo
-
-        # Calculate position size adjusted to volatility of EXO
-        # Dollar risk per 1 volatility unit
-        risk_perunit = 100
-        risk_vola_period = 100
-
-        # Calculate volatility unit
-        # In this case we use 10-period rolling median of EXO changes
-        vola = abs(px.diff()).rolling(risk_vola_period).median()
-        # We want to risk 100$ per 1 volatility unit
-        #
-        # This type of position sizing used for calibration of swarm members
-        # After swarm generation and picking we will use portfolio based MM by Van Tharp
-        # Tailored for portfolio size and risks of particular client
-        return risk_perunit / vola
+        return pd.Series(1, index=px.index)
 
     def _calc_swarm_member(self, opts):
         swarm_name, entry_rule, exit_rule, calc_info = self.calculate(opts)

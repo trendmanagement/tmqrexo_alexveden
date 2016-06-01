@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from backtester.exoinfo import EXOInfo
+import pickle
 
 
 class SwarmManager(object):
@@ -148,3 +149,30 @@ class SwarmManager(object):
         self.swarm_picked, self.swarm_picked_inposition = self._backtest_picked_swarm(filered_swarm)
         self.swarm_picked_margin = self.swarm_picked_inposition.sum(axis=1) * self.strategy.exoinfo.margin()
         #return self.swarm_picked
+
+    def get_swarm_name(self):
+        """
+        Return swarm manager human-readable name
+        Underlying_EXOName_Strategy_Direction
+        :return:
+        """
+        underlying = self.strategy.exoinfo.exo_info['underlying']
+        exoname = self.strategy.exoinfo.exo_info['name']
+        strategyname = self.strategy.name
+        direction = 'Long' if self.strategy.direction == 1 else 'Short'
+
+        return '{0}_{1}_{2}_{3}'.format(underlying, exoname, strategyname, direction)
+
+    def save(self, filename=None):
+        if filename is None:
+            fn = self.get_swarm_name() + '.swm'
+        else:
+            fn = filename
+
+        with open(fn, 'wb') as f:
+            pickle.dump(self, f)
+
+    @staticmethod
+    def load(filename):
+        with open(filename, 'rb') as f:
+            return pickle.load(f)
