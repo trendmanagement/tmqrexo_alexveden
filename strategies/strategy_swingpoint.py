@@ -152,6 +152,8 @@ class StrategySwingPoint(StrategyBase):
 
         return pd.DataFrame(
             {
+                 'sphIndicator': pd.Series(sphIndicator, index=data.exo.index),
+                 'splIndicator': pd.Series(splIndicator, index=data.exo.index),
                  'sphLevel': pd.Series(sphLevel, index=data.exo.index),
                  'splLevel': pd.Series(splLevel, index=data.exo.index),
                  'sphVolume': pd.Series(sphVolume, index=data.exo.index),
@@ -161,84 +163,80 @@ class StrategySwingPoint(StrategyBase):
             },
             index=data.exo.index)
 
-    def calculate(self, params=None, save_info=False):
-        #
-        #
-        #  Params is a tripple like (50, 10, 15), where:
-        #   50 - slow MA period
-        #   10 - fast MA period
-        #   15 - median period
-        #
-        #  On every iteration of swarming algorithm, parameter set will be different.
-        #  For more information look inside: /notebooks/tmp/Swarming engine research.ipynb
-        #
-
-        if params is None:
-            # Return default parameters
-            sphTreshold_value, splTreshold_value, rules_index, period_median = self.default_opts()
-        else:
-            # Unpacking optimization params
-            #  in order in self.opts definition
-            sphTreshold_value, splTreshold_value, rules_index, period_median = params
-
-        # Defining EXO price
-        px = self.data.exo
-
-        #
-        #
-        # Swing poins rules calculation
-        #
-        #
-        '''
-        testHPrice = optStr.entrySignalingSeries(CLOSE,dd);   Note OPEN=1, HIGH=2, LOW=3, CLOSE=4
-        testLPrice = optStr.entrySignalingSeries(CLOSE,dd);
-
-        longSignalPrice      = sphLevel(dd-1);    % swing point high value on the previous day
-        shortSignalPrice     = splLevel(dd-1);    % swing point low value on the previous day
-
-        optStr.sphVolume     = the volume on the last swing-point-high day
-        optStr.splVolume     = the volume on the last swing-point-low  day
-        '''
-
-        # Setting Swing point DF
-        sp_df = self.swingpoints(sphTreshold_value, splTreshold_value, self.data)
-
-        bearish_breakout_confirmed, bearish_failure_confirmed, bullish_breakout_confirmed, bullish_failure_confirmed = self.calc_entry_rules(
-            sp_df)
-
-        if self.direction == 1:
-            rules_list = [bullish_breakout_confirmed, bullish_failure_confirmed]
-
-        elif self.direction == -1:
-            rules_list = [bearish_breakout_confirmed, bearish_failure_confirmed]
 
 
-            # Median based trailing stop
-        trailing_stop = px.rolling(period_median).median().shift(1)
+    def calc_entry_rules_tmqr(self, sp_df):
+        """
+        BULLISH   =  1; BEARISH   = -1; UNDEFINED =  0;
+        lastSWPHigh  = intmax('int32');
+        lastSWPLow   = intmin('int32');
+        EPSILON      = 0.000000000001;
 
-        # Enry/exit rules
-        entry_rule = rules_list[rules_index]
+        currentState = UNDEFINED;
+        nBase = nDays - length(spreadSeries);
+        marketState = zeros(1, nDays);
+        """
+        spreadSeries = sp_df.price
 
-        if self.direction == 1:
-            exit_rule = (CrossDown(px, trailing_stop))  # Cross down for longs
+        BULLISH = 1
+        BEARISH = -1
+        UNDEFINED = 0
+        lastSWPHigh = np.inf   #intmax('int32');
+        lastSWPLow = -np.inf   #intmin('int32');
+        EPSILON = 0.000000000001
 
-        elif self.direction == -1:
-            exit_rule = (CrossUp(px, trailing_stop))  # Cross up for shorts, Cross down for longs
+        nDays = len(sp_df)
+        currentState = UNDEFINED
+        nBase = 0 #nDays - length(spreadSeries);
+        marketState = np.zeros(nDays) #zeros(1, nDays);
 
+        sphIndicator = sp_df['sphIndicator'].values
+        splIndicator = sp_df['splIndicator'].values
+        sphLevel = sp_df['sphLevel'].values
+        splLevel = sp_df['splLevel'].values
 
-        # Swarm_member_name must be *unique* for every swarm member
-        # We use params values for uniqueness
-        swarm_member_name = self.get_member_name(params)
+        for dd in range(1, nDays):
+            if dd <= nBase:
+                continue
+            if sphIndicator[dd - nBase]:
+                lastSWPHigh = sphLevel[dd - nBase]
+            if splIndicator[dd - nBase]:
+                lastSWPLow = splLevel[dd - nBase]
 
-        #
-        # Calculation info
-        #
-        calc_info = None
-        if save_info:
-            calc_info = {'trailing_stop': trailing_stop, 'sp_df': sp_df}
+            if currentState == BULLISH:
+                pass
+                if (spreadSeries[dd - nBase] - lastSWPLow <= -EPSILON and
+                    spreadSeries[dd - nBase - 1] - lastSWPLow > -EPSILON) \
+                    or \
+                    (lastSWPLow-lastSWPHigh >= EPSILON and
+                    spreadSeries[dd - nBase]-lastSWPHigh <= -EPSILON and
+                    spreadSeries[dd - nBase - 1] - lastSWPHigh > -EPSILON):
 
+                        currentState = BEARISH
 
-        return swarm_member_name, entry_rule, exit_rule, calc_info
+            elif currentState == BEARISH:
+                if (spreadSeries[dd - nBase] - lastSWPHigh >= EPSILON and
+                    spreadSeries[dd - nBase - 1] - lastSWPHigh < EPSILON) \
+                    or \
+                    (lastSWPLow - lastSWPHigh >= EPSILON and
+                     spreadSeries[dd - nBase] - lastSWPLow >= EPSILON and
+                     spreadSeries[dd - nBase - 1] - lastSWPLow < EPSILON):
+
+                        currentState = BULLISH
+
+            else: #currentState == UNDEFINED
+                if spreadSeries[dd] - lastSWPHigh >= EPSILON:
+                    currentState = BULLISH
+                if spreadSeries[dd] - lastSWPLow <= -EPSILON:
+                    currentState = BEARISH
+
+            marketState[dd] = currentState
+
+        bearish_breakout_confirmed = marketState == BEARISH
+        bullish_breakout_confirmed = marketState == BULLISH
+
+        return pd.Series(bearish_breakout_confirmed, index=sp_df.index), \
+               pd.Series(bullish_breakout_confirmed, index=sp_df.index),
 
     def calc_entry_rules(self, sp_df):
         epsilon = 1.0000e-012
@@ -250,18 +248,10 @@ class StrategySwingPoint(StrategyBase):
         num_bars = len(sp_df)
 
 
-        bullish_breakout_confirmed = (price > df_sph_level_shift) & (
-            (price - df_sph_level_shift) >= epsilon)
-
-        # Without volume Confirmed and Suspected are the same rules
-        # bullish_breakout_suspected = (sp_df.price > sp_df.sphLevel.shift(1)) & ((sp_df.price - sp_df.sphLevel.shift(1)) >= epsilon) & (sp_df.volumeSeries > sp_df.sphVolume.shift(1))
+        bullish_breakout_confirmed = (price > df_sph_level_shift)
+        bearish_breakout_confirmed = (price < df_spl_level_shift)
 
 
-        bearish_breakout_confirmed = (price < df_spl_level_shift) & (
-            (price - df_spl_level_shift) <= -epsilon)
-
-        # Without volume Confirmed and Suspected are the same rules
-        # bearish_breakout_suspected = (sp_df.price < sp_df.splLevel.shift(1)) & ((sp_df.price - sp_df.splLevel.shift(1)) <= -epsilon) & (sp_df.volumeSeries <= sp_df.splVolume.shift(1))
         # Days after breakout calc
         ##
         ## Bullish
@@ -351,6 +341,84 @@ class StrategySwingPoint(StrategyBase):
             pd.Series(bearish_failure_confirmed, index=sp_df.index), \
             pd.Series(bullish_breakout_confirmed, index=sp_df.index), \
             pd.Series(bullish_failure_confirmed, index=sp_df.index)
+
+
+    def calculate(self, params=None, save_info=False):
+        #
+        #
+        #  Params is a tripple like (50, 10, 15), where:
+        #   50 - slow MA period
+        #   10 - fast MA period
+        #   15 - median period
+        #
+        #  On every iteration of swarming algorithm, parameter set will be different.
+        #  For more information look inside: /notebooks/tmp/Swarming engine research.ipynb
+        #
+
+        if params is None:
+            # Return default parameters
+            sphTreshold_value, splTreshold_value, rules_index, period_median = self.default_opts()
+        else:
+            # Unpacking optimization params
+            #  in order in self.opts definition
+            sphTreshold_value, splTreshold_value, rules_index, period_median = params
+
+        # Defining EXO price
+        px = self.data.exo
+
+        #
+        #
+        # Swing poins rules calculation
+        #
+        #
+        '''
+        testHPrice = optStr.entrySignalingSeries(CLOSE,dd);   Note OPEN=1, HIGH=2, LOW=3, CLOSE=4
+        testLPrice = optStr.entrySignalingSeries(CLOSE,dd);
+
+        longSignalPrice      = sphLevel(dd-1);    % swing point high value on the previous day
+        shortSignalPrice     = splLevel(dd-1);    % swing point low value on the previous day
+
+        optStr.sphVolume     = the volume on the last swing-point-high day
+        optStr.splVolume     = the volume on the last swing-point-low  day
+        '''
+
+        # Setting Swing point DF
+        sp_df = self.swingpoints(sphTreshold_value, splTreshold_value, self.data)
+
+        #bearish_breakout_confirmed, bearish_failure_confirmed, bullish_breakout_confirmed, bullish_failure_confirmed = self.calc_entry_rules(sp_df)
+        bearish_breakout_confirmed, bullish_breakout_confirmed = self.calc_entry_rules_tmqr(sp_df)
+
+        if self.direction == 1:
+            rules_list = [bullish_breakout_confirmed]
+
+        elif self.direction == -1:
+            rules_list = [bearish_breakout_confirmed]
+
+
+            # Median based trailing stop
+        trailing_stop = px.rolling(period_median).median().shift(1)
+
+        # Enry/exit rules
+        entry_rule = rules_list[rules_index]
+
+        if self.direction == 1:
+            exit_rule = (CrossDown(px, trailing_stop))  # Cross down for longs
+
+        elif self.direction == -1:
+            exit_rule = (CrossUp(px, trailing_stop))  # Cross up for shorts, Cross down for longs
+
+        # Swarm_member_name must be *unique* for every swarm member
+        # We use params values for uniqueness
+        swarm_member_name = self.get_member_name(params)
+
+        #
+        # Calculation info
+        #
+        calc_info = None
+        if save_info:
+            calc_info = {'trailing_stop': trailing_stop, 'sp_df': sp_df}
+
+        return swarm_member_name, entry_rule, exit_rule, calc_info
 
 
 if __name__ == "__main__":

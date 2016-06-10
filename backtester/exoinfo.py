@@ -14,3 +14,15 @@ class EXOInfo(object):
 
     def margin(self):
         return pd.Series(self.exo_info['margin'], index=self.data.exo.index)
+
+    def exo_name(self):
+        underlying = self.exo_info['underlying']
+        exoname = self.exo_info['name']
+        return '{0}_{1}_EXO'.format(underlying, exoname)
+
+    def exo_price_index(self):
+        """
+        Cumulative dollar values index of EXO price
+        :return:
+        """
+        return self.data.exo.diff().cumsum()

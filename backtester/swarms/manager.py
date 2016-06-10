@@ -69,6 +69,24 @@ class SwarmManager(object):
         swarm, swarm_stats, swarm_inposition = self.strategy.run_swarm(filtered_swarm)
         return swarm, swarm_inposition
 
+    def _get_nbest(self, ranked_results, nsystems):
+        # Select N best ranked systems to trade
+        nbest = ranked_results.sort_values()
+
+
+        results = pd.Series(0, index=nbest.index, dtype=np.int8)
+
+        nanless_nbest = nbest[nbest > 0].dropna()
+
+        #
+        # Every nbest member value is NaN
+        # Not enough data or something wrong with ranked_results
+        if len(nanless_nbest) == 0:
+            return results
+
+        # Flagging picked trading systems
+        results[nanless_nbest[-nsystems:].index] = 1
+        return results
 
     def pick(self):
         """
@@ -99,7 +117,7 @@ class SwarmManager(object):
         #
         #   Ranking each swarm member's equity
         #
-        ranks = self.swarm.apply(lambda x: rankerfunc(x, self.rebalancetime)).rank(axis=1, pct=True)
+        ranks = self.swarm.apply(lambda x: rankerfunc(x, self.rebalancetime))
 
         is_picked_df = pd.DataFrame(0, index=self.swarm.index, columns=self.swarm.columns, dtype=np.int8)
         nbest = None
@@ -114,21 +132,10 @@ class SwarmManager(object):
                 if not self.global_filter.values[i]:
                     continue
 
-            if self.rebalancetime[i]:
-                # Select N best ranked systems to trade
-                nbest = (ranks.iloc[i].rank(pct=True, na_option='top')*100).sort_values()
-
-                # Filter early trades
-                if nbest.sum() == 0:
-                    nbest[:] = 0
-                    continue
-                nbest = nbest.astype(np.uint8)
-
-                # Flagging picked trading systems
-                nbest[-nSystems:] = 1
-                nbest[:-nSystems] = 0
+            # == True - to avoid NaN values to pass condition
+            if self.rebalancetime[i] == True:
+                nbest = self._get_nbest(ranks.iloc[i], nSystems)
                 is_picked_df.iloc[i] = nbest
-
             else:
                 # Flag last picked swarm members until new self.rebalancetime
                 if nbest is not None:

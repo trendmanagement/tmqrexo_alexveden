@@ -24,7 +24,7 @@ class SwarmRebalance(object):
         True|False - array (swarm.index shape)
         """
         month = pd.Series(swarm.index.month)
-        return pd.Series(1, index=swarm.index)
+        return pd.Series(month != month.shift(1), index=swarm.index)
 
     @ staticmethod
     def every_monday(swarm):
