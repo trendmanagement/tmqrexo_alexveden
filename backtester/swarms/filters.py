@@ -81,4 +81,5 @@ class SwarmFilter(object):
             swing_point_regime.values[i] = swing_switch
 
         return swing_point_regime == 1, {'values': swing_point,
+                                         'input_equity': avg_swarm_eqty,
                                          'name': 'GF: SwingPoint ({0} chg-periods, {1} up, {2} down)'.format(period, up_factor, down_factor)}

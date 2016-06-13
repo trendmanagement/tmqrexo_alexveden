@@ -65,8 +65,8 @@ class SwarmManager(object):
         #   for reproduce comparable results 'picked_swarm' vs 'avg_swarm'
         self.swarm_avg = SwarmManager.get_average_swarm(self.swarm) * self.context['swarm']['members_count']
 
-    def _backtest_picked_swarm(self, filtered_swarm):
-        swarm, swarm_stats, swarm_inposition = self.strategy.run_swarm(filtered_swarm)
+    def _backtest_picked_swarm(self, filtered_swarm, filtered_swarm_equity):
+        swarm, swarm_stats, swarm_inposition = self.strategy.run_swarm(filtered_swarm, filtered_swarm_equity)
         return swarm, swarm_inposition
 
     def _get_nbest(self, ranked_results, nsystems):
@@ -102,17 +102,6 @@ class SwarmManager(object):
         rankerfunc = swarm_settings['ranking_function']
         self.rebalancetime = swarm_settings['rebalance_time_function'](self.swarm)
 
-        #
-        # Calculating global filter function if available
-        #
-        if 'global_filter_function' in swarm_settings:
-            gf_func = swarm_settings['global_filter_function']
-            params = None
-            if 'global_filter_params' in swarm_settings:
-                params = swarm_settings['global_filter_params']
-            # Calculating global filter on Avg swarm equity line
-            avg_swarm_equity = self.swarm_avg
-            self.global_filter, self.global_filter_data = gf_func(avg_swarm_equity, params)
 
         #
         #   Ranking each swarm member's equity
@@ -125,12 +114,6 @@ class SwarmManager(object):
         for i in range(len(self.rebalancetime)):
             if i < 100:
                 continue
-
-            # Applying global trades filter
-            if self.global_filter is not None:
-                # If global filter is True on current day we filter all picks
-                if not self.global_filter.values[i]:
-                    continue
 
             # == True - to avoid NaN values to pass condition
             if self.rebalancetime[i] == True:
@@ -150,10 +133,16 @@ class SwarmManager(object):
             else:
                 return np.nan
         picked_swarms_cols = is_picked_df.apply(filt_func).dropna().index
-        filered_swarm = is_picked_df[picked_swarms_cols]
+        filtered_swarm = is_picked_df[picked_swarms_cols]
 
+        #
+        # Calculating swarm equity for picked global filter
+        #
+        diff_sw = self.swarm.diff()
+        # is_picked_df.shift(1) - to avoid entry price backtest bug
+        filtered_equity = diff_sw[is_picked_df.shift(1) == 1].sum(axis=1).cumsum()
 
-        self.swarm_picked, self.swarm_picked_inposition = self._backtest_picked_swarm(filered_swarm)
+        self.swarm_picked, self.swarm_picked_inposition = self._backtest_picked_swarm(filtered_swarm, filtered_equity)
         self.swarm_picked_margin = self.swarm_picked_inposition.sum(axis=1) * self.strategy.exoinfo.margin()
         #return self.swarm_picked
 

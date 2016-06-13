@@ -37,6 +37,11 @@ class StrategyBase(object):
         self.load_exodata()
 
         self.exoinfo = EXOInfo(self.data, self.exo_dict)
+
+        self.global_filter = None
+        self.global_filter_data = None
+        self._filtered_swarm = None
+        self._filtered_swarm_equity = None
         #
         # Set costs
         #
@@ -123,17 +128,23 @@ class StrategyBase(object):
         # Backtesting routine
         pl, inposition = backtester.backtest(self.data, entry_rule, exit_rule, self.direction)
 
+
+        # Apply global filter to trading system entries
         if self._filtered_swarm is not None:
             filtered_inpos = self._filtered_swarm[self.get_member_name(opts)]
-            # Apply global filter to trading system entries
-            # Binary AND to arrays
-            inposition = inposition & filtered_inpos
 
+            # Binary AND to arrays
+            if self.global_filter is not None:
+                inposition = inposition & filtered_inpos & self.global_filter
+            else:
+                inposition = inposition & filtered_inpos
+
+        # Do backtest
         equity, stats = backtester.stats(pl, inposition, self.positionsize, self.costs)
 
         return (swarm_name, equity, stats, inposition)
 
-    def run_swarm(self, filtered_swarm=None):
+    def run_swarm(self, filtered_swarm=None, filtered_swarm_equity=None):
         '''
         Brute force all steps of self.opts and calculate base stats
         '''
@@ -143,6 +154,19 @@ class StrategyBase(object):
 
         # Storing temporary filter state
         self._filtered_swarm = filtered_swarm
+        self._filtered_swarm_equity = filtered_swarm_equity
+
+        #
+        # Calculating global filter function if available
+        #
+        if filtered_swarm is not None and 'swarm' in self.context:
+            swarm_settings = self.context['swarm']
+            if 'global_filter_function' in swarm_settings:
+                gf_func = swarm_settings['global_filter_function']
+                params = None
+                if 'global_filter_params' in swarm_settings:
+                    params = swarm_settings['global_filter_params']
+                self.global_filter, self.global_filter_data = gf_func(filtered_swarm_equity, params)
 
         opts_list = self.slice_opts()
 

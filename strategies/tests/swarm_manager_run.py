@@ -20,14 +20,15 @@ from strategies.strategy_macross_with_trail import StrategyMACrossTrail
 
 STRATEGY_CONTEXT = {
     'strategy': {
-        'class': StrategyMACrossTrail,
-        'exo_name': 'strategy_270225',
+        'class': StrategySwingPoint,
+        'exo_name': '../../mat/strategy_270201.mat',
         'direction': -1,
         'opt_params': [
-            # OptParam(name, default_value, min_value, max_value, step)
-            OptParam('SlowMAPeriod', 20, 10, 30, 2),
-            OptParam('FastMAPeriod', 2, 2, 20, 1),
-            OptParam('MedianPeriod', 5, 5, 20, 3)
+            #OptParam(name, default_value, min_value, max_value, step)
+                        OptParam('sphTreshold', 2, 1, 10, 2),
+                        OptParam('splTreshold', 2, 1, 10, 2),
+                        OptParam('RulesIndex', 0, 0 , 3, 1),
+                        OptParam('MedianPeriod', 5, 5, 20, 3)
         ],
     },
     'swarm': {
@@ -35,7 +36,7 @@ STRATEGY_CONTEXT = {
         'ranking_function': SwarmRanker.highestreturns_14days,
         'rebalance_time_function': SwarmRebalance.every_monday,
 
-        # 'global_filter_function': SwarmFilter.swingpoint_threshold,
+        'global_filter_function': SwarmFilter.swingpoint_threshold,
         'global_filter_params': {
             'up_factor': 5.0,
             'down_factor': 5.0,
