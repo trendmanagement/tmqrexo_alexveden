@@ -18,6 +18,14 @@ class OptParam(object):
         self.max = max_value
         self.step = step
 
+class OptParamArray(object):
+    """
+    Generic system optimization parameter, like Moving Avg period etc..
+    """
+    def __init__(self, name, array):
+        self.name = name
+        self.array = array
+
 
 class StrategyBase(object):
     """
@@ -83,8 +91,14 @@ class StrategyBase(object):
             return [None]
         result = []
         for o in self.opts:
-            # Including last step in sample
-            result.append(np.arange(o.min, o.max+o.step, o.step))
+            if type(o) == OptParam:
+                # Including last step in sample
+                result.append(np.arange(o.min, o.max+o.step, o.step))
+            elif type(o) == OptParamArray:
+                result.append(o.array)
+            else:
+                raise Exception('Unexpected OptParam type')
+
         params_universe = itertools.product(*result)
 
         #
