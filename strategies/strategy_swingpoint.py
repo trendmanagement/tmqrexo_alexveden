@@ -164,183 +164,86 @@ class StrategySwingPoint(StrategyBase):
             index=data.exo.index)
 
 
-
-    def calc_entry_rules_tmqr(self, sp_df):
-        """
-        BULLISH   =  1; BEARISH   = -1; UNDEFINED =  0;
-        lastSWPHigh  = intmax('int32');
-        lastSWPLow   = intmin('int32');
-        EPSILON      = 0.000000000001;
-
-        currentState = UNDEFINED;
-        nBase = nDays - length(spreadSeries);
-        marketState = zeros(1, nDays);
-        """
-        spreadSeries = sp_df.price
-
-        BULLISH = 1
-        BEARISH = -1
-        UNDEFINED = 0
-        lastSWPHigh = np.inf   #intmax('int32');
-        lastSWPLow = -np.inf   #intmin('int32');
-        EPSILON = 0.000000000001
-
-        nDays = len(sp_df)
-        currentState = UNDEFINED
-        nBase = 0 #nDays - length(spreadSeries);
-        marketState = np.zeros(nDays) #zeros(1, nDays);
-
-        sphIndicator = sp_df['sphIndicator'].values
-        splIndicator = sp_df['splIndicator'].values
-        sphLevel = sp_df['sphLevel'].values
-        splLevel = sp_df['splLevel'].values
-
-        for dd in range(1, nDays):
-            if dd <= nBase:
-                continue
-            if sphIndicator[dd - nBase]:
-                lastSWPHigh = sphLevel[dd - nBase]
-            if splIndicator[dd - nBase]:
-                lastSWPLow = splLevel[dd - nBase]
-
-            if currentState == BULLISH:
-                pass
-                if (spreadSeries[dd - nBase] - lastSWPLow <= -EPSILON and
-                    spreadSeries[dd - nBase - 1] - lastSWPLow > -EPSILON) \
-                    or \
-                    (lastSWPLow-lastSWPHigh >= EPSILON and
-                    spreadSeries[dd - nBase]-lastSWPHigh <= -EPSILON and
-                    spreadSeries[dd - nBase - 1] - lastSWPHigh > -EPSILON):
-
-                        currentState = BEARISH
-
-            elif currentState == BEARISH:
-                if (spreadSeries[dd - nBase] - lastSWPHigh >= EPSILON and
-                    spreadSeries[dd - nBase - 1] - lastSWPHigh < EPSILON) \
-                    or \
-                    (lastSWPLow - lastSWPHigh >= EPSILON and
-                     spreadSeries[dd - nBase] - lastSWPLow >= EPSILON and
-                     spreadSeries[dd - nBase - 1] - lastSWPLow < EPSILON):
-
-                        currentState = BULLISH
-
-            else: #currentState == UNDEFINED
-                if spreadSeries[dd] - lastSWPHigh >= EPSILON:
-                    currentState = BULLISH
-                if spreadSeries[dd] - lastSWPLow <= -EPSILON:
-                    currentState = BEARISH
-
-            marketState[dd] = currentState
-
-        bearish_breakout_confirmed = marketState == BEARISH
-        bullish_breakout_confirmed = marketState == BULLISH
-
-        return pd.Series(bearish_breakout_confirmed, index=sp_df.index), \
-               pd.Series(bullish_breakout_confirmed, index=sp_df.index),
-
     def calc_entry_rules(self, sp_df):
-        epsilon = 1.0000e-012
 
-        df_sph_level_shift = sp_df.sphLevel.shift(1).values
-        df_spl_level_shift = sp_df.splLevel.shift(1).values
-        price = sp_df.price.values
-        prev_price = sp_df.price.shift(1).values
-        num_bars = len(sp_df)
+        # Both are EXO close price
+        testHPice = testLPrice = sp_df.price
+        nDays = len(sp_df)
+        longSignalPrice = sp_df['sphLevel'].values
+        shortSignalPrice = sp_df['splLevel'].values
+        sphVolume = sp_df['sphVolume'].values
+        splVolume = sp_df['splVolume'].values
+        volumeSeries = sp_df['volumeSeries'].values
 
+        # Filling results with zeros
+        bullish_breakout_confirmed = np.zeros(nDays, dtype=np.int8)
+        bearish_breakout_confirmed = np.zeros(nDays, dtype=np.int8)
+        bullish_failure_confirmed = np.zeros(nDays, dtype=np.int8)
+        bearish_failure_confirmed = np.zeros(nDays, dtype=np.int8)
 
-        bullish_breakout_confirmed = (price > df_sph_level_shift)
-        bearish_breakout_confirmed = (price < df_spl_level_shift)
-
-
-        # Days after breakout calc
-        ##
-        ## Bullish
-        ##
-        confirmationTimeThresholdBullish = 0  # Days after breakout
-        confirmationTimeThresholdBearush = 0  # Days after breakout
-
-
-        array_bullish_confirm = np.zeros(num_bars)
-        array_bearish_confirm = np.zeros(num_bars)
-
-        bullish_breakout_confirmed_prev = np.roll(bullish_breakout_confirmed, 1)
-        bearish_breakout_confirmed_prev = np.roll(bearish_breakout_confirmed, 1)
-
-        for i in range(num_bars):
-            if bullish_breakout_confirmed_prev[i] == 1 and bullish_breakout_confirmed[i] == 0:
-                confirmationTimeThresholdBullish += 1
-            elif bullish_breakout_confirmed[i] == 0:
-                confirmationTimeThresholdBullish += 1
-            elif bullish_breakout_confirmed[i] == 1:
-                confirmationTimeThresholdBullish = 0
-            array_bullish_confirm[i] = confirmationTimeThresholdBullish
-
-            if bearish_breakout_confirmed_prev[i] == 1 and bearish_breakout_confirmed[i] == 0:
-                confirmationTimeThresholdBearush += 1
-            elif bearish_breakout_confirmed[i] == 0:
-                confirmationTimeThresholdBearush += 1
-            elif bearish_breakout_confirmed[i] == 1:
-                confirmationTimeThresholdBearush = 0
-            array_bearish_confirm[i] = confirmationTimeThresholdBearush
-
-
-        sp_df['confirmationTimeThresholdBullish'] = pd.Series(array_bullish_confirm, index=sp_df.index)
-        sp_df['confirmationTimeThresholdBearish'] = pd.Series(array_bearish_confirm, index=sp_df.index)
-
-
-
-        # Failure flags calc
-        ##
-        ## Bullish
-        ##
-        bullish_failureflag = 0
-        bearish_failureflag = 0
-
-        failureLongLine = prev_price
-        failureShortLine = prev_price
-
+        #
+        # Failures flags and settings
+        #
+        confirmationThreshold = 10   # How many bars to confirm failure
         longPenetrationCount = 0
         shortPenetrationCount = 0
+        longFailureFlag = False
+        shortFailureFlag = False
+        failureLongLine = 0.0
+        failureShortLine = 0.0
 
-        array_bullish_failure = np.zeros(num_bars)
-        array_bearish_failure = np.zeros(num_bars)
 
-        for i in range(num_bars):
+        for dd in range(1, nDays):
             #
-            # Bullish failures calculation
+            # Bullish breakout confirmed rule
             #
-            if (price[i] < failureLongLine[i]) and (longPenetrationCount <= array_bullish_confirm[i]):
-                bullish_failureflag = 1
-            elif (longPenetrationCount > sp_df.confirmationTimeThresholdBullish.iat[i]):
-                bullish_failureflag = 0
-            else:
-                longPenetrationCount += 1
-            array_bullish_failure[i] = bullish_failureflag
+            if testHPice[dd] > longSignalPrice[dd-1] and testHPice[dd-1] < longSignalPrice[dd-1]: #  Check the cross of sphLevel
+                bullish_breakout_confirmed[dd] = 1
+                # Failures flag set
+                longFailureFlag = True
+                longPenetrationCount = 0
+                failureLongLine = testHPice[dd-1]
 
             #
-            # Bearish failures calculation
+            # Bearish breakout confirmed rule
             #
-            if (price[i] > failureShortLine[i]) & (shortPenetrationCount <= sp_df.confirmationTimeThresholdBearish.iat[i]):
-                bearish_failureflag = 1
-            elif (shortPenetrationCount > sp_df.confirmationTimeThresholdBearish.iat[i]):
-                bearish_failureflag = 0
-            else:
-                shortPenetrationCount = shortPenetrationCount + 1
-
-            array_bearish_failure[i] = bearish_failureflag
+            if testLPrice[dd] < shortSignalPrice[dd-1] and testLPrice[dd-1] > shortSignalPrice[dd-1]: #   Check the cross of splLevel
+                bearish_breakout_confirmed[dd] = 1
+                # Failures flag set
+                shortFailureFlag = True
+                shortPenetrationCount = 0
+                failureShortLine = testLPrice[dd-1]
 
 
-        sp_df['bullish_failureflag'] = pd.Series(array_bullish_failure, index=sp_df.index)
-        sp_df['bearish_failureflag'] = pd.Series(array_bearish_failure, index=sp_df.index)
+            #
+            # Bullish failure test
+            #
+            if longFailureFlag:
+                # If crossing previous failure line
+                if testHPice[dd] < failureLongLine and testHPice[dd-1] > failureLongLine \
+                    and longPenetrationCount <= confirmationThreshold:
+                        bullish_failure_confirmed[dd] = 1
+                else:
+                    longPenetrationCount += 1
+                    if longPenetrationCount > confirmationThreshold:
+                        longFailureFlag = False
+            #
+            # Bearish failure test
+            #
+            if shortFailureFlag:
+                # If crossing previous failure line
+                if testLPrice[dd] > failureShortLine and testLPrice[dd-1] < failureShortLine \
+                    and shortPenetrationCount <= confirmationThreshold:
+                        bearish_failure_confirmed[dd] = 1
+                else:
+                    shortPenetrationCount += 1
+                    if shortPenetrationCount > confirmationThreshold:
+                        shortFailureFlag = False
 
 
-        bullish_failure_confirmed = (bullish_breakout_confirmed == 1) & (sp_df.bullish_failureflag == 1)
+        return bearish_breakout_confirmed, bearish_failure_confirmed, bullish_breakout_confirmed, bullish_failure_confirmed
 
-        bearish_failure_confirmed = (bearish_breakout_confirmed == 1) & (sp_df.bearish_failureflag == 1)
-        return pd.Series(bearish_breakout_confirmed, index=sp_df.index), \
-            pd.Series(bearish_failure_confirmed, index=sp_df.index), \
-            pd.Series(bullish_breakout_confirmed, index=sp_df.index), \
-            pd.Series(bullish_failure_confirmed, index=sp_df.index)
+
 
 
     def calculate(self, params=None, save_info=False):
@@ -385,21 +288,13 @@ class StrategySwingPoint(StrategyBase):
         # Setting Swing point DF
         sp_df = self.swingpoints(sphTreshold_value, splTreshold_value, self.data)
 
-        #bearish_breakout_confirmed, bearish_failure_confirmed, bullish_breakout_confirmed, bullish_failure_confirmed = self.calc_entry_rules(sp_df)
-        bearish_breakout_confirmed, bullish_breakout_confirmed = self.calc_entry_rules_tmqr(sp_df)
+        rules_list = self.calc_entry_rules(sp_df)
 
-        if self.direction == 1:
-            rules_list = [bullish_breakout_confirmed]
-
-        elif self.direction == -1:
-            rules_list = [bearish_breakout_confirmed]
-
-
-            # Median based trailing stop
+        # Median based trailing stop
         trailing_stop = px.rolling(period_median).median().shift(1)
 
         # Enry/exit rules
-        entry_rule = rules_list[rules_index]
+        entry_rule = pd.Series(rules_list[rules_index])
 
         if self.direction == 1:
             exit_rule = (CrossDown(px, trailing_stop))  # Cross down for longs
