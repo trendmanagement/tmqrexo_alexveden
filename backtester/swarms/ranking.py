@@ -13,29 +13,7 @@ class SwarmRanker(object):
         :param rebalance_time: rebalance time
         :return: Series of metric which is used in ranking for swarm members
         '''
-
-
-        """
-        result = np.full_like(eqty, np.nan)
-        for i in range(len(eqty)):
-            # Skip first 30 days
-            if i < 100:
-                continue
-
-            if not rebalance_time[i]:
-                continue
-
-            # Skip periods without trades
-            e = np.unique(eqty[i-90:i+1])
-            e_cnt = len(e)
-            if e_cnt < 15:
-                result[i] = np.nan
-                continue
-            # Recalculate last 14 period returns
-            result[i] = e[-1] - e[-14]
-        """
-
-        return pd.Series(eqty.diff(periods=14), index=eqty.index)
+        return eqty.diff(periods=14)
 
     @staticmethod
     def highestreturns_max_sharpe(eqty, rebalance_time):
@@ -45,8 +23,28 @@ class SwarmRanker(object):
         :param rebalance_time: rebalance time
         :return: Series of metric which is used in ranking for swarm members
         '''
-
+        raise Exception("Obsolete must be rewritten to handle DataFrame")
         chg = eqty.diff(periods=14)
+
         sharpe = chg.rolling(200).mean() / chg.rolling(200).std()
 
         return pd.Series(sharpe*100, index=eqty.index)
+
+    @staticmethod
+    def highestreturns_14days_with_slopefilter(eqty, rebalance_time):
+        '''
+        Ranking function
+        Calculate last 14 days equity returns, excluding out-of-market time
+        :param eqty: Swarm member equity
+        :param rebalance_time: rebalance time
+        :return: Series of metric which is used in ranking for swarm members
+        '''
+        q = eqty.rank(axis=1, pct=True)
+
+        diff14 = eqty.diff(periods=14)
+        ma90 = eqty.apply(lambda x: x.rolling(90).mean())
+
+        rank = diff14
+        # Filter all members with negative returns in 30 or 90 days
+        rank[(eqty < ma90) | (ma90-ma90.shift(1) <= 0) | (eqty - eqty.shift(90) <= 0) | (q < 0.9)] = 0
+        return rank

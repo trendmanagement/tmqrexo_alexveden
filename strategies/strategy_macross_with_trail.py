@@ -21,9 +21,6 @@ class StrategyMACrossTrail(StrategyBase):
 
         self.check_context()
 
-        # This is a short strategy
-        self.direction = strategy_context['strategy']['direction']
-
         # Define optimized params
         self.opts = strategy_context['strategy']['opt_params']
 
@@ -76,11 +73,11 @@ class StrategyMACrossTrail(StrategyBase):
 
         if params is None:
             # Return default parameters
-            period_slow, period_fast, period_median = self.default_opts()
+            direction, period_slow, period_fast, period_median = self.default_opts()
         else:
             # Unpacking optimization params
             #  in order in self.opts definition
-            period_slow, period_fast, period_median = params
+            direction, period_slow, period_fast, period_median = params
 
         # Defining EXO price
         px = self.data.exo

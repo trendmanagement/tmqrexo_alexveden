@@ -34,7 +34,6 @@ class StrategyBase(object):
     def __init__(self, strategy_context):
         self.name = 'BaseStrategy'
         self.opts = None
-        self.direction = 0
         self.costs = None
         self.context = strategy_context
 
@@ -137,10 +136,16 @@ class StrategyBase(object):
         return pd.Series(1, index=px.index)
 
     def _calc_swarm_member(self, opts):
+
+        # In bi-directional mode 1-st opt argument must be *direction* of the swarm
+        direction = opts[0]
+        if direction != 1 and direction != -1:
+            raise Exception('In bi-direction mode fist opt argument must be Direction: 1 or -1')
+
         swarm_name, entry_rule, exit_rule, calc_info = self.calculate(opts)
 
         # Backtesting routine
-        pl, inposition = backtester.backtest(self.data, entry_rule, exit_rule, self.direction)
+        pl, inposition = backtester.backtest(self.data, entry_rule, exit_rule, direction)
 
 
         # Apply global filter to trading system entries
@@ -203,6 +208,7 @@ class StrategyBase(object):
     def calculate(self, params=None, save_info=False):
         """
         The main method for trading logics calculation
+        :param direction: direction of the swarm member
         :param params: tuple-like object with optimizations parameters
         :param save_info: store calculation information for strategy
         :return:

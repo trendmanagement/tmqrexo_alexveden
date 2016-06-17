@@ -50,7 +50,7 @@ class StrategyVolaBreakoutBands(StrategyBase):
     def calculate(self, params=None, save_info=False):
 
         # Unpacking params values
-        period, down_factor, up_factor = params
+        direction, period, down_factor, up_factor = params
 
         # Defining EXO price
         px = self.data.exo
@@ -125,7 +125,7 @@ class StrategyVolaBreakoutBands(StrategyBase):
             swing_point_regime.values[i] = swing_switch
         
         # Enry/exit rules
-        if self.direction == 1:
+        if direction == 1:
             entry_rule = swing_point_regime == 1
             exit_rule = swing_point_regime == -1
         else:

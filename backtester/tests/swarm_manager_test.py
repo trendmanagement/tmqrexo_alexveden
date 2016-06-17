@@ -94,6 +94,25 @@ class SwarmManagerTestCase(unittest.TestCase):
 
         self.assertEqual(r.dtype, np.int8)
 
+    def test_best_ranking_filter_all_negative(self):
+        sm = SwarmManager()
+
+        index = ['0', '1', '2', '3', '4', '5']
+        ranks = [np.nan, -2, -5, np.nan, 0, np.nan]
+
+        rnk = pd.Series(ranks, index=index)
+
+        r = sm._get_nbest(rnk, nsystems=2)
+
+        # Indexes is a string, because these are pd.Series indexes not array int32 index
+        self.assertEqual(r['0'], 0)
+        self.assertEqual(r['1'], 0)
+        self.assertEqual(r['2'], 0)
+        self.assertEqual(r['3'], 0)
+        self.assertEqual(r['4'], 0)
+        self.assertEqual(r['5'], 0)
+
+        self.assertEqual(r.dtype, np.int8)
 
 if __name__ == '__main__':
     unittest.main()

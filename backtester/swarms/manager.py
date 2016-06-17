@@ -106,7 +106,7 @@ class SwarmManager(object):
         #
         #   Ranking each swarm member's equity
         #
-        ranks = self.swarm.apply(lambda x: rankerfunc(x, self.rebalancetime))
+        ranks = rankerfunc(self.swarm, self.rebalancetime)
 
         is_picked_df = pd.DataFrame(0, index=self.swarm.index, columns=self.swarm.columns, dtype=np.int8)
         nbest = None

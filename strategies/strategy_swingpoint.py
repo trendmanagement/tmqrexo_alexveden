@@ -21,9 +21,6 @@ class StrategySwingPoint(StrategyBase):
 
         self.check_context()
 
-        # This is a short strategy
-        self.direction = strategy_context['strategy']['direction']
-
         # Define optimized params
         self.opts = strategy_context['strategy']['opt_params']
 
@@ -260,11 +257,11 @@ class StrategySwingPoint(StrategyBase):
 
         if params is None:
             # Return default parameters
-            sphTreshold_value, splTreshold_value, rules_index, period_median = self.default_opts()
+            direction, sphTreshold_value, splTreshold_value, rules_index, period_median = self.default_opts()
         else:
             # Unpacking optimization params
             #  in order in self.opts definition
-            sphTreshold_value, splTreshold_value, rules_index, period_median = params
+            direction, sphTreshold_value, splTreshold_value, rules_index, period_median = params
 
         # Defining EXO price
         px = self.data.exo
@@ -296,10 +293,10 @@ class StrategySwingPoint(StrategyBase):
         # Enry/exit rules
         entry_rule = pd.Series(rules_list[rules_index])
 
-        if self.direction == 1:
+        if direction == 1:
             exit_rule = (CrossDown(px, trailing_stop))  # Cross down for longs
 
-        elif self.direction == -1:
+        elif direction == -1:
             exit_rule = (CrossUp(px, trailing_stop))  # Cross up for shorts, Cross down for longs
 
         # Swarm_member_name must be *unique* for every swarm member
