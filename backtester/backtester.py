@@ -124,7 +124,17 @@ def stats(pl, inposition, positionsize=None, costs=None):
 
     # Calculate summary statistics
     if len(trades) == 0:
-        statsistics = None
+        statsistics = {
+            'netprofit': 0.0,
+            'avg': 0.0,
+            'std': 0.0,
+            'count': 0,
+            'winrate': 0.0,
+            'maxdd': 0.0,
+            'avgbarsintrade': 0.0,
+            'avgmae': 0.0,
+            'tradesmaxdd': 0.0
+        }
     else:
         statsistics = {
             'netprofit': np.sum(trades),

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from backtester.exoinfo import EXOInfo
 import pickle
+import os
 
 
 class SwarmManager(object):
@@ -17,6 +18,12 @@ class SwarmManager(object):
         self.context = context
         self.global_filter = None
         self.rebalancetime = None
+
+        self.check_context()
+
+        strategy_settings = self.context['strategy']
+        # Initialize strategy class
+        self.strategy = strategy_settings['class'](self.context)
 
     @staticmethod
     def get_average_swarm(swarm):
@@ -53,10 +60,6 @@ class SwarmManager(object):
             raise ValueError('"rebalance_time_function" not found in swarm settings')
 
     def run_swarm(self):
-        strategy_settings = self.context['strategy']
-
-        # Initialize strategy class
-        self.strategy = strategy_settings['class'](self.context)
 
         # Run strategy swarm
         self.swarm, self.swarm_stats, self.swarm_inposition = self.strategy.run_swarm()
@@ -95,18 +98,19 @@ class SwarmManager(object):
         :return:
         """
 
-        self.check_context()
-
         swarm_settings = self.context['swarm']
         nSystems = swarm_settings['members_count']
         rankerfunc = swarm_settings['ranking_function']
+        rankerparams = None
+        if 'ranking_params' in swarm_settings:
+            rakerparams = swarm_settings['ranking_params']
         self.rebalancetime = swarm_settings['rebalance_time_function'](self.swarm)
 
 
         #
         #   Ranking each swarm member's equity
         #
-        ranks = rankerfunc(self.swarm, self.rebalancetime)
+        ranks = rankerfunc(self.swarm, self.rebalancetime, rakerparams)
 
         is_picked_df = pd.DataFrame(0, index=self.swarm.index, columns=self.swarm.columns, dtype=np.int8)
         nbest = None
@@ -155,13 +159,18 @@ class SwarmManager(object):
         underlying = self.strategy.exoinfo.exo_info['underlying']
         exoname = self.strategy.exoinfo.exo_info['name']
         strategyname = self.strategy.name
-        direction = 'Long' if self.strategy.direction == 1 else 'Short'
+        if self.strategy.direction == 1:
+            direction = 'Long'
+        elif self.strategy.direction == -1:
+            direction = 'Short'
+        else:
+            direction = 'Bidir'
 
         return '{0}_{1}_{2}_{3}'.format(underlying, exoname, strategyname, direction)
 
-    def save(self, filename=None):
+    def save(self, directory,  filename=None):
         if filename is None:
-            fn = self.get_swarm_name() + '.swm'
+            fn = os.path.join(directory, self.get_swarm_name() + '.swm')
         else:
             fn = filename
 
@@ -169,6 +178,12 @@ class SwarmManager(object):
             pickle.dump(self, f)
 
     @staticmethod
-    def load(filename):
-        with open(filename, 'rb') as f:
+    def load(filename=None, strategy_context=None, directory=''):
+        fn = filename
+
+        if strategy_context is not None:
+            smgr = SwarmManager(strategy_context)
+            fn = os.path.join(directory, smgr.get_swarm_name()+'.swm')
+
+        with open(fn, 'rb') as f:
             return pickle.load(f)
