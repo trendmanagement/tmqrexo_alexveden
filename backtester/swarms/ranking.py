@@ -62,9 +62,26 @@ class SwarmRanker(object):
         :param context: ranker function additional parameters
         :return: Series of metric which is used in ranking for swarm members
         '''
+        if context['ranking_type'] == 'relstr':
+            #
+            # Relative strength ranking type
+            #
+            relstr_ma_period = context['ranking_relstr_ma_period']
+            ma = eqty.apply(lambda x: x.rolling(relstr_ma_period).mean())
+            rank = eqty / ma
 
-        equity_returns_period = context['eqty_returns_period']
-        rank = eqty.diff(periods=equity_returns_period)
+            # Filtering upper and lower bounds
+            rank_upper_bound = context['ranking_relstr_upperbound']
+            rank_lower_bound = context['ranking_relstr_lowerbound']
+            rank[(rank < rank_lower_bound) | (rank > rank_upper_bound)] = 0
+        elif context['ranking_type'] == 'returns':
+            #
+            # Highest N-day equity returns ranking type
+            #
+            equity_returns_period = context['ranking_returns_period']
+            rank = eqty.diff(periods=equity_returns_period)
+        else:
+            raise ValueError("Ranking ")
 
         if 'ignore_eqty_less_ma' in context and context['ignore_eqty_less_ma']:
             ma_period = context['ignore_eqty_less_ma_period']
@@ -79,6 +96,10 @@ class SwarmRanker(object):
             slope_period = context['ignore_eqty_with_negative_ma_slope_period']
             ma = eqty.apply(lambda x: x.rolling(ma_period).mean())
             rank[(ma-ma.shift(slope_period) <= 0)] = 0
+        if 'ignore_if_avg_swarm_negative_change' in context and context['ignore_if_avg_swarm_negative_change']:
+            avg_chg_period = context['ignore_if_avg_swarm_negative_change_period']
+            avgswarm = eqty.mean(axis=1)
+            rank[avgswarm.diff(periods=avg_chg_period) <= 0] = 0
         if 'ignore_if_avg_swarm_negative_change' in context and context['ignore_if_avg_swarm_negative_change']:
             avg_chg_period = context['ignore_if_avg_swarm_negative_change_period']
             avgswarm = eqty.mean(axis=1)
