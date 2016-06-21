@@ -81,7 +81,7 @@ class SwarmRanker(object):
             equity_returns_period = context['ranking_returns_period']
             rank = eqty.diff(periods=equity_returns_period)
         else:
-            raise ValueError("Ranking ")
+            raise ValueError("Ranking type unknown")
 
         if 'ignore_eqty_less_ma' in context and context['ignore_eqty_less_ma']:
             ma_period = context['ignore_eqty_less_ma_period']

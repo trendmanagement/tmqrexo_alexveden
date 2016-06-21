@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from backtester.common_algos import swingpoints
 
 
 class SwarmFilter(object):
@@ -11,7 +12,7 @@ class SwarmFilter(object):
 
 
     @staticmethod
-    def swingpoint_threshold(avg_swarm_eqty, context):
+    def volatility_chandelier(avg_swarm_eqty, context):
         period = context['period']
         down_factor = context['down_factor']
         up_factor = context['up_factor']
@@ -83,3 +84,78 @@ class SwarmFilter(object):
         return swing_point_regime == 1, {'values': swing_point,
                                          'input_equity': avg_swarm_eqty,
                                          'name': 'GF: SwingPoint ({0} chg-periods, {1} up, {2} down)'.format(period, up_factor, down_factor)}
+
+
+    @staticmethod
+    def swingpoint_daily(avg_swarm_eqty, context):
+        period = context['period']
+        down_factor = context['down_factor']
+        up_factor = context['up_factor']
+
+
+        spreadSeries = avg_swarm_eqty
+
+        data = pd.DataFrame({'exo': spreadSeries, 'volume': pd.Series(0, index=spreadSeries.index) })
+        sp_df = swingpoints(up_factor, down_factor, data)
+
+
+        BULLISH = 1
+        BEARISH = -1
+        UNDEFINED = 0
+        lastSWPHigh = np.inf  # intmax('int32');
+        lastSWPLow = -np.inf  # intmin('int32');
+        EPSILON = 0.000000000001
+
+        nDays = len(sp_df)
+        currentState = UNDEFINED
+        nBase = 0  # nDays - length(spreadSeries);
+        marketState = np.zeros(nDays, dtype=np.int8)  # zeros(1, nDays);
+
+        sphIndicator = sp_df['sphIndicator'].values
+        splIndicator = sp_df['splIndicator'].values
+        sphLevel = sp_df['sphLevel'].values
+        splLevel = sp_df['splLevel'].values
+
+        for dd in range(1, nDays):
+            if dd <= nBase:
+                continue
+            if sphIndicator[dd - nBase]:
+                lastSWPHigh = sphLevel[dd - nBase]
+            if splIndicator[dd - nBase]:
+                lastSWPLow = splLevel[dd - nBase]
+
+            if currentState == BULLISH:
+                pass
+                if (spreadSeries[dd - nBase] - lastSWPLow <= -EPSILON and
+                                spreadSeries[dd - nBase - 1] - lastSWPLow > -EPSILON) \
+                        or \
+                        (lastSWPLow - lastSWPHigh >= EPSILON and
+                                     spreadSeries[dd - nBase] - lastSWPHigh <= -EPSILON and
+                                     spreadSeries[dd - nBase - 1] - lastSWPHigh > -EPSILON):
+                    currentState = BEARISH
+
+            elif currentState == BEARISH:
+                if (spreadSeries[dd - nBase] - lastSWPHigh >= EPSILON and
+                                spreadSeries[dd - nBase - 1] - lastSWPHigh < EPSILON) \
+                        or \
+                        (lastSWPLow - lastSWPHigh >= EPSILON and
+                                     spreadSeries[dd - nBase] - lastSWPLow >= EPSILON and
+                                     spreadSeries[dd - nBase - 1] - lastSWPLow < EPSILON):
+                    currentState = BULLISH
+
+            else:  # currentState == UNDEFINED
+                if spreadSeries[dd] - lastSWPHigh >= EPSILON:
+                    currentState = BULLISH
+                if spreadSeries[dd] - lastSWPLow <= -EPSILON:
+                    currentState = BEARISH
+
+            marketState[dd] = currentState
+
+        return pd.Series(marketState == BULLISH, index=spreadSeries.index, dtype=np.uint8), \
+               {
+                   'values': pd.Series(marketState, index=spreadSeries.index),
+                    'input_equity': avg_swarm_eqty,
+                    'name': 'GF: SwingPoint Daily ({0} chg-periods, {1} up, {2} down)'.format(period,
+                                                                                              up_factor,
+                                                                                              down_factor)
+               }
