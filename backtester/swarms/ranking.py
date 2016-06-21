@@ -68,12 +68,12 @@ class SwarmRanker(object):
             #
             relstr_ma_period = context['ranking_relstr_ma_period']
             ma = eqty.apply(lambda x: x.rolling(relstr_ma_period).mean())
-            rank = eqty / ma
+            rank = eqty - ma
 
             # Filtering upper and lower bounds
-            rank_upper_bound = context['ranking_relstr_upperbound']
-            rank_lower_bound = context['ranking_relstr_lowerbound']
-            rank[(rank < rank_lower_bound) | (rank > rank_upper_bound)] = 0
+            #rank_upper_bound = context['ranking_relstr_upperbound']
+            #rank_lower_bound = context['ranking_relstr_lowerbound']
+            #rank[(rank < rank_lower_bound) | (rank > rank_upper_bound)] = 0
         elif context['ranking_type'] == 'returns':
             #
             # Highest N-day equity returns ranking type
