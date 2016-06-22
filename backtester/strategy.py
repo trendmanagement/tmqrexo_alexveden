@@ -40,7 +40,6 @@ class StrategyBase(object):
         self.check_context()
 
         self.exo_name = strategy_context['strategy']['exo_name']
-        self.direction = strategy_context['strategy']['direction']
         self.load_exodata()
 
         self.exoinfo = EXOInfo(self.data, self.exo_dict)

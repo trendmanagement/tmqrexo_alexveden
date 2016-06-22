@@ -61,6 +61,7 @@ def stats(pl, inposition, positionsize=None, costs=None):
     barsintrade = 0.0
     summae = 0.0
     mae = 0.0
+    costs_sum = 0.0
 
     equity = np.zeros(len(inposition))
 
@@ -97,7 +98,9 @@ def stats(pl, inposition, positionsize=None, costs=None):
             # Apply transaction costs
             # Apply on entry point
             if costs is not None and i == entry_i:
-                profit += (-np.abs(costs.values[i]) * psize * 2)
+                _costs = (-np.abs(costs.values[i]) * psize * 2)
+                costs_sum += _costs
+                profit += _costs
 
             mae = min(profit, mae)
 
@@ -133,7 +136,8 @@ def stats(pl, inposition, positionsize=None, costs=None):
             'maxdd': 0.0,
             'avgbarsintrade': 0.0,
             'avgmae': 0.0,
-            'tradesmaxdd': 0.0
+            'tradesmaxdd': 0.0,
+            'costs_sum': 0.0
         }
     else:
         statsistics = {
@@ -146,6 +150,7 @@ def stats(pl, inposition, positionsize=None, costs=None):
             'avgbarsintrade': barsintrade / len(trades)-1,
             'avgmae': summae / len(trades),
             'tradesmaxdd':  (trades_equity - trades_equity.expanding().max()).min(),
+            'costs_sum': costs_sum
         }
     return equity, statsistics
 

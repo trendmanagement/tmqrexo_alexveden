@@ -21,9 +21,6 @@ class StrategyVolaBreakoutBands(StrategyBase):
 
         self.check_context()
 
-        # This is a short strategy
-        self.direction = strategy_context['strategy']['direction']
-
         # Define optimized params
         self.opts = strategy_context['strategy']['opt_params']
 

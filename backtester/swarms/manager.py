@@ -18,6 +18,7 @@ class SwarmManager(object):
         self.context = context
         self.global_filter = None
         self.rebalancetime = None
+        self.swarm_stats = None
 
         self.check_context()
 
@@ -70,7 +71,7 @@ class SwarmManager(object):
 
     def _backtest_picked_swarm(self, filtered_swarm, filtered_swarm_equity):
         swarm, swarm_stats, swarm_inposition = self.strategy.run_swarm(filtered_swarm, filtered_swarm_equity)
-        return swarm, swarm_inposition
+        return swarm, swarm_inposition, swarm_stats
 
     def _get_nbest(self, ranked_results, nsystems):
         # Select N best ranked systems to trade
@@ -146,7 +147,7 @@ class SwarmManager(object):
         # is_picked_df.shift(1) - to avoid entry price backtest bug
         filtered_equity = diff_sw[is_picked_df.shift(1) == 1].sum(axis=1).cumsum()
 
-        self.swarm_picked, self.swarm_picked_inposition = self._backtest_picked_swarm(filtered_swarm, filtered_equity)
+        self.swarm_picked, self.swarm_picked_inposition, self.swarm_picked_stats = self._backtest_picked_swarm(filtered_swarm, filtered_equity)
         self.swarm_picked_margin = self.swarm_picked_inposition.sum(axis=1) * self.strategy.exoinfo.margin()
         #return self.swarm_picked
 
@@ -159,16 +160,41 @@ class SwarmManager(object):
         underlying = self.strategy.exoinfo.exo_info['underlying']
         exoname = self.strategy.exoinfo.exo_info['name']
         strategyname = self.strategy.name
-        if self.strategy.direction == 1:
-            direction = 'Long'
-        elif self.strategy.direction == -1:
-            direction = 'Short'
-        else:
+
+        direction_param = self.context['strategy']['opt_params'][0]
+
+        if direction_param.name.lower() != 'direction':
+            raise ValueError('First OptParam of strategy must be Direction')
+
+        if len(direction_param.array) == 2:
             direction = 'Bidir'
+        else:
+            if direction_param.array[0] == 1:
+                direction = 'Long'
+            elif direction_param.array[0] == -1:
+                direction = 'Short'
+
 
         return '{0}_{1}_{2}_{3}'.format(underlying, exoname, strategyname, direction)
 
+    def get_swarm_stats(self, swarm_stats):
+        if swarm_stats is None:
+            return None
+        active_swarm_stats = swarm_stats[swarm_stats['count'] > 0]
+        return {'SwarmMembersCount': len(active_swarm_stats),
+                'TradesCount': active_swarm_stats['count'].sum(),
+                'AvgTradesPerSwarmMember': active_swarm_stats['count'].mean(),
+                'AvgWinRatePerSwarmMember': active_swarm_stats['winrate'].mean(),
+                'NetProfit': active_swarm_stats['netprofit'].sum(),
+                'CommissionSum': active_swarm_stats['costs_sum'].sum()
+                }
+
+
+
     def save(self, directory,  filename=None):
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+
         if filename is None:
             fn = os.path.join(directory, self.get_swarm_name() + '.swm')
         else:
