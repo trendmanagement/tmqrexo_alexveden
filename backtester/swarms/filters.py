@@ -88,7 +88,6 @@ class SwarmFilter(object):
 
     @staticmethod
     def swingpoint_daily(avg_swarm_eqty, context):
-        period = context['period']
         down_factor = context['down_factor']
         up_factor = context['up_factor']
 
@@ -155,7 +154,6 @@ class SwarmFilter(object):
                {
                    'values': pd.Series(marketState, index=spreadSeries.index),
                     'input_equity': avg_swarm_eqty,
-                    'name': 'GF: SwingPoint Daily ({0} chg-periods, {1} up, {2} down)'.format(period,
-                                                                                              up_factor,
+                    'name': 'GF: SwingPoint Daily ({0} up, {1} down)'.format(up_factor,
                                                                                               down_factor)
                }
