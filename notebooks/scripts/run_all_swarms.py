@@ -24,24 +24,24 @@ try:
 except SystemError:
     from settings import *
 
+if __name__ == '__main__':
+    for f in os.listdir(sys.argv[1]):
+        if 'strategy_' not in f:
+            continue
+        exo_name = os.path.join(sys.argv[1], f)
+        print("Processing "+exo_name)
+        for name, swarm_context in BATCH_CONTEXT.items():
+            print("Running swarm " + name)
 
-for f in os.listdir(sys.argv[1]):
-    if 'strategy_' not in f:
-        continue
-    exo_name = os.path.join(sys.argv[1], f)
-    print("Processing "+exo_name)
-    for name, swarm_context in BATCH_CONTEXT.items():
-        print("Running swarm " + name)
+            STRATEGY_CONTEXT_COMMON.update(swarm_context)
+            STRATEGY_CONTEXT_COMMON['strategy']['exo_name'] = exo_name
+            STRATEGY_CONTEXT_COMMON['strategy']['suffix'] = name
 
-        STRATEGY_CONTEXT_COMMON.update(swarm_context)
-        STRATEGY_CONTEXT_COMMON['strategy']['exo_name'] = exo_name
-        STRATEGY_CONTEXT_COMMON['strategy']['suffix'] = name
+            smgr = SwarmManager(STRATEGY_CONTEXT_COMMON)
+            smgr.run_swarm()
+            smgr.pick()
 
-        smgr = SwarmManager(STRATEGY_CONTEXT_COMMON)
-        smgr.run_swarm()
-        smgr.pick()
+            # Saving results to swarms directory
+            smgr.save('./swarms/')
 
-        # Saving results to swarms directory
-        smgr.save('./swarms/')
-
-print('Done')
+    print('Done')
