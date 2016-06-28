@@ -76,10 +76,11 @@ class StrategyIchimokuCloud(StrategyBase):
         and forms the faster Cloud boundary. 
         '''
         leading_spans_lookahead_period = leading_spans_lookahead_period  # subject of optimization
-        leading_span_a = ((conversion_line + base_line) / 2)
+        leading_span_a = ((conversion_line + base_line) / 2).shift(leading_spans_lookahead_period)
 
         # straightforward time shifting to 'leading_spans_lookahead_period' number of days
-        leading_span_a.index = leading_span_a.index + pd.DateOffset(days=leading_spans_lookahead_period)
+        # might be slower than .shift method
+        #leading_span_a.index = leading_span_a.index + pd.DateOffset(days=leading_spans_lookahead_period)
 
         '''
         Senkou Span B (Leading Span B): (52-period high + 52-period low)/2)) 
@@ -91,10 +92,11 @@ class StrategyIchimokuCloud(StrategyBase):
         '''
         leading_span_b_period = leading_span_b_period  # subject of optimization
         leading_span_b = ((price_df.rolling(window=leading_span_b_period).max() + price_df.rolling(
-            window=leading_span_b_period).min()) / 2)
+            window=leading_span_b_period).min()) / 2).shift(leading_spans_lookahead_period)
 
         # straightforward time shifting to 'leading_spans_lookahead_period' number of days
-        leading_span_b.index = leading_span_b.index + pd.DateOffset(days=leading_spans_lookahead_period)
+        # might be slower than .shift method
+        #leading_span_b.index = leading_span_b.index + pd.DateOffset(days=leading_spans_lookahead_period)
 
         '''
         Chikou Span (Lagging Span): Close plotted 26 days in the past
@@ -147,7 +149,15 @@ class StrategyIchimokuCloud(StrategyBase):
         spans_crossup = CrossUp(leading_span_a, leading_span_b)
         spans_crossdown = CrossDown(leading_span_a, leading_span_b)
 
-        return cloud_color_green, cloud_color_red, price_above_cloud_top, price_above_cloud_bottom, price_below_cloud_top, price_below_cloud_bottom, price_crossup_base_line, price_crossdown_base_line, price_crossup_conv_line, price_crossdown_base_line, price_crossup_conv_line, price_crossdown_conv_line, price_in_cloud, conv_crossup_base_line, conv_crossdown_base_line, spans_crossup, spans_crossdown
+        return cloud_color_green, cloud_color_red,\
+               price_above_cloud_top, price_above_cloud_bottom,\
+               price_below_cloud_top, price_below_cloud_bottom,\
+               price_crossup_base_line, price_crossdown_base_line,\
+               price_crossup_conv_line, price_crossdown_base_line,\
+               price_crossup_conv_line, price_crossdown_conv_line,\
+               price_in_cloud, conv_crossup_base_line,\
+               conv_crossdown_base_line, spans_crossup,\
+               spans_crossdown
 
     def calculate(self, params=None, save_info=False):
         #
