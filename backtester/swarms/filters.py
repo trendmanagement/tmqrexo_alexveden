@@ -5,6 +5,17 @@ from backtester.common_algos import swingpoints
 
 class SwarmFilter(object):
     @staticmethod
+    def filter_equity(equity, gf_function, gf_context):
+
+        is_picked, gf_data = gf_function(equity, gf_context)
+
+        # Litte bit future referencing but without entry point bug
+        # Unusable in production (real-time environments)
+        eqty_chg = equity.shift(-1) - equity
+        return eqty_chg[is_picked].cumsum().ffill(), gf_data
+
+
+    @staticmethod
     def rolling_mean(avg_swarm_eqty, context):
         period = context['ma_period']
         ma = avg_swarm_eqty.rolling(period).mean()
