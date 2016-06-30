@@ -32,12 +32,14 @@ if __name__ == '__main__':
         print("Processing "+exo_name)
         for name, swarm_context in BATCH_CONTEXT.items():
             print("Running swarm " + name)
+            strategy_context = STRATEGY_CONTEXT_COMMON.copy()
 
-            STRATEGY_CONTEXT_COMMON.update(swarm_context)
-            STRATEGY_CONTEXT_COMMON['strategy']['exo_name'] = exo_name
-            STRATEGY_CONTEXT_COMMON['strategy']['suffix'] = name
+            strategy_context.update(swarm_context)
+            strategy_context['strategy']['exo_name'] = exo_name
+            strategy_context['strategy']['suffix'] = name
 
-            smgr = SwarmManager(STRATEGY_CONTEXT_COMMON)
+
+            smgr = SwarmManager(strategy_context)
             smgr.run_swarm()
             smgr.pick()
 
