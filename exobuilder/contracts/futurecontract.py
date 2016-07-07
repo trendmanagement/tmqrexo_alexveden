@@ -1,4 +1,4 @@
-
+from exobuilder.contracts.optionexpirationchain import OptionExpirationChain
 
 class FutureContract(object):
     def __init__(self, contract_dic, instrument):
@@ -9,6 +9,8 @@ class FutureContract(object):
         """
         self._data = contract_dic
         self._instrument = instrument
+        self._price = 0.0
+        self._options = None
 
     @property
     def name(self):
@@ -25,4 +27,16 @@ class FutureContract(object):
     @property
     def dbid(self):
         return self._data['idcontract']
+
+    @property
+    def price(self):
+        return self._price
+
+    @property
+    def options(self):
+        if self._options is None:
+            opt_chain_dict = self._instrument.assetindex.get_options_list(self._instrument.date, self)
+            self._options = OptionExpirationChain(opt_chain_dict, self)
+        return self._options
+
 

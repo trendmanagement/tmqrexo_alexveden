@@ -60,6 +60,9 @@ class OptionContractTestCase(unittest.TestCase):
     def test_optioncontract_has_callorput_uppercase(self):
         self.assertEqual(self.option_contract.callorput, 'P')
 
+    def test_optioncontract_has_putorcall_uppercase(self):
+        self.assertEqual(self.option_contract.putorcall, 'P')
+
     def test_optioncontract_has_dbid(self):
         self.assertEqual(self.option_contract.dbid, self.opt_contract_dict['idoption'])
 

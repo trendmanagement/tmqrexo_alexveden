@@ -35,5 +35,9 @@ class OptionContract(object):
         return self._data['callorput'].upper()
 
     @property
+    def putorcall(self):
+        return self._data['callorput'].upper()
+
+    @property
     def dbid(self):
         return self._data['idoption']

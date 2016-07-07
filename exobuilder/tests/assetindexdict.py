@@ -17,15 +17,12 @@ class AssetIndexDicts(AssetIndexBase):
             self.options_dict = pickle.load(f)
 
     def get_instrument_info(self, symbol):
-        if symbol != self.instr_name:
-            raise NotImplementedError("This is a test class works only with 'ES' instrument")
-
         return self.instrument_dict
 
     def get_futures_list(self, date, instrument, limit):
-        if instrument.name != self.instr_name:
-            raise NotImplementedError("This is a test class works only with 'ES' instrument")
-
         return self.futures_dict
+
+    def get_options_list(self, date, futurecontract):
+        return self.options_dict
 
 
