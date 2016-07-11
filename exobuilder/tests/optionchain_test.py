@@ -9,6 +9,8 @@ from datetime import datetime, date
 from exobuilder.contracts.instrument import Instrument
 from collections import OrderedDict
 import numpy as np
+from .datasourcefortest import DataSourceForTest
+
 
 class OptionChainTestCase(unittest.TestCase):
     def setUp(self):
@@ -16,7 +18,8 @@ class OptionChainTestCase(unittest.TestCase):
         self.symbol = 'EP'
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
-        self.instrument = Instrument(self.symbol, self.date, self.futures_limit, self.assetindex)
+        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
+        self.instrument = self.datasource[self.symbol]
 
         fut_contract_dic = {'_id': '577a4f9e4b01f47f84caad7b',
                           'contractname': 'F.US.EPH14',
@@ -143,6 +146,14 @@ class OptionChainTestCase(unittest.TestCase):
 
     def test_chain_has_get_item_error_unexpected_item_type(self):
         self.assertRaises(ValueError, self.opt_chain.__getitem__, 'wrong type')
+
+    def test_chain_has_applyed_options_limit(self):
+        self.fut._price = 1060.000001
+        opt_chain = OptionsChain(self.opt_chain_dict, self.fut, 5)
+        self.assertEqual(len(opt_chain.strikes), 11) # 5 stikes per side + 1 ATM
+        self.assertEqual(True, np.all(opt_chain.strikes == np.array([1020, 1025, 1030, 1040, 1050, 1060, 1070, 1075, 1080, 1090, 1100])))
+
+
 
 
 

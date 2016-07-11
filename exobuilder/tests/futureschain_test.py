@@ -4,6 +4,7 @@ from exobuilder.contracts.futurecontract import FutureContract
 from .assetindexdict import AssetIndexDicts
 from datetime import datetime, date
 from exobuilder.contracts.instrument import Instrument
+from .datasourcefortest import DataSourceForTest
 
 class FuturesChainTestCase(unittest.TestCase):
     def setUp(self):
@@ -11,7 +12,8 @@ class FuturesChainTestCase(unittest.TestCase):
         self.symbol = 'EP'
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
-        self.instrument = Instrument(self.symbol, self.date, self.futures_limit, self.assetindex)
+        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
+        self.instrument = self.datasource[self.symbol]
         self.fut_chain = FuturesChain(self.instrument)
 
     def test_constructor(self):
@@ -26,8 +28,8 @@ class FuturesChainTestCase(unittest.TestCase):
         self.assertEqual(len(self.fut_chain), self.futures_limit)
 
     def test_chain_has_expirations(self):
-        data = self.instrument.assetindex.get_futures_list(self.instrument.date, self.instrument,
-                                                    self.instrument.futures_limit)
+        data = self.instrument.datasource.assetindex.get_futures_list(self.instrument.date, self.instrument,
+                                                           self.instrument.futures_limit)
         self.assertEqual(len(self.fut_chain.expirations), self.futures_limit)
         self.assertEqual(self.fut_chain.expirations, [x['expirationdate'] for x in data])
 

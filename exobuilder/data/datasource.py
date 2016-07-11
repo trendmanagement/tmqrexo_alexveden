@@ -1,12 +1,18 @@
-
+from exobuilder.contracts.instrument import Instrument
 
 class DataSourceBase(object):
-    def __init__(self):
-        pass
+    def __init__(self, assetindex, date, futures_limit, options_limit):
+        self.assetindex = assetindex
+        self.date = date
+        self.futures_limit = futures_limit
+        self.options_limit = options_limit
 
-    def getdata(self, ticker, startdate, enddate):
-        pass
 
-    def __str__(self):
-        return 'DataSourceBase'
+    def get_fut_data(self, dbid, date):
+        raise NotImplementedError()
 
+    def get_option_data(self, dbid, date):
+        raise NotImplementedError()
+
+    def __getitem__(self, item):
+        return Instrument(self, item, self.date, self.futures_limit, self.options_limit)

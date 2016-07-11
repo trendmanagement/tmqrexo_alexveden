@@ -73,3 +73,6 @@ class PutCallPair(object):
 
         return None
 
+    def __repr__(self):
+        return "{0} {1} / {2}".format(self.strike, self.call.name, self.put.name)
+

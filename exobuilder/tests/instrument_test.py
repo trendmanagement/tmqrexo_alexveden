@@ -2,21 +2,26 @@ import unittest
 from exobuilder.contracts.instrument import Instrument
 from exobuilder.contracts.futureschain import FuturesChain
 from .assetindexdict import AssetIndexDicts
+from .datasourcefortest import DataSourceForTest
 from datetime import datetime
 
 class InstrumentCase(unittest.TestCase):
     def setUp(self):
         self.assetindex = AssetIndexDicts()
+
         self.symbol = 'EP'
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
         self.instrument_dbid = 11
-        self.instrument = Instrument(self.symbol, self.date, self.futures_limit, self.assetindex)
+        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
+        self.instrument = self.datasource[self.symbol]
+        return
 
     def test_instrument_constructor(self):
         instrument = self.instrument
         self.assertEqual(type(dict()), type(instrument._datadic))
-        self.assertEqual(type(self.assetindex), type(instrument.assetindex))
+        self.assertEqual(type(self.assetindex), type(instrument.datasource.assetindex))
+        self.assertEqual(type(self.datasource), type(instrument.datasource))
 
     def test_instrument_has_name(self):
         instrument = self.instrument
@@ -33,6 +38,10 @@ class InstrumentCase(unittest.TestCase):
     def test_instrument_has_futures_limit(self):
         instrument = self.instrument
         self.assertEqual(self.futures_limit, instrument.futures_limit)
+
+    def test_instrument_has_options_limit(self):
+        instrument = self.instrument
+        self.assertEqual(0, instrument.options_limit)
 
     def test_instrument_has_dbid(self):
         instrument = self.instrument

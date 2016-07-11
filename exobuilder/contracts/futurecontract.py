@@ -9,8 +9,9 @@ class FutureContract(object):
         """
         self._data = contract_dic
         self._instrument = instrument
-        self._price = 0.0
         self._options = None
+        self._price_data = None
+        self._price = 0.0
 
     @property
     def name(self):
@@ -30,6 +31,11 @@ class FutureContract(object):
 
     @property
     def price(self):
+        if self._price == 0.0:
+            # Getting price data from datasource
+            self._price_data = self._instrument.datasource.get_fut_data(self.dbid, self._instrument.date)
+            self._price = self._price_data['close']
+
         return self._price
 
     @property
@@ -38,5 +44,11 @@ class FutureContract(object):
             opt_chain_dict = self._instrument.assetindex.get_options_list(self._instrument.date, self)
             self._options = OptionExpirationChain(opt_chain_dict, self)
         return self._options
+
+    def __str__(self):
+        return '{0} {1} {2}'.format(self.expiration.date(), self.name, self.price)
+
+    def __repr__(self):
+        return '{0} {1} {2}'.format(self.expiration.date(), self.name, self.price)
 
 

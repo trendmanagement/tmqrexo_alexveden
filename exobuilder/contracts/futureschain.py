@@ -49,3 +49,14 @@ class FuturesChain(object):
     def __setitem__(self, key, value):
         raise AssertionError("Futures chain collection is read only")
 
+    def __str__(self):
+        return str(self.contracts)
+
+    def __repr__(self):
+        sbuf = ''
+
+        for i, c in enumerate(self.contracts):
+            sbuf += '{0}: {1}\n'.format(i, c)
+
+        return sbuf
+

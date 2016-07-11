@@ -4,19 +4,25 @@ class Instrument(object):
     """
     Underlying instrument class
     """
-    def __init__(self, symbol, date, futures_limit, assetindex):
+    def __init__(self, datasource, symbol, date, futures_limit, options_limit=0):
         """
         Initialize instrument class
+        :param datasource: asset index instrument
         :param symbol: ticker of instrument in DB
         :param date: current calculation date
-        :param assetindex: asset index instrument
         :param futures_limit: futures expirations limit for instrument in FuturesChains
+        :param options_limit: max strikes per side in Options chains
         """
-        self.assetindex = assetindex
+        self.datasource = datasource
         self.date = date
-        self._datadic = assetindex.get_instrument_info(symbol)
+        self._datadic = datasource.assetindex.get_instrument_info(symbol)
         self.futures_limit = futures_limit
+        self.options_limit = options_limit
         self._futures_chain = None
+
+    @property
+    def assetindex(self):
+        return self.datasource.assetindex
 
     @property
     def dbid(self):

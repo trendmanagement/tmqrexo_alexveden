@@ -10,6 +10,7 @@ from datetime import datetime, date
 from exobuilder.contracts.instrument import Instrument
 from collections import OrderedDict
 import numpy as np
+from .datasourcefortest import DataSourceForTest
 
 class OptionExpirationChainTestCase(unittest.TestCase):
     def setUp(self):
@@ -17,7 +18,8 @@ class OptionExpirationChainTestCase(unittest.TestCase):
         self.symbol = 'EP'
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
-        self.instrument = Instrument(self.symbol, self.date, self.futures_limit, self.assetindex)
+        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
+        self.instrument = self.datasource[self.symbol]
 
         fut_contract_dic = {'_id': '577a4f9e4b01f47f84caad7b',
                           'contractname': 'F.US.EPH14',

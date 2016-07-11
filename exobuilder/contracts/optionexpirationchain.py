@@ -11,7 +11,7 @@ class OptionExpirationChain(object):
         self._chains = OrderedDict()
 
         for record in self._data:
-            option_chain = OptionsChain(record, self._fut)
+            option_chain = OptionsChain(record, self._fut, self._fut.instrument.options_limit)
             self._chains[option_chain.expiration] = option_chain
 
         self._expirations = sorted(list(self._chains.keys()))
@@ -45,3 +45,11 @@ class OptionExpirationChain(object):
             return self._chains[expiration]
         else:
             raise ValueError('Unexpected item type, must be float or int')
+
+    def __repr__(self):
+        exp_str = ""
+
+        for i, exp in enumerate(self.expirations):
+            exp_str += '{0}: {1}\n'.format(i, exp.date())
+
+        return exp_str

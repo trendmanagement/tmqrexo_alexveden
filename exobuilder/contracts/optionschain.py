@@ -6,15 +6,24 @@ import bisect
 
 
 class OptionsChain(object):
-    def __init__(self, option_chain_dic, futures_contract):
+    def __init__(self, option_chain_dic, futures_contract, options_limit=0):
         self._data = option_chain_dic
         self._fut = futures_contract
         self._options = OrderedDict()
         self._atm_index = -1
+        self._options_limit = options_limit
 
         self._expiration = self._data['_id']['date']
 
+        if options_limit > 0:
+            all_strikes = np.array(sorted(list(set([x['strikeprice'] for x in self._data['chain']]))))
+            atm_index = np.argmin(np.abs(all_strikes - self.underlying.price))
+            all_strikes = all_strikes[max(0, atm_index - options_limit):min(len(self._data['chain']), atm_index + options_limit + 1)]
+
         for opt_dic in self._data['chain']:
+            if options_limit > 0:
+                if opt_dic['strikeprice'] not in all_strikes:
+                    continue
             option = OptionContract(opt_dic, self._fut)
             pc_pair = self._options.setdefault(option.strike, PutCallPair())
             pc_pair.addoption(option)
@@ -78,5 +87,12 @@ class OptionsChain(object):
             self._atm_index = np.argmin(np.abs(self._strike_array - ulprice))
         return self._atm_index
 
+    def __repr__(self):
+        opt_str = ""
 
+        atmi = self.atmindex
 
+        for i, strike in enumerate(self.strikes):
+            opt_str += "{0}: {1}\n".format(i-atmi, self[strike])
+
+        return opt_str

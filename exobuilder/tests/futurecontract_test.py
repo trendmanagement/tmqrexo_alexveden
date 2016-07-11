@@ -2,6 +2,7 @@ import unittest
 from exobuilder.contracts.futurecontract import FutureContract
 from exobuilder.contracts.instrument import Instrument
 from exobuilder.contracts.optionexpirationchain import OptionExpirationChain
+from .datasourcefortest import DataSourceForTest
 from .assetindexdict import AssetIndexDicts
 from datetime import datetime
 
@@ -12,7 +13,8 @@ class FutureContractTestCase(unittest.TestCase):
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
         self.instrument_dbid = 11
-        self.instrument = Instrument(self.symbol, self.date, self.futures_limit, self.assetindex)
+        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
+        self.instrument = self.datasource[self.symbol]
 
         self.contract_dict = {'_id': '577a4fa34b01f47f84cab23c',
                               'contractname': 'F.EPZ16',
@@ -43,7 +45,8 @@ class FutureContractTestCase(unittest.TestCase):
         self.assertEqual(self.fut_contract.dbid, self.contract_dict['idcontract'])
 
     def test_future_has_price(self):
-        self.assertEqual(self.fut_contract.price, 0.0)
+        self.fut_contract._price = 1500
+        self.assertEqual(self.fut_contract.price, 1500)
 
     def test_future_has_expirations(self):
         self.assertEqual(type(self.fut_contract.options), OptionExpirationChain)
