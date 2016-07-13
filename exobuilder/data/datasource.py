@@ -14,5 +14,8 @@ class DataSourceBase(object):
     def get_option_data(self, dbid, date):
         raise NotImplementedError()
 
+    def get_extra_data(self, key, date):
+        raise NotImplementedError()
+
     def __getitem__(self, item):
         return Instrument(self, item, self.date, self.futures_limit, self.options_limit)

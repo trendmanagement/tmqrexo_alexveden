@@ -56,6 +56,14 @@ class FutureContractTestCase(unittest.TestCase):
         options = id(fut.options)
         self.assertEqual(id(fut.options), options)
 
+    def test_future_str_format(self):
+        fut = FutureContract(self.contract_dict, self.instrument)
+        self.assertEqual(str(fut), '{0} {1} {2}'.format(fut.expiration.date(), fut.name, fut.price))
+
+    def test_future_repr_format(self):
+        fut = FutureContract(self.contract_dict, self.instrument)
+        self.assertEqual(fut.__repr__(), '{0} {1} {2}'.format(fut.expiration.date(), fut.name, fut.price))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -51,5 +51,4 @@ class OptionExpirationChain(object):
 
         for i, exp in enumerate(self.expirations):
             exp_str += '{0}: {1}\n'.format(i, exp.date())
-
         return exp_str

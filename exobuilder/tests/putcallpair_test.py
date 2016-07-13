@@ -231,6 +231,28 @@ class PutCallPainTestCase(unittest.TestCase):
         pair.addoption(option_contract_call)
         self.assertEqual(self.fut_contract, pair.underlying)
 
+    def test_putcallpair_has_repr(self):
+        pair = PutCallPair()
+        pair.addoption(self.option_contract_put)
+
+        opt_contract_dict_call = {'_id': '577a573e4b01f47f84d0cbd5',
+                                  'callorput': 'c',
+                                  'cqgsymbol': 'P.US.EPH1427750',
+                                  'expirationdate': datetime(2014, 3, 21, 0, 0),
+                                  'idcontract': 4736,
+                                  'idinstrument': 11,
+                                  'idoption': 11558454,
+                                  'optionmonth': 'H',
+                                  'optionmonthint': 3,
+                                  'optionname': 'P.US.EPH1427750',
+                                  'optionyear': 2014,
+                                  'strikeprice': 2775.0
+                                  }
+        option_contract_call = OptionContract(opt_contract_dict_call, self.fut_contract)
+
+        pair.addoption(option_contract_call)
+        self.assertEqual(pair.__repr__(), "{0} {1} / {2}".format(pair.strike, pair.call.name, pair.put.name))
+
 
 
 if __name__ == '__main__':

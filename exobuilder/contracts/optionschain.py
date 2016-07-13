@@ -94,5 +94,4 @@ class OptionsChain(object):
 
         for i, strike in enumerate(self.strikes):
             opt_str += "{0}: {1}\n".format(i-atmi, self[strike])
-
         return opt_str

@@ -82,6 +82,14 @@ class OptionExpirationChainTestCase(unittest.TestCase):
         expiry = datetime(2014, 1, 17, 0, 0)
         self.assertEqual(self.opt_chain[0].expiration, expiry)
 
+    def test_chain_repr(self):
+        exp_str = ""
+
+        for i, exp in enumerate(self.opt_chain.expirations):
+            exp_str += '{0}: {1}\n'.format(i, exp.date())
+
+        self.assertEqual(self.opt_chain.__repr__(), exp_str)
+
 
 
 

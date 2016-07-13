@@ -54,9 +54,7 @@ class FuturesChain(object):
 
     def __repr__(self):
         sbuf = ''
-
         for i, c in enumerate(self.contracts):
             sbuf += '{0}: {1}\n'.format(i, c)
-
         return sbuf
 

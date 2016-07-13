@@ -62,6 +62,16 @@ class FuturesChainTestCase(unittest.TestCase):
             self.assertEqual(type(exp), datetime)
             self.assertEqual(type(f), FutureContract)
 
+    def test_chain_str(self):
+        self.assertEqual(self.fut_chain.__str__(), str(self.fut_chain.contracts))
+
+    def test_chain_repr(self):
+        sbuf = ''
+        for i, c in enumerate(self.fut_chain.contracts):
+            sbuf += '{0}: {1}\n'.format(i, c)
+
+        self.assertEqual(self.fut_chain.__repr__(), sbuf)
+
 
 
 

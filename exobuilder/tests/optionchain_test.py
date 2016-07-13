@@ -153,6 +153,16 @@ class OptionChainTestCase(unittest.TestCase):
         self.assertEqual(len(opt_chain.strikes), 11) # 5 stikes per side + 1 ATM
         self.assertEqual(True, np.all(opt_chain.strikes == np.array([1020, 1025, 1030, 1040, 1050, 1060, 1070, 1075, 1080, 1090, 1100])))
 
+    def test_chain_repr(self):
+        opt_str = ""
+
+        atmi = self.opt_chain.atmindex
+
+        for i, strike in enumerate(self.opt_chain.strikes):
+            opt_str += "{0}: {1}\n".format(i - atmi, self.opt_chain[strike])
+
+        self.assertEqual(self.opt_chain.__repr__(), opt_str)
+
 
 
 

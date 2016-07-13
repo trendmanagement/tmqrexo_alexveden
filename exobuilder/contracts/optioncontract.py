@@ -1,4 +1,5 @@
-
+from exobuilder.algorithms.blackscholes import blackscholes
+import numpy as np
 
 class OptionContract(object):
     def __init__(self, contract_dic, future_contract):
@@ -9,6 +10,8 @@ class OptionContract(object):
         """
         self._data = contract_dic
         self._future_contract = future_contract
+        self._option_price_data = None
+        self._option_price = float('nan')
 
     @property
     def name(self):
@@ -41,3 +44,37 @@ class OptionContract(object):
     @property
     def dbid(self):
         return self._data['idoption']
+
+    @property
+    def date(self):
+        return self.instrument.date
+
+    @property
+    def to_expiration_years(self):
+        return (self.expiration.date() - self.date.date()).total_seconds() / 31536000.0 # == (365.0 * 24 * 60 * 60)
+
+    @property
+    def to_expiration_days(self):
+        return (self.expiration.date() - self.date.date()).days
+
+    @property
+    def riskfreerate(self):
+        return self.instrument.datasource.get_extra_data('riskfreerate', self.date)
+
+    @property
+    def iv(self):
+        if self._option_price_data is None:
+            self._option_price_data = self.instrument.datasource.get_option_data(self.dbid, self.date)
+        return self._option_price_data["impliedvol"]
+
+    @property
+    def price(self):
+        if np.isnan(self._option_price):
+            self._option_price = blackscholes(self.callorput, self.underlying.price, self.strike, self.to_expiration_years, self.riskfreerate, self.iv)
+
+        return self._option_price
+
+
+
+
+
