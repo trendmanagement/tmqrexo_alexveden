@@ -37,6 +37,14 @@ class Instrument(object):
         return self._datadic['symbol']
 
     @property
+    def point_value_futures(self):
+        return 1.0 / self._datadic['ticksize'] * self._datadic['tickvalue']
+
+    @property
+    def point_value_options(self):
+        return 1.0 / self._datadic['optionticksize'] * self._datadic['optiontickvalue']
+
+    @property
     def futures(self):
         """
         Futures chains accessor

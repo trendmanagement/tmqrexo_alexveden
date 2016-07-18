@@ -53,6 +53,15 @@ class InstrumentCase(unittest.TestCase):
         # Chain caching
         self.assertEqual(chain, self.instrument.futures)
 
+    def test_instrument_has_futures_point_value(self):
+        self.assertEqual(self.instrument.point_value_futures, 1.0 / 0.25 * 12.5)
+
+    def test_instrument_has_options_point_value(self):
+        inst = self.datasource[self.symbol]
+        inst._datadic['optiontickvalue'] = 25.0
+        inst._datadic['optionticksize'] = .5
+        self.assertEqual(self.instrument.point_value_options, 1.0 / 0.5 * 25.0)
+
 
 
 if __name__ == '__main__':

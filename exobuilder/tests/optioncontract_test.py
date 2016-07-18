@@ -86,7 +86,6 @@ class OptionContractTestCase(unittest.TestCase):
         self.assertEqual(self.option_contract.to_expiration_days,
                          (self.option_contract.expiration - self.date).total_seconds() / (24 * 60 * 60))
 
-
     def test_optioncontract_has_toexpiration_days_iszero_on_expiration_time(self):
         opt_contract_dict = {'_id': '577a573e4b01f47f84d0cbd5',
                                   'callorput': 'p',
@@ -334,6 +333,9 @@ class OptionContractTestCase(unittest.TestCase):
 
         # TODO: Add more error handling conditions to BS
         self.assertTrue(np.isnan(blackscholes(callputflag, S, X, -T, r, v)))
+
+    def test_optioncontract_has_pointvalue(self):
+        self.assertEqual(self.option_contract.pointvalue, self.instrument.point_value_options)
 
 
 

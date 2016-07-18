@@ -39,6 +39,10 @@ class FutureContract(object):
         return self._price
 
     @property
+    def pointvalue(self):
+        return self.instrument.point_value_futures
+
+    @property
     def options(self):
         if self._options is None:
             opt_chain_dict = self._instrument.assetindex.get_options_list(self._instrument.date, self)

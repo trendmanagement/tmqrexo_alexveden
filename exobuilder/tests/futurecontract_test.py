@@ -64,6 +64,10 @@ class FutureContractTestCase(unittest.TestCase):
         fut = FutureContract(self.contract_dict, self.instrument)
         self.assertEqual(fut.__repr__(), '{0} {1} {2}'.format(fut.expiration.date(), fut.name, fut.price))
 
+    def test_has_point_value(self):
+        point_val = self.fut_contract.pointvalue
+        self.assertEqual(self.fut_contract.instrument.point_value_futures, point_val)
+
 
 if __name__ == '__main__':
     unittest.main()

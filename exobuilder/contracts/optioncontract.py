@@ -74,6 +74,10 @@ class OptionContract(object):
 
         return self._option_price
 
+    @property
+    def pointvalue(self):
+        return self.instrument.point_value_options
+
 
 
 
