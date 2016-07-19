@@ -14,6 +14,7 @@ import numpy as np
 import scipy
 
 
+
 class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
     def __init__(self, strategy_context):
         # Initialize parent class
