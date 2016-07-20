@@ -253,3 +253,53 @@ class PositionTestCase(unittest.TestCase):
             '_realized_pnl': 100.0
         }, pos.as_dict())
 
+
+    def test_from_dict(self):
+        pos = Position()
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        pos.add(trans)
+
+        trans2 = Transaction(self.fut_contract, self.date, -2.0, 13.3)
+        pos.add(trans2)
+
+        positions = pos.netpositions
+        self.assertEqual(1, len(positions))
+        self.assertEqual(100, pos._realized_pnl)
+
+        self.assertEqual(1, len(positions))
+        self.assertEqual(True, self.fut_contract in positions)
+        p = positions[self.fut_contract]
+
+        self.assertEqual(p['qty'], 2.0)
+        self.assertEqual(p['value'], trans.usdvalue / 2)
+
+        self.fut_contract._price = 14.3
+        self.assertEqual(100, pos._realized_pnl)
+        self.assertEqual(pos.pnl, 100 + 200)
+
+        pos_dic = pos.as_dict()
+
+        # Deserealizing position
+
+        p2 = Position.from_dict(pos_dic, self.datasource)
+
+        positions = p2.netpositions
+        self.assertEqual(100, p2._realized_pnl)
+
+        self.assertEqual(1, len(positions))
+        self.assertEqual(True, self.fut_contract in positions)
+        p = positions[self.fut_contract]
+
+        # Wrong - because we have new object from datsource
+        #self.fut_contract._price = 14.3
+
+        for k in positions.keys():
+            k._price = 14.3
+
+        self.assertEqual(p['qty'], 2.0)
+        self.assertEqual(p['value'], trans.usdvalue / 2)
+
+
+        self.assertEqual(100, p2._realized_pnl)
+        self.assertEqual(p2.pnl, 100 + 200)
+

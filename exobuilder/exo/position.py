@@ -64,3 +64,19 @@ class Position(object):
             '_realized_pnl': self._realized_pnl
             }
 
+    @staticmethod
+    def from_dict(position_dict, datasource):
+        p = Position()
+
+        positions = {}
+        for asset_hash, pos_data in position_dict['positions'].items():
+            asset_instance = datasource[asset_hash]
+
+            positions[asset_instance] = pos_data
+
+        # Filling position with data
+        p._positions = positions
+        p._realized_pnl = position_dict['_realized_pnl']
+
+        return p
+

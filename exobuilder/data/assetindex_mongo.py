@@ -47,5 +47,14 @@ class AssetIndexMongo(AssetIndexBase):
 
         return opt_chains
 
+    def get_instrument(self, dbid):
+        return self.db.instruments.find({'idinstrument': dbid}).next()
+
+    def get_future_contract(self, dbid):
+        return self.db.contracts.find({'idcontract': dbid}).next()
+
+    def get_option_contract(self, dbid):
+        return self.db.options.find({'idoption': dbid})
+
 
 
