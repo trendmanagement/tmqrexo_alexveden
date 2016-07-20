@@ -1,5 +1,7 @@
 from exobuilder.contracts.optionexpirationchain import OptionExpirationChain
 
+FUT_HASH_ROOT = 100000000
+
 class FutureContract(object):
     def __init__(self, contract_dic, instrument):
         """
@@ -20,6 +22,10 @@ class FutureContract(object):
     @property
     def expiration(self):
         return self._data['expirationdate']
+
+    @property
+    def date(self):
+        return self._instrument.date
 
     @property
     def instrument(self):
@@ -54,5 +60,20 @@ class FutureContract(object):
 
     def __repr__(self):
         return '{0} {1} {2}'.format(self.expiration.date(), self.name, self.price)
+
+    def as_dict(self):
+        return {'name': self.name, 'dbid': self.dbid, 'type': 'F', 'hash': self.__hash__()}
+
+    def __hash__(self):
+        return FUT_HASH_ROOT + self.dbid
+
+    def __eq__(self, other):
+        if isinstance(other, FutureContract) and other.__hash__() == self.__hash__():
+            return True
+
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 

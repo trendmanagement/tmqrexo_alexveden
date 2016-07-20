@@ -68,6 +68,46 @@ class FutureContractTestCase(unittest.TestCase):
         point_val = self.fut_contract.pointvalue
         self.assertEqual(self.fut_contract.instrument.point_value_futures, point_val)
 
+    def test_as_dict(self):
+        dict = self.fut_contract.as_dict()
 
-if __name__ == '__main__':
-    unittest.main()
+        self.assertEqual({'name': self.fut_contract.name, 'dbid': self.fut_contract.dbid, 'type': 'F', 'hash': self.fut_contract.__hash__()}, dict)
+
+    def test_hash(self):
+        self.assertEqual(100000000 + self.fut_contract.dbid, self.fut_contract.__hash__())
+
+    def test_has_date(self):
+        self.assertEqual(self.fut_contract.date, self.date)
+
+    def test_equality(self):
+        contract_dict = {'_id': '577a4fa34b01f47f84cab23c',
+                          'contractname': 'F.EPZ16',
+                          'cqgsymbol': 'F.EPZ16',
+                          'expirationdate': datetime(2016, 12, 16, 0, 0),
+                          'idcontract': 6570,
+                          'idinstrument': 11,
+                          'month': 'Z',
+                          'monthint': 12,
+                          'year': 2016}
+
+        fut_contract = FutureContract(contract_dict, self.instrument)
+
+        self.assertEqual(fut_contract, self.fut_contract)
+        self.assertFalse(fut_contract is None)
+        self.assertNotEqual(fut_contract, None)
+
+    def test_not_equality(self):
+        contract_dict = {'_id': '577a4fa34b01f47f84cab23c',
+                         'contractname': 'F.EPZ16',
+                         'cqgsymbol': 'F.EPZ16',
+                         'expirationdate': datetime(2016, 12, 16, 0, 0),
+                         'idcontract': 65701,
+                         'idinstrument': 11,
+                         'month': 'Z',
+                         'monthint': 12,
+                         'year': 2016}
+
+        fut_contract = FutureContract(contract_dict, self.instrument)
+
+        self.assertNotEqual(fut_contract, self.fut_contract)
+

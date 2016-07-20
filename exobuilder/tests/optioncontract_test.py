@@ -337,13 +337,29 @@ class OptionContractTestCase(unittest.TestCase):
     def test_optioncontract_has_pointvalue(self):
         self.assertEqual(self.option_contract.pointvalue, self.instrument.point_value_options)
 
+    def test_optioncontract_as_dict(self):
+        self.assertEqual({'name': self.option_contract.name, 'dbid': self.option_contract.dbid, 'type': 'O', 'hash': self.option_contract.__hash__()}, self.option_contract.as_dict())
 
+    def test_optioncontract_hash(self):
+        self.assertEqual(200000000 + self.option_contract.dbid, self.option_contract.__hash__())
 
+    def test_equality(self):
+        opt_contract_dict = {'_id': '577a573e4b01f47f84d0cbd5',
+                                  'callorput': 'p',
+                                  'cqgsymbol': 'P.US.EPH1427750',
+                                  'expirationdate': datetime(2014, 3, 21, 0, 0),
+                                  'idcontract': 4736,
+                                  'idinstrument': 11,
+                                  'idoption': 11558454,
+                                  'optionmonth': 'H',
+                                  'optionmonthint': 3,
+                                  'optionname': 'P.US.EPH1427750',
+                                  'optionyear': 2014,
+                                  'strikeprice': 2775.0
+                                  }
 
+        option_contract = OptionContract(opt_contract_dict, self.fut_contract)
 
-
-
-
-
-if __name__ == '__main__':
-    unittest.main()
+        self.assertEqual(option_contract, self.option_contract)
+        self.assertFalse(option_contract is None)
+        self.assertNotEqual(option_contract, None)

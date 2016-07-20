@@ -90,13 +90,3 @@ class OptionExpirationChainTestCase(unittest.TestCase):
 
         self.assertEqual(self.opt_chain.__repr__(), exp_str)
 
-
-
-
-
-
-
-
-if __name__ == '__main__':
-    unittest.main()
-

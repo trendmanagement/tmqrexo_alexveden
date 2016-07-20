@@ -1,6 +1,8 @@
 from exobuilder.algorithms.blackscholes import blackscholes
 import numpy as np
 
+OPT_HASH_ROOT = 200000000
+
 class OptionContract(object):
     def __init__(self, contract_dic, future_contract):
         """
@@ -77,6 +79,21 @@ class OptionContract(object):
     @property
     def pointvalue(self):
         return self.instrument.point_value_options
+
+    def as_dict(self):
+        return {'name': self.name, 'dbid': self.dbid, 'type': 'O', 'hash': self.__hash__()}
+
+    def __hash__(self):
+        return OPT_HASH_ROOT + self.dbid
+
+    def __eq__(self, other):
+        if isinstance(other, OptionContract) and other.__hash__() == self.__hash__():
+            return True
+
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 

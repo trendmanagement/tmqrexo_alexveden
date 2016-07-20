@@ -32,201 +32,224 @@ class PositionTestCase(unittest.TestCase):
 
     def test_add(self):
         pos = Position()
-        pos.add(self.fut_contract, self.date, 4.0, 12.3)
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        pos.add(trans)
 
-        trans = pos.transactions
-        self.assertEqual(1, len(trans))
-        t = trans[0]
-        self.assertEqual(t.asset, self.fut_contract)
-        self.assertEqual(t.date, self.date)
-        self.assertEqual(t.qty, 4.0)
-        self.assertEqual(t.price, 12.3)
+        positions = pos.netpositions
+        self.assertEqual(1, len(positions))
+        self.assertEqual(True, self.fut_contract in positions)
+        p = positions[self.fut_contract]
 
-    def test_net_positions_opened(self):
-        pos = Position()
-        pos.add(self.fut_contract, self.date, 4.0, 12.3)
-
-        trans = pos.transactions
-        self.assertEqual(1, len(trans))
-
-        netpositions = pos.netpositions
-        self.assertTrue(trans[0].asset in netpositions)
-
-        p = netpositions[trans[0].asset]
         self.assertEqual(p['qty'], 4.0)
-        self.assertEqual(p['value'], -trans[0].usdvalue)
+        self.assertEqual(p['value'], trans.usdvalue)
+        self.assertEqual(0, pos._realized_pnl)
 
-    def test_net_positions_opened_and_closed(self):
+    def test_add_2transactions(self):
         pos = Position()
-        pos.add(self.fut_contract, self.date, 4.0, 12.3)
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        pos.add(trans)
 
-        trans = pos.transactions
-        self.assertEqual(1, len(trans))
+        trans2 = Transaction(self.fut_contract, self.date, 2.0, 15.3)
+        pos.add(trans2)
 
-        netpositions = pos.netpositions
-        self.assertTrue(trans[0].asset in netpositions)
-        self.assertEqual(1, len(netpositions))
+        positions = pos.netpositions
+        self.assertEqual(1, len(positions))
+        self.assertEqual(True, self.fut_contract in positions)
+        p = positions[self.fut_contract]
 
-        p = netpositions[trans[0].asset]
-        self.assertEqual(p['qty'], 4.0)
-        self.assertEqual(p['value'], -trans[0].usdvalue)
+        self.assertEqual(p['qty'], 6.0)
+        self.assertEqual(p['value'], trans.usdvalue + trans2.usdvalue)
+        self.assertEqual(0, pos._realized_pnl)
 
-        # Closing opened position
-        pos.add(self.fut_contract, self.date, -4.0, 12.3)
-        trans = pos.transactions
-        self.assertEqual(2, len(trans))
-
-        netpositions = pos.netpositions
-        self.assertTrue(trans[0].asset in netpositions)
-        self.assertTrue(trans[1].asset in netpositions)
-        self.assertEqual(1, len(netpositions))
-
-        p = netpositions[trans[0].asset]
-        self.assertEqual(p['qty'], 0.0)
-        self.assertEqual(p['value'], 0)
-
-    def test_net_positions_opened_and_closed_profit(self):
+    def test_add_to_closeposition_long(self):
         pos = Position()
-        pos.add(self.fut_contract, self.date, 4.0, 12.3)
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        pos.add(trans)
 
-        trans = pos.transactions
-        self.assertEqual(1, len(trans))
+        trans = Transaction(self.fut_contract, self.date, -4.0, 13.3)
+        pos.add(trans)
 
-        netpositions = pos.netpositions
-        self.assertTrue(trans[0].asset in netpositions)
-        self.assertEqual(1, len(netpositions))
+        positions = pos.netpositions
+        self.assertEqual(0, len(positions))
+        self.assertEqual(200, pos._realized_pnl)
 
-        p = netpositions[trans[0].asset]
-        self.assertEqual(p['qty'], 4.0)
-        self.assertEqual(p['value'], -trans[0].usdvalue)
-
-        # Closing opened position
-        pos.add(self.fut_contract, self.date, -4.0, 13.3)
-        trans = pos.transactions
-        self.assertEqual(2, len(trans))
-
-        netpositions = pos.netpositions
-        self.assertTrue(trans[0].asset in netpositions)
-        self.assertTrue(trans[1].asset in netpositions)
-        self.assertEqual(1, len(netpositions))
-
-        p = netpositions[trans[0].asset]
-        self.assertEqual(p['qty'], 0.0)
-        self.assertEqual(p['value'], 50*4)
-
-    def test_net_positions_opened_and_3_transactions(self):
+    def test_add_to_closeposition_short(self):
         pos = Position()
-        pos.add(self.fut_contract, self.date, 4.0, 12.3)
+        trans = Transaction(self.fut_contract, self.date, -4.0, 12.3)
+        pos.add(trans)
 
-        trans = pos.transactions
-        self.assertEqual(1, len(trans))
+        trans = Transaction(self.fut_contract, self.date, 4.0, 13.3)
+        pos.add(trans)
 
-        netpositions = pos.netpositions
-        self.assertTrue(trans[0].asset in netpositions)
-        self.assertEqual(1, len(netpositions))
+        positions = pos.netpositions
+        self.assertEqual(0, len(positions))
+        self.assertEqual(-200, pos._realized_pnl)
 
-        p = netpositions[trans[0].asset]
-        self.assertEqual(p['qty'], 4.0)
-        self.assertEqual(p['value'], -trans[0].usdvalue)
-
-        # Closing opened position
-        pos.add(self.fut_contract, self.date, -5.0, 13.3)
-        pos.add(self.fut_contract, self.date, 1.0, 13.3)
-        trans = pos.transactions
-        self.assertEqual(3, len(trans))
-
-        netpositions = pos.netpositions
-        self.assertTrue(trans[0].asset in netpositions)
-        self.assertTrue(trans[1].asset in netpositions)
-        self.assertTrue(trans[2].asset in netpositions)
-        self.assertEqual(1, len(netpositions))
-
-        p = netpositions[trans[0].asset]
-        self.assertEqual(p['qty'], 0.0)
-        self.assertEqual(p['value'], 50 * 4)
-
-    def test_pnl_opened_position(self):
+    def test_add_shrink_position_short(self):
         pos = Position()
+        trans = Transaction(self.fut_contract, self.date, -4.0, 12.3)
+        pos.add(trans)
 
-        pos.add(self.fut_contract, self.date, 4.0, 12.3)
+        trans2 = Transaction(self.fut_contract, self.date, 2.0, 13.3)
+        pos.add(trans2)
 
-        trans = pos.transactions
-        self.assertEqual(1, len(trans))
+        positions = pos.netpositions
+        self.assertEqual(1, len(positions))
+        self.assertEqual(-100, pos._realized_pnl)
 
-        self.fut_contract._price = 13.3
+        self.assertEqual(1, len(positions))
+        self.assertEqual(True, self.fut_contract in positions)
+        p = positions[self.fut_contract]
 
-        self.assertEqual(pos.pnl, 200)
+        self.assertEqual(p['qty'], -2.0)
+        self.assertEqual(p['value'], trans.usdvalue / 2)
 
-    def test_pnl_closed_profit(self):
+    def test_add_shrink_position_long(self):
         pos = Position()
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        pos.add(trans)
 
-        pos.add(self.fut_contract, self.date, 4.0, 12.3)
-        pos.add(self.fut_contract, self.date, -4.0, 14.3)
-        trans = pos.transactions
-        self.assertEqual(2, len(trans))
+        trans2 = Transaction(self.fut_contract, self.date, -2.0, 13.3)
+        pos.add(trans2)
 
-        self.fut_contract._price = 13.3
+        positions = pos.netpositions
+        self.assertEqual(1, len(positions))
+        self.assertEqual(100, pos._realized_pnl)
 
-        self.assertEqual(pos.pnl, 400)
+        self.assertEqual(1, len(positions))
+        self.assertEqual(True, self.fut_contract in positions)
+        p = positions[self.fut_contract]
 
-    def test_pnl_open_profit_average_price(self):
+        self.assertEqual(p['qty'], 2.0)
+        self.assertEqual(p['value'], trans.usdvalue / 2)
+
+    def test_add_shrink_position_short_and_then_close(self):
         pos = Position()
+        trans = Transaction(self.fut_contract, self.date, -4.0, 12.3)
+        pos.add(trans)
 
-        pos.add(self.fut_contract, self.date, 4.0, 12.3)
-        pos.add(self.fut_contract, self.date, 4.0, 14.3)
-        trans = pos.transactions
-        self.assertEqual(2, len(trans))
+        trans2 = Transaction(self.fut_contract, self.date, 2.0, 13.3)
+        pos.add(trans2)
 
-        self.fut_contract._price = 15.3
+        trans3 = Transaction(self.fut_contract, self.date, 2.0, 13.3)
+        pos.add(trans3)
 
-        self.assertEqual(pos.pnl, 3*200+1*200)
+        positions = pos.netpositions
+        self.assertEqual(0, len(positions))
+        self.assertEqual(-200, pos._realized_pnl)
 
-    def test_close(self):
-        self.fut_contract._price = 15.3
-
+    def test_add_shrink_position_long_and_then_close(self):
         pos = Position()
-        pos.add(self.fut_contract, self.date, 4.0, 12.3)
-        trans = pos.transactions
-        pos.close(self.date)
-        self.assertEqual(2, len(trans))
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        pos.add(trans)
 
-        t = trans[1]
+        trans2 = Transaction(self.fut_contract, self.date, -2.0, 13.3)
+        pos.add(trans2)
 
+        trans3 = Transaction(self.fut_contract, self.date, -2.0, 13.3)
+        pos.add(trans3)
 
-        self.assertEqual(t.asset.price, 15.3)
-        self.assertEqual(t.asset, self.fut_contract)
-        self.assertEqual(t.date, self.date)
-        self.assertEqual(t.qty, -4.0)
-        self.assertEqual(t.price, 15.3)
-        self.assertEqual(pos.pnl, 3*200)
+        positions = pos.netpositions
+        self.assertEqual(0, len(positions))
+        self.assertEqual(200, pos._realized_pnl)
 
-    def test_has_isclosed(self):
-        self.fut_contract._price = 15.3
-
+    def test_add_shrink_position_long_pnl(self):
         pos = Position()
-        pos.add(self.fut_contract, self.date, 4.0, 12.3)
-        self.assertEqual(False, pos.is_closed)
-        pos.close(self.date)
-        self.assertEqual(True, pos.is_closed)
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        pos.add(trans)
 
-    def test_add_transaction(self):
+        trans2 = Transaction(self.fut_contract, self.date, -2.0, 13.3)
+        pos.add(trans2)
+
+        positions = pos.netpositions
+        self.assertEqual(1, len(positions))
+        self.assertEqual(100, pos._realized_pnl)
+
+        self.assertEqual(1, len(positions))
+        self.assertEqual(True, self.fut_contract in positions)
+        p = positions[self.fut_contract]
+
+        self.assertEqual(p['qty'], 2.0)
+        self.assertEqual(p['value'], trans.usdvalue / 2)
+
+        self.fut_contract._price = 14.3
+        self.assertEqual(pos.pnl, 100+200)
+
+    def test_add_shrink_position_short_pnl(self):
         pos = Position()
-        _t = Transaction(self.fut_contract, self.date, 4.0, 12.3)
-        pos.add_transaction(_t)
+        trans = Transaction(self.fut_contract, self.date, -4.0, 12.3)
+        pos.add(trans)
 
-        trans = pos.transactions
-        self.assertEqual(1, len(trans))
-        t = trans[0]
-        self.assertEqual(t, _t)
-        self.assertEqual(t.asset, self.fut_contract)
-        self.assertEqual(t.date, self.date)
-        self.assertEqual(t.qty, 4.0)
-        self.assertEqual(t.price, 12.3)
+        trans2 = Transaction(self.fut_contract, self.date, 2.0, 13.3)
+        pos.add(trans2)
 
+        positions = pos.netpositions
+        self.assertEqual(1, len(positions))
+        self.assertEqual(-100, pos._realized_pnl)
 
+        self.assertEqual(1, len(positions))
+        self.assertEqual(True, self.fut_contract in positions)
+        p = positions[self.fut_contract]
 
+        self.assertEqual(p['qty'], -2.0)
+        self.assertEqual(p['value'], trans.usdvalue / 2)
 
+        self.fut_contract._price = 14.3
+        self.assertEqual(pos.pnl, -100-200)
 
+    def test_add_to_closeposition_long_pnl(self):
+        pos = Position()
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        pos.add(trans)
 
-if __name__ == '__main__':
-    unittest.main()
+        trans = Transaction(self.fut_contract, self.date, -4.0, 13.3)
+        pos.add(trans)
+
+        positions = pos.netpositions
+        self.assertEqual(0, len(positions))
+        self.assertEqual(200, pos._realized_pnl)
+        self.assertEqual(200, pos.pnl)
+
+    def test_add_to_closeposition_short_pnl(self):
+        pos = Position()
+        trans = Transaction(self.fut_contract, self.date, -4.0, 12.3)
+        pos.add(trans)
+
+        trans = Transaction(self.fut_contract, self.date, 4.0, 13.3)
+        pos.add(trans)
+
+        positions = pos.netpositions
+        self.assertEqual(0, len(positions))
+        self.assertEqual(-200, pos._realized_pnl)
+        self.assertEqual(-200, pos.pnl)
+
+    def test_as_dict(self):
+        pos = Position()
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        pos.add(trans)
+
+        trans2 = Transaction(self.fut_contract, self.date, -2.0, 13.3)
+        pos.add(trans2)
+
+        positions = pos.netpositions
+        self.assertEqual(1, len(positions))
+        self.assertEqual(100, pos._realized_pnl)
+
+        self.assertEqual(1, len(positions))
+        self.assertEqual(True, self.fut_contract in positions)
+        p = positions[self.fut_contract]
+
+        self.assertEqual(p['qty'], 2.0)
+        self.assertEqual(p['value'], trans.usdvalue / 2)
+
+        self.fut_contract._price = 14.3
+        self.assertEqual(100, pos._realized_pnl)
+        self.assertEqual(pos.pnl, 100 + 200)
+
+        self.assertEqual({'positions':
+                              {
+                                  self.fut_contract.__hash__(): {'qty': 2.0, 'value': trans.usdvalue/2}
+                              },
+            '_realized_pnl': 100.0
+        }, pos.as_dict())
+

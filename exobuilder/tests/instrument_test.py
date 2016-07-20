@@ -61,8 +61,3 @@ class InstrumentCase(unittest.TestCase):
         inst._datadic['optiontickvalue'] = 25.0
         inst._datadic['optionticksize'] = .5
         self.assertEqual(self.instrument.point_value_options, 1.0 / 0.5 * 25.0)
-
-
-
-if __name__ == '__main__':
-    unittest.main()

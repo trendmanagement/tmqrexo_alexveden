@@ -72,9 +72,3 @@ class FuturesChainTestCase(unittest.TestCase):
 
         self.assertEqual(self.fut_chain.__repr__(), sbuf)
 
-
-
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -162,13 +162,3 @@ class OptionChainTestCase(unittest.TestCase):
             opt_str += "{0}: {1}\n".format(i - atmi, self.opt_chain[strike])
 
         self.assertEqual(self.opt_chain.__repr__(), opt_str)
-
-
-
-
-
-
-
-if __name__ == '__main__':
-    unittest.main()
-

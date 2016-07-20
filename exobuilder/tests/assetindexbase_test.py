@@ -19,9 +19,6 @@ class AssetIndexBaseCase(unittest.TestCase):
         self.assertRaises(NotImplementedError, self.assetindex.get_futures_list, None, None, None)
         self.assertRaises(NotImplementedError, self.assetindex.get_instrument_info, None)
         self.assertRaises(NotImplementedError, self.assetindex.get_options_list, None, None)
-
-
-
-
-if __name__ == '__main__':
-    unittest.main()
+        self.assertRaises(NotImplementedError, self.assetindex.get_instrument, None)
+        self.assertRaises(NotImplementedError, self.assetindex.get_future_contract, None)
+        self.assertRaises(NotImplementedError, self.assetindex.get_option_contract, None)

@@ -52,8 +52,9 @@ class TransactionTestCase(unittest.TestCase):
     def test_has_usdvalue(self):
         self.assertEqual(self.trans.usdvalue, 4*12.3*self.fut_contract.pointvalue)
 
+    def test_has_as_dict(self):
+        self.assertEqual({'date': self.trans.date,
+                          'qty': self.trans.qty,
+                          'price': self.trans.price,
+                          'asset': self.fut_contract.as_dict()}, self.trans.as_dict())
 
-
-
-if __name__ == '__main__':
-    unittest.main()

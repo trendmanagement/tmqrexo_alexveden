@@ -7,6 +7,8 @@ class ExoEngineBase(object):
         self._positions = []
         self._date = date
         self._datasource = datasource
+        self._series = None
+        self._extra_context = {}
 
     def is_rollover(self):
         pass

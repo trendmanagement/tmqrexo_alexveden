@@ -27,3 +27,12 @@ class AssetIndexBase(object):
         :return: list of options metadata dicts
         """
         raise NotImplementedError()
+
+    def get_instrument(self, dbid):
+        raise NotImplementedError()
+
+    def get_future_contract(self, dbid):
+        raise NotImplementedError()
+
+    def get_option_contract(self, dbid):
+        raise NotImplementedError()

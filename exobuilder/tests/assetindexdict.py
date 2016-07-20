@@ -1,7 +1,9 @@
 from exobuilder.data.assetindex import AssetIndexBase
 import pickle
 import gzip
-
+from exobuilder.contracts.instrument import Instrument
+from exobuilder.contracts.futurecontract import FutureContract
+from exobuilder.contracts.optioncontract import OptionContract
 
 class AssetIndexDicts(AssetIndexBase):
     def __init__(self):
@@ -24,5 +26,19 @@ class AssetIndexDicts(AssetIndexBase):
 
     def get_options_list(self, date, futurecontract):
         return self.options_dict
+
+    def get_instrument(self, dbid):
+        if dbid == self.instrument_dict['idinstrument']:
+            return self.instrument_dict
+
+    def get_future_contract(self, dbid):
+        for d in self.futures_dict:
+            if d['idcontract'] == dbid:
+                return d
+
+    def get_option_contract(self, dbid):
+        for o in self.options_dict[2]['chain']:
+            if o['idoption'] == dbid:
+                return o
 
 

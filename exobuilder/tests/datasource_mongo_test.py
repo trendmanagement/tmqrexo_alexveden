@@ -59,8 +59,3 @@ class DatasourceMongoTestCase(unittest.TestCase):
         #
         self.assertEqual(opt_data['datetime'], datetime(2013, 8, 27, 0, 0, 0))
 
-
-
-
-if __name__ == '__main__':
-    unittest.main()

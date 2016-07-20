@@ -26,3 +26,9 @@ class Transaction(object):
     @property
     def usdvalue(self):
         return self._price * self._qty * self._asset.pointvalue
+
+    def as_dict(self):
+        return {'date': self.date,
+                'qty': self.qty,
+                'price': self.price,
+                'asset': self.asset.as_dict()}

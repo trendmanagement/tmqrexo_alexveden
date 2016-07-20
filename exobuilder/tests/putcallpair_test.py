@@ -254,6 +254,3 @@ class PutCallPainTestCase(unittest.TestCase):
         self.assertEqual(pair.__repr__(), "{0} {1} / {2}".format(pair.strike, pair.call.name, pair.put.name))
 
 
-
-if __name__ == '__main__':
-    unittest.main()
