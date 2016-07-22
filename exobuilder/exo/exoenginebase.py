@@ -1,14 +1,23 @@
 from exobuilder.exo.position import Position
 from exobuilder.exo.transaction import Transaction
-
+import pandas as pd
+import pickle
 
 class ExoEngineBase(object):
-    def __init__(self, date, datasource):
-        self._positions = []
+    def __init__(self, symbol, date, datasource):
+        self._position = Position()
         self._date = date
         self._datasource = datasource
-        self._series = None
+        self._series = pd.Series()
         self._extra_context = {}
+        self._symbol = symbol
+        self._transactions = []
+        self._old_transactions = []
+        self._exosuffix = '_ExoBase'
+
+    @property
+    def name(self):
+        return self._symbol + self._exosuffix
 
     def is_rollover(self):
         pass
@@ -27,47 +36,36 @@ class ExoEngineBase(object):
         """
         pass
 
-    def _calculate(self):
+    def calculate(self):
         """
         Main internal method to manage EXO data
         :return:
         """
-
-        old_pos = self.position
-        old_pnl = 0.0
-        if old_pos is not None:
-            old_pnl = old_pos.pnl
+        trans_list = []
 
         # Proto-code
         if self.is_rollover():
-            self.process_rollover()
+            roll_trans = self.process_rollover()
+            if roll_trans is not None and len(roll_trans) > 0:
+                trans_list += roll_trans
 
             # Process closed position PnL to change EXO price for current day
             # ???
 
         # Processing new day
         new_transactions = self.process_day()
-
         if new_transactions is not None and len(new_transactions) > 0:
-            if self.position is None:
-                # Create new position
-                p = Position()
-                for t in new_transactions:
-                    p.add_transaction(t)
+            trans_list += new_transactions
 
-                # Append new position to EXO
-                self._positions.append(p)
-            else:
-                p = self.position
-                for t in new_transactions:
-                    p.add_transaction(t)
+        if len(trans_list) > 0:
+            for t in trans_list:
+                self.position.add(t)
+
+        self._transactions += trans_list
 
         pnl = self.position.pnl
 
-        pnl_diff = pnl - old_pnl
-
-        # Append pnl_diff to EXO series values
-        #? ?????
+        self.series[self.date] = pnl
 
         # Save EXO state to DB
         self.save()
@@ -78,19 +76,41 @@ class ExoEngineBase(object):
 
 
 
-    def _save(self):
+    def as_dict(self):
         """
         Save the EXO data to DB
         :return:
         """
-        pass
+        result = {}
 
-    def _load(self):
+        result['position'] = self.position.as_dict()
+
+        result['transactions'] = self._old_transactions
+
+        for t in self._transactions:
+            result['transactions'].append(t.as_dict())
+
+        result['name'] = self.name
+
+        result['series'] = pickle.dumps(self.series)
+
+        return result
+
+    def load(self):
+        exo_data = self.datasource.exostorage.load_exo(self.name)
+        if exo_data is not None:
+            self._position = Position.from_dict(exo_data['position'], self.datasource)
+            self._old_transactions = exo_data['transactions']
+            self._series = pickle.loads(exo_data['series'])
+        return exo_data
+
+    def save(self):
         """
-        Load EXO data from DB
+        Save EXO data to storage
         :return:
         """
-        pass
+        self.datasource.exostorage.save_exo(self.as_dict())
+
 
     @property
     def position(self):
@@ -99,15 +119,15 @@ class ExoEngineBase(object):
         If position is closed return None
         :return: None or Position()
         """
-        pass
+        return self._position
 
     @property
-    def price_series(self):
+    def series(self):
         """
         Returns EXO price series values (before current date)
         :return:
         """
-        pass
+        return self._series
 
     @property
     def date(self):

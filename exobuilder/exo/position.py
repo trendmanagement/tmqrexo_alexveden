@@ -57,7 +57,7 @@ class Position(object):
         positions = {}
 
         for asset, pos in self.netpositions.items():
-            positions[asset.__hash__()] = pos
+            positions[str(asset.__hash__())] = pos
 
         return {
             'positions': positions,
@@ -70,7 +70,7 @@ class Position(object):
 
         positions = {}
         for asset_hash, pos_data in position_dict['positions'].items():
-            asset_instance = datasource[asset_hash]
+            asset_instance = datasource[int(asset_hash)]
 
             positions[asset_instance] = pos_data
 
@@ -79,4 +79,7 @@ class Position(object):
         p._realized_pnl = position_dict['_realized_pnl']
 
         return p
+
+    def __len__(self):
+        return len(self.netpositions)
 

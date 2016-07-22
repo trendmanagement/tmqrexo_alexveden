@@ -248,7 +248,7 @@ class PositionTestCase(unittest.TestCase):
 
         self.assertEqual({'positions':
                               {
-                                  self.fut_contract.__hash__(): {'qty': 2.0, 'value': trans.usdvalue/2}
+                                  str(self.fut_contract.__hash__()): {'qty': 2.0, 'value': trans.usdvalue/2}
                               },
             '_realized_pnl': 100.0
         }, pos.as_dict())
@@ -302,4 +302,11 @@ class PositionTestCase(unittest.TestCase):
 
         self.assertEqual(100, p2._realized_pnl)
         self.assertEqual(p2.pnl, 100 + 200)
+
+    def test_has_len(self):
+        pos = Position()
+        self.assertEqual(len(pos), 0)
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        pos.add(trans)
+        self.assertEqual(len(pos), 1)
 

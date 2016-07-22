@@ -5,11 +5,12 @@ from exobuilder.contracts.optioncontract import OptionContract, OPT_HASH_ROOT
 HASH_ROOT_STEP = 100000000
 
 class DataSourceBase(object):
-    def __init__(self, assetindex, date, futures_limit, options_limit):
+    def __init__(self, assetindex, date, futures_limit, options_limit, exostorage=None):
         self.assetindex = assetindex
         self.date = date
         self.futures_limit = futures_limit
         self.options_limit = options_limit
+        self.exostorage = exostorage
 
 
     def get_fut_data(self, dbid, date):
