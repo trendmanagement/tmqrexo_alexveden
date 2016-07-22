@@ -14,8 +14,8 @@ class PositionTestCase(unittest.TestCase):
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
         self.instrument_dbid = 11
-        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
-        self.instrument = self.datasource[self.symbol]
+        self.datasource = DataSourceForTest(self.assetindex, self.futures_limit, 0)
+        self.instrument = self.datasource.get(self.symbol, self.date)
 
         self.contract_dict = {'_id': '577a4fa34b01f47f84cab23c',
                               'contractname': 'F.EPZ16',
@@ -226,7 +226,7 @@ class PositionTestCase(unittest.TestCase):
     def test_as_dict(self):
         pos = Position()
         trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
-        pos.add(trans)
+        pos.add(trans, leg_name='leg1')
 
         trans2 = Transaction(self.fut_contract, self.date, -2.0, 13.3)
         pos.add(trans2)
@@ -248,7 +248,7 @@ class PositionTestCase(unittest.TestCase):
 
         self.assertEqual({'positions':
                               {
-                                  str(self.fut_contract.__hash__()): {'qty': 2.0, 'value': trans.usdvalue/2}
+                                  str(self.fut_contract.__hash__()): {'qty': 2.0, 'value': trans.usdvalue/2, 'leg_name': 'leg1'}
                               },
             '_realized_pnl': 100.0
         }, pos.as_dict())
@@ -281,7 +281,7 @@ class PositionTestCase(unittest.TestCase):
 
         # Deserealizing position
 
-        p2 = Position.from_dict(pos_dic, self.datasource)
+        p2 = Position.from_dict(pos_dic, self.datasource, self.date)
 
         positions = p2.netpositions
         self.assertEqual(100, p2._realized_pnl)
@@ -309,4 +309,26 @@ class PositionTestCase(unittest.TestCase):
         trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
         pos.add(trans)
         self.assertEqual(len(pos), 1)
+
+    def test_close_all(self):
+        pos = Position()
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        pos.add(trans)
+
+        trans2 = Transaction(self.fut_contract, self.date, 2.0, 15.3)
+        pos.add(trans2)
+
+        positions = pos.netpositions
+        self.assertEqual(1, len(positions))
+        self.assertEqual(True, self.fut_contract in positions)
+        p = positions[self.fut_contract]
+
+        self.assertEqual(p['qty'], 6.0)
+        self.assertEqual(p['value'], trans.usdvalue + trans2.usdvalue)
+        self.assertEqual(0, pos._realized_pnl)
+
+        self.fut_contract._price = 14.3
+        trans = pos.close_all_translist()
+        self.assertEqual([Transaction(self.fut_contract, self.date, -6.0, 14.3)], trans)
+
 

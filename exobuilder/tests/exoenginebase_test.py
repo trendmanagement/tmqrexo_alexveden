@@ -11,6 +11,7 @@ from .assetindexdict import AssetIndexDicts
 from .datasourcefortest import DataSourceForTest
 import pandas as pd
 import numpy as np
+import pickle
 
 
 class ExoEngineBaseTestCase(unittest.TestCase):
@@ -20,8 +21,8 @@ class ExoEngineBaseTestCase(unittest.TestCase):
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
         self.instrument_dbid = 11
-        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
-        self.instrument = self.datasource[self.symbol]
+        self.datasource = DataSourceForTest(self.assetindex, self.futures_limit, 0)
+        self.instrument = self.datasource.get(self.symbol, self.date)
 
         self.contract_dict = {'_id': '577a4fa34b01f47f84cab23c',
                               'contractname': 'F.EPZ16',
@@ -56,7 +57,7 @@ class ExoEngineBaseTestCase(unittest.TestCase):
         self.assertEqual("EP_ExoBase", self.exo_engine.name)
 
     def test_has_series(self):
-        self.assertTrue(isinstance(self.exo_engine.series, pd.DataFrame))
+        self.assertTrue(isinstance(self.exo_engine.series, pd.Series))
 
 
     def test_as_dict(self):
@@ -64,7 +65,7 @@ class ExoEngineBaseTestCase(unittest.TestCase):
         trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
         exo_engine.position.add(trans)
 
-        tr_list = exo_engine._transactions.setdefault(self.date, [])
+        tr_list = exo_engine._transactions
         tr_list.append(trans)
 
         date = pd.date_range("2015-01-01 00:00:00", "2015-01-01 00:00:10", freq="1S")
@@ -80,12 +81,12 @@ class ExoEngineBaseTestCase(unittest.TestCase):
         self.assertEqual(exo_engine.position.as_dict(), exo_dic['position'])
 
         self.assertEqual(True, 'transactions' in exo_dic)
-        self.assertEqual([trans.as_dict()], exo_dic['transactions'][self.date])
+        self.assertEqual([trans.as_dict()], exo_dic['transactions'])
 
         self.assertEqual(exo_dic['name'], self.exo_engine.name)
 
         self.assertEqual(True, 'series' in exo_dic)
-        self.assertEqual(exo_engine.series.to_dict(), exo_dic['series'])
+        self.assertEqual(pickle.dumps(exo_engine.series), exo_dic['series'])
 
 
 

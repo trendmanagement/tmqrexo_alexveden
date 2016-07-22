@@ -19,15 +19,6 @@ class ExoEngineBase(object):
     def name(self):
         return self._symbol + self._exosuffix
 
-    def is_rollover(self):
-        pass
-
-    def process_rollover(self):
-        """
-        Typically we should only close old position on rollover day
-        :return:
-        """
-        pass
 
     def process_day(self):
         """
@@ -42,15 +33,6 @@ class ExoEngineBase(object):
         :return:
         """
         trans_list = []
-
-        # Proto-code
-        if self.is_rollover():
-            roll_trans = self.process_rollover()
-            if roll_trans is not None and len(roll_trans) > 0:
-                trans_list += roll_trans
-
-            # Process closed position PnL to change EXO price for current day
-            # ???
 
         # Processing new day
         new_transactions = self.process_day()

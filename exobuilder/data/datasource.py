@@ -5,9 +5,8 @@ from exobuilder.contracts.optioncontract import OptionContract, OPT_HASH_ROOT
 HASH_ROOT_STEP = 100000000
 
 class DataSourceBase(object):
-    def __init__(self, assetindex, date, futures_limit, options_limit, exostorage=None):
+    def __init__(self, assetindex, futures_limit, options_limit, exostorage=None):
         self.assetindex = assetindex
-        self.date = date
         self.futures_limit = futures_limit
         self.options_limit = options_limit
         self.exostorage = exostorage
@@ -22,7 +21,7 @@ class DataSourceBase(object):
     def get_extra_data(self, key, date):
         raise NotImplementedError()
 
-    def __getitem__(self, item):
+    def get(self, item, date):
         if isinstance(item, int):
             #
             # Get item by hash instrument, or future, or option
@@ -37,7 +36,7 @@ class DataSourceBase(object):
                 instr_dic = self.assetindex.get_instrument(fut_contract_dic['idinstrument'])
 
                 # Creating contract classes
-                instr = Instrument(self, instr_dic, self.date, self.futures_limit, self.options_limit)
+                instr = Instrument(self, instr_dic, date, self.futures_limit, self.options_limit)
                 fut = FutureContract(fut_contract_dic, instr)
                 assert fut.__hash__() == item
 
@@ -50,7 +49,7 @@ class DataSourceBase(object):
                 instr_dic = self.assetindex.get_instrument(fut_contract_dic['idinstrument'])
 
                 # Creating contract classes
-                instr = Instrument(self, instr_dic, self.date, self.futures_limit, self.options_limit)
+                instr = Instrument(self, instr_dic, date, self.futures_limit, self.options_limit)
                 fut = FutureContract(fut_contract_dic, instr)
 
                 opt = OptionContract(opt_contract_dic, fut)
@@ -64,4 +63,4 @@ class DataSourceBase(object):
             # Fetch Instrument by symbol name sting
             #
             data_dict = self.assetindex.get_instrument_info(item)
-            return Instrument(self, data_dict, self.date, self.futures_limit, self.options_limit)
+            return Instrument(self, data_dict, date, self.futures_limit, self.options_limit)

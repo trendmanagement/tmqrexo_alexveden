@@ -13,8 +13,8 @@ class InstrumentCase(unittest.TestCase):
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
         self.instrument_dbid = 11
-        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
-        self.instrument = self.datasource[self.symbol]
+        self.datasource = DataSourceForTest(self.assetindex, self.futures_limit, 0)
+        self.instrument = self.datasource.get(self.symbol, self.date)
         return
 
     def test_instrument_constructor(self):
@@ -57,7 +57,7 @@ class InstrumentCase(unittest.TestCase):
         self.assertEqual(self.instrument.point_value_futures, 1.0 / 0.25 * 12.5)
 
     def test_instrument_has_options_point_value(self):
-        inst = self.datasource[self.symbol]
+        inst = self.datasource.get(self.symbol, self.date)
         inst._datadic['optiontickvalue'] = 25.0
         inst._datadic['optionticksize'] = .5
         self.assertEqual(self.instrument.point_value_options, 1.0 / 0.5 * 25.0)

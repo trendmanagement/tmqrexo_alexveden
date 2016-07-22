@@ -15,8 +15,8 @@ class OptionContractTestCase(unittest.TestCase):
         self.symbol = 'EP'
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
-        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
-        self.instrument = self.datasource[self.symbol]
+        self.datasource = DataSourceForTest(self.assetindex, self.futures_limit, 0)
+        self.instrument = self.datasource.get(self.symbol, self.date)
 
         self.contract_dict = {'_id': '577a4fa34b01f47f84cab23c',
                               'contractname': 'F.EPZ16',
@@ -297,42 +297,6 @@ class OptionContractTestCase(unittest.TestCase):
         self.assertNotEqual(option_contract.price, 0)
         self.assertFalse(np.isnan(option_contract._option_price))
 
-    def test_optioncontract_has_price_exception(self):
-        opt_contract_dict = {'_id': '577a573e4b01f47f84d0cbd5',
-                             'callorput': 'c',
-                             'cqgsymbol': 'P.US.EPH1427750',
-                             'expirationdate': datetime(2014, 3, 21, 0, 0),
-                             'idcontract': 4736,
-                             'idinstrument': 11,
-                             'idoption': 11558454,
-                             'optionmonth': 'H',
-                             'optionmonthint': 3,
-                             'optionname': 'P.US.EPH1427750',
-                             'optionyear': 2014,
-                             'strikeprice': 2775.0
-                             }
-
-        option_contract = OptionContract(opt_contract_dict, self.fut_contract)
-        self.instrument.date = datetime(2014, 3, 21, 9, 30, 0)
-
-        S = option_contract.underlying.price
-        self.assertEqual(2770.0, S)
-
-        T = option_contract.to_expiration_years
-
-        X = option_contract.strike
-
-        r = option_contract.riskfreerate
-        self.assertEqual(r, 0.255)
-
-        v = -option_contract.iv
-        self.assertEqual(v, -0.356)
-
-        callputflag = option_contract.callorput
-        self.assertEqual(callputflag, 'C')
-
-        # TODO: Add more error handling conditions to BS
-        self.assertTrue(np.isnan(blackscholes(callputflag, S, X, -T, r, v)))
 
     def test_optioncontract_has_pointvalue(self):
         self.assertEqual(self.option_contract.pointvalue, self.instrument.point_value_options)

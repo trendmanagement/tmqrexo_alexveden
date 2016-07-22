@@ -23,11 +23,18 @@ class Position(object):
             pnl += asset.pointvalue * asset.price * netposition['qty'] - netposition['value']
         return pnl + self._realized_pnl
 
+    def close_all_translist(self):
+        transactions = []
+        for asset, netposition in self.netpositions.items():
+            transactions.append(Transaction(asset, asset.date, -netposition['qty'], asset.price))
 
-    def add(self, transaction):
+        return transactions
+
+
+    def add(self, transaction, leg_name=''):
         """Add new transaction to position"""
         if transaction.asset not in self._positions:
-            self._positions[transaction.asset] = {'qty': transaction.qty, 'value': transaction.usdvalue}
+            self._positions[transaction.asset] = {'qty': transaction.qty, 'value': transaction.usdvalue, 'leg_name': leg_name}
         else:
             pdic = self._positions[transaction.asset]
 
@@ -65,12 +72,12 @@ class Position(object):
             }
 
     @staticmethod
-    def from_dict(position_dict, datasource):
+    def from_dict(position_dict, datasource, date):
         p = Position()
 
         positions = {}
         for asset_hash, pos_data in position_dict['positions'].items():
-            asset_instance = datasource[int(asset_hash)]
+            asset_instance = datasource.get(int(asset_hash), date)
 
             positions[asset_instance] = pos_data
 

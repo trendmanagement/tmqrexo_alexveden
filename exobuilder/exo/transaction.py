@@ -39,3 +39,10 @@ class Transaction(object):
             'asset': self.asset.as_dict(),
             'usdvalue': self.usdvalue,
             }
+
+    def __eq__(self, other):
+        if isinstance(other, Transaction):
+            if self.asset == other.asset and self.date == other.date and self.qty == other.qty and self.price == other.price:
+                return True
+
+        return False

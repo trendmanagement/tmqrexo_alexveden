@@ -4,8 +4,8 @@ import pymongo
 from datetime import datetime
 
 class DataSourceMongo(DataSourceBase):
-    def __init__(self, conn_str, dbname, assetindex, date, futures_limit, options_limit, exostorage=None):
-        super().__init__(assetindex, date, futures_limit, options_limit, exostorage=exostorage)
+    def __init__(self, conn_str, dbname, assetindex, futures_limit, options_limit, exostorage=None):
+        super().__init__(assetindex, futures_limit, options_limit, exostorage=exostorage)
         self.client = MongoClient('mongodb://localhost:27017/')
         self.db = self.client['tmldb']
 

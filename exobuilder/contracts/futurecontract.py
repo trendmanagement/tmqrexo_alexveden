@@ -24,6 +24,10 @@ class FutureContract(object):
         return self._data['expirationdate']
 
     @property
+    def to_expiration_days(self):
+        return (self.expiration.date() - self.date.date()).days
+
+    @property
     def date(self):
         return self._instrument.date
 

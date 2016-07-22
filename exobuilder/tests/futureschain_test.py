@@ -12,8 +12,8 @@ class FuturesChainTestCase(unittest.TestCase):
         self.symbol = 'EP'
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
-        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
-        self.instrument = self.datasource[self.symbol]
+        self.datasource = DataSourceForTest(self.assetindex, self.futures_limit, 0)
+        self.instrument = self.datasource.get(self.symbol, self.date)
         self.fut_chain = FuturesChain(self.instrument)
 
     def test_constructor(self):

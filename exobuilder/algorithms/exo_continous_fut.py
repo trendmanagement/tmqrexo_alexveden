@@ -15,23 +15,15 @@ class EXOContinuousFut(ExoEngineBase):
 
         self._exosuffix = '_ContFut'
 
-    def is_rollover(self):
-        pass
-
-    def process_rollover(self):
-        """
-        Typically we should only close old position on rollover day
-        :return:
-        """
-        pass
 
     def process_day(self):
         """
         Main EXO's position management method
         :return: list of Transactions to process
         """
+        instr = self.datasource[self._symbol]
+
         if len(self.position) == 0:
-            instr = self.datasource[self._symbol]
             fut = instr.futures[0]
             return [Transaction(fut, self.date, 1.0, fut.price)]
 

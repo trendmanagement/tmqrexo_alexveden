@@ -13,8 +13,8 @@ class FutureContractTestCase(unittest.TestCase):
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
         self.instrument_dbid = 11
-        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
-        self.instrument = self.datasource[self.symbol]
+        self.datasource = DataSourceForTest(self.assetindex, self.futures_limit, 0)
+        self.instrument = self.datasource.get(self.symbol, self.date)
 
         self.contract_dict = {'_id': '577a4fa34b01f47f84cab23c',
                               'contractname': 'F.EPZ16',
@@ -110,4 +110,7 @@ class FutureContractTestCase(unittest.TestCase):
         fut_contract = FutureContract(contract_dict, self.instrument)
 
         self.assertNotEqual(fut_contract, self.fut_contract)
+
+    def test_has_days_to_expiration(self):
+        self.assertEqual(self.fut_contract.to_expiration_days, (self.fut_contract.expiration.date() - self.date.date()).days)
 

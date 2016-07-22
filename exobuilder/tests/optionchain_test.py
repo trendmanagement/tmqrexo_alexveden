@@ -18,8 +18,8 @@ class OptionChainTestCase(unittest.TestCase):
         self.symbol = 'EP'
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
-        self.datasource = DataSourceForTest(self.assetindex, self.date, self.futures_limit, 0)
-        self.instrument = self.datasource[self.symbol]
+        self.datasource = DataSourceForTest(self.assetindex, self.futures_limit, 0)
+        self.instrument = self.datasource.get(self.symbol, self.date)
 
         fut_contract_dic = {'_id': '577a4f9e4b01f47f84caad7b',
                           'contractname': 'F.US.EPH14',

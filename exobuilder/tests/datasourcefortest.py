@@ -2,8 +2,8 @@ from exobuilder.data.datasource import DataSourceBase
 
 
 class DataSourceForTest(DataSourceBase):
-    def __init__(self, assetindex, date, futures_limit, options_limit):
-        super().__init__(assetindex, date, futures_limit, options_limit)
+    def __init__(self, assetindex, futures_limit, options_limit):
+        super().__init__(assetindex, futures_limit, options_limit)
 
     def get_extra_data(self, key, date):
         if key == 'riskfreerate':

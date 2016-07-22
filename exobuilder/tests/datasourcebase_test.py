@@ -14,16 +14,15 @@ class DatasourceMongoTestCase(unittest.TestCase):
         self.date = datetime(2014, 1, 6, 10, 15, 0)
         futures_limit = 3
         options_limit = 10
-        self.datasource = DataSourceBase(self.assetindex, self.date, futures_limit, options_limit)
+        self.datasource = DataSourceBase(self.assetindex, futures_limit, options_limit)
 
     def test_constructor(self):
         self.assertEqual(self.datasource.assetindex, self.assetindex)
-        self.assertEqual(self.datasource.date, self.date)
         self.assertEqual(self.datasource.futures_limit, 3)
         self.assertEqual(self.datasource.options_limit, 10)
 
     def test_get_item_as_instument(self):
-        instr = self.datasource['EP']
+        instr = self.datasource.get('EP', self.date)
         self.assertEqual(type(instr), Instrument)
         self.assertEqual(instr.name, 'EP')
         self.assertEqual(instr.date, self.date)
@@ -36,7 +35,7 @@ class DatasourceMongoTestCase(unittest.TestCase):
         self.assertRaises(NotImplementedError, self.datasource.get_extra_data, None, None)
 
     def test_get_item_from_hash_future_contract(self):
-        instr = self.datasource['EP']
+        instr = self.datasource.get('EP', self.date)
         self.assertEqual(type(instr), Instrument)
         self.assertEqual(instr.name, 'EP')
         self.assertEqual(instr.date, self.date)
@@ -57,14 +56,14 @@ class DatasourceMongoTestCase(unittest.TestCase):
 
         hash = fut_contract.__hash__()
 
-        f2 = self.datasource[hash]
+        f2 = self.datasource.get(hash, self.date)
         self.assertEqual(type(f2), FutureContract)
         self.assertEqual(f2.name, 'F.EPZ16')
         self.assertEqual(f2.date, self.date)
         self.assertEqual(f2, fut_contract)
 
     def test_get_item_from_hash_option_contract(self):
-        instr = self.datasource['EP']
+        instr = self.datasource.get('EP', self.date)
         self.assertEqual(type(instr), Instrument)
         self.assertEqual(instr.name, 'EP')
         self.assertEqual(instr.date, self.date)
@@ -101,7 +100,7 @@ class DatasourceMongoTestCase(unittest.TestCase):
 
         hash = option_contract.__hash__()
 
-        opt2 = self.datasource[hash]
+        opt2 = self.datasource.get(hash, self.date)
         self.assertEqual(type(opt2), OptionContract)
         self.assertEqual(opt2.name, 'P.US.EPH1427750')
         self.assertEqual(opt2.date, self.date)
@@ -109,8 +108,8 @@ class DatasourceMongoTestCase(unittest.TestCase):
         self.assertEqual(opt2.underlying, fut_contract)
 
     def test_get_item_from_hash_option_contract_notimplemented(self):
-        self.assertRaises(NotImplementedError, self.datasource.__getitem__, 300000000)
-        self.assertRaises(NotImplementedError, self.datasource.__getitem__, 99999999)
+        self.assertRaises(NotImplementedError, self.datasource.get, 300000000, self.date)
+        self.assertRaises(NotImplementedError, self.datasource.get, 99999999, self.date)
 
 
 
