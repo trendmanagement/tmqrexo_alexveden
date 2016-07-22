@@ -1,9 +1,10 @@
 from exobuilder.contracts.futureschain import FuturesChain
 from exobuilder.contracts.futurecontract import FutureContract
 from exobuilder.tests.assetindexdict import AssetIndexDicts
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from exobuilder.contracts.instrument import Instrument
 from exobuilder.data.datasource_mongo import DataSourceMongo
+from exobuilder.data.datasource_sql import DataSourceSQL
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.exostorage import EXOStorage
 from exobuilder.exo.exoenginebase import ExoEngineBase
@@ -11,9 +12,12 @@ from exobuilder.exo.transaction import Transaction
 
 class EXOContinuousFut(ExoEngineBase):
     def __init__(self, symbol, date, datasource):
-        super().__init__(symbol, date, datasource)
+        super().__init__(date, datasource)
+        self._symbol = symbol
 
-        self._exosuffix = '_ContFut'
+    @property
+    def exo_name(self):
+        return self._symbol + '_ContFut'
 
 
     def process_day(self):
@@ -21,7 +25,8 @@ class EXOContinuousFut(ExoEngineBase):
         Main EXO's position management method
         :return: list of Transactions to process
         """
-        instr = self.datasource[self._symbol]
+        instr = self.datasource.get(self._symbol, self.date)
+
 
         if len(self.position) == 0:
             fut = instr.futures[0]
@@ -46,14 +51,22 @@ if __name__ == "__main__":
     assetindex = AssetIndexMongo(mongo_connstr, mongo_db_name)
     exostorage = EXOStorage(mongo_connstr, mongo_db_name)
 
-    date = datetime(2014, 1, 7, 10, 15, 0)
+    base_date = datetime(2014, 1, 13, 10, 15, 0)
     futures_limit = 3
     options_limit = 10
 
-    datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, date, futures_limit, options_limit,
-                                 exostorage)
+    #datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, date, futures_limit, options_limit, exostorage)
 
-    exo_engine = EXOContinuousFut('ES', date, datasource)
-    exo_engine.load()
-    exo_engine.calculate()
+    server = 'h9ggwlagd1.database.windows.net'
+    user = 'steve'
+    password = 'KYYAtv9P'
+    datasource = DataSourceSQL(server, user, password, assetindex, futures_limit, options_limit, exostorage)
+
+    for i in range(100):
+        date = base_date + timedelta(days=i)
+        print(date)
+        exo_engine = EXOContinuousFut('ES', date, datasource)
+        # Load EXO information from mongo
+        exo_engine.load()
+        exo_engine.calculate()
     print('Done')

@@ -330,5 +330,6 @@ class PositionTestCase(unittest.TestCase):
         self.fut_contract._price = 14.3
         trans = pos.close_all_translist()
         self.assertEqual([Transaction(self.fut_contract, self.date, -6.0, 14.3)], trans)
+        self.assertNotEqual(None, Transaction(self.fut_contract, self.date, -6.0, 14.3)) # For 100% coverage
 
 

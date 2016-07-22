@@ -4,20 +4,22 @@ import pandas as pd
 import pickle
 
 class ExoEngineBase(object):
-    def __init__(self, symbol, date, datasource):
+    def __init__(self, date, datasource):
         self._position = Position()
         self._date = date
         self._datasource = datasource
         self._series = pd.Series()
         self._extra_context = {}
-        self._symbol = symbol
         self._transactions = []
         self._old_transactions = []
-        self._exosuffix = '_ExoBase'
 
     @property
     def name(self):
-        return self._symbol + self._exosuffix
+        return self.exo_name
+
+    @property
+    def exo_name(self):
+        raise NotImplementedError("This method must be overridden by child class of EXO engine")
 
 
     def process_day(self):
@@ -25,7 +27,7 @@ class ExoEngineBase(object):
         Main EXO's position management method
         :return: list of Transactions to process
         """
-        pass
+        raise NotImplementedError("This method must be overridden by child class of EXO engine")
 
     def calculate(self):
         """
@@ -81,7 +83,7 @@ class ExoEngineBase(object):
     def load(self):
         exo_data = self.datasource.exostorage.load_exo(self.name)
         if exo_data is not None:
-            self._position = Position.from_dict(exo_data['position'], self.datasource)
+            self._position = Position.from_dict(exo_data['position'], self.datasource, self.date)
             self._old_transactions = exo_data['transactions']
             self._series = pickle.loads(exo_data['series'])
         return exo_data

@@ -25,7 +25,7 @@ class DataSourceMongo(DataSourceBase):
         try:
             return self.db.futures_data.find({'datetime': date, 'idcontract': dbid}).next()
         except:
-            return {'datetime': date, 'close': float('nan')}
+            raise KeyError('Futures data not found contract id: {0} date: {1}'.format(dbid, date))
 
     def get_extra_data(self, key, date):
 
@@ -52,7 +52,11 @@ class DataSourceMongo(DataSourceBase):
         #
         # Returning previous day IV information
         #
-        return self.db.options_data.find({'idoption': dbid,
-                                          'datetime': {'$lt': self._shrink_datetime(date)}
-                                          }).sort([('datetime', -1)]).limit(1).next()
+        try:
+            return self.db.options_data.find({'idoption': dbid,
+                                              'datetime': {'$lt': self._shrink_datetime(date)}
+                                              }).sort([('datetime', -1)]).limit(1).next()
+        except:
+            raise KeyError('Option data not found contract id: {0} date: {1}'.format(dbid, date))
+
 

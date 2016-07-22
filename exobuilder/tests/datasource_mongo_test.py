@@ -1,6 +1,7 @@
 import unittest
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
+from exobuilder.data.datasource_sql import DataSourceSQL
 from datetime import datetime
 import numpy as np
 
@@ -14,6 +15,12 @@ class DatasourceMongoTestCase(unittest.TestCase):
         options_limit = 10
         self.datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, self.date, futures_limit, options_limit)
 
+        server = 'h9ggwlagd1.database.windows.net'
+        user = 'steve'
+        password = 'KYYAtv9P'
+
+        #self.datasource = DataSourceSQL(server, user, password, assetindex, futures_limit, options_limit)
+
     def test_data_source_get_fut_data_exists(self):
         dbid = 4736
         fut_data = self.datasource.get_fut_data(dbid, self.date)
@@ -21,10 +28,9 @@ class DatasourceMongoTestCase(unittest.TestCase):
         self.assertEqual(fut_data['datetime'], self.date)
 
     def test_data_source_get_fut_data_not_exists(self):
-        dbid = 4738
-        fut_data = self.datasource.get_fut_data(dbid, self.date)
-        self.assertTrue(np.isnan(fut_data['close']))
-        self.assertEqual(fut_data['datetime'], self.date)
+        dbid = 47380564654561560
+        fut_data = (dbid, self.date)
+        self.assertRaises(KeyError, self.datasource.get_fut_data, dbid, self.date)
 
     def test_data_source_get_extra_data_and_caching(self):
         self.assertEqual(0, len(self.datasource.extra_data_cache))
@@ -58,4 +64,8 @@ class DatasourceMongoTestCase(unittest.TestCase):
         # !!! Returns previous day IV (calculated on settlement)
         #
         self.assertEqual(opt_data['datetime'], datetime(2013, 8, 27, 0, 0, 0))
+
+    def test_data_source_get_option_data_not_exists(self):
+        dbid = 11488838
+        self.assertRaises(KeyError, self.datasource.get_option_data, dbid, datetime(1900, 8, 28, 10, 15, 0))
 
