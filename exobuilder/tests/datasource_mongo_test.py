@@ -16,8 +16,8 @@ class DatasourceMongoTestCase(unittest.TestCase):
         self.datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, self.date, futures_limit, options_limit)
 
         server = 'h9ggwlagd1.database.windows.net'
-        user = 'steve'
-        password = 'KYYAtv9P'
+        user = 'modelread'
+        password = '4fSHRXwd4u'
 
         #self.datasource = DataSourceSQL(server, user, password, assetindex, futures_limit, options_limit)
 

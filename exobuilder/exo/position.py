@@ -5,6 +5,7 @@ class Position(object):
     def __init__(self):
         self._positions = {}
         self._realized_pnl = 0.0
+        self._legs = {}
 
     @property
     def netpositions(self):
@@ -13,6 +14,10 @@ class Position(object):
         :return:
         """
         return self._positions
+
+    @property
+    def legs(self):
+        return self._legs
 
     @property
     def pnl(self):
@@ -26,15 +31,19 @@ class Position(object):
     def close_all_translist(self):
         transactions = []
         for asset, netposition in self.netpositions.items():
-            transactions.append(Transaction(asset, asset.date, -netposition['qty'], asset.price))
+            transactions.append(Transaction(asset, asset.date, -netposition['qty'], asset.price, leg_name=netposition['leg_name']))
 
         return transactions
 
 
-    def add(self, transaction, leg_name=''):
+    def add(self, transaction):
         """Add new transaction to position"""
         if transaction.asset not in self._positions:
-            self._positions[transaction.asset] = {'qty': transaction.qty, 'value': transaction.usdvalue, 'leg_name': leg_name}
+            self._positions[transaction.asset] = {'qty': transaction.qty, 'value': transaction.usdvalue, 'leg_name': transaction.leg_name}
+            if transaction.leg_name != '':
+                if transaction.leg_name in self._legs:
+                    raise NameError("Leg with name '{0}' already exists. Existing asset: {1} New asset: {2}".format(transaction.leg_name, self._legs[transaction.leg_name], transaction.asset))
+                self._legs[transaction.leg_name] = transaction.asset
         else:
             pdic = self._positions[transaction.asset]
 
@@ -59,6 +68,8 @@ class Position(object):
             if pdic['qty'] == 0:
                 # Delete closed positions
                 del self._positions[transaction.asset]
+                if pdic['leg_name'] != '' and pdic['leg_name'] in self._legs:
+                    del self.legs[pdic['leg_name']]
 
     def as_dict(self):
         positions = {}
@@ -84,6 +95,12 @@ class Position(object):
         # Filling position with data
         p._positions = positions
         p._realized_pnl = position_dict['_realized_pnl']
+
+        p._legs.clear()
+        for asset, posdic in positions.items():
+            if 'leg_name' in posdic and posdic['leg_name'] != '':
+                p._legs[posdic['leg_name']] = asset
+
 
         return p
 

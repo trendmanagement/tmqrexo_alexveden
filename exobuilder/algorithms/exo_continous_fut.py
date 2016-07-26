@@ -9,6 +9,7 @@ from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.exostorage import EXOStorage
 from exobuilder.exo.exoenginebase import ExoEngineBase
 from exobuilder.exo.transaction import Transaction
+import time
 
 class EXOContinuousFut(ExoEngineBase):
     def __init__(self, symbol, date, datasource):
@@ -19,6 +20,16 @@ class EXOContinuousFut(ExoEngineBase):
     def exo_name(self):
         return self._symbol + '_ContFut'
 
+    def is_rollover(self):
+        if len(self.position) != 0:
+            fut = self.position.legs['fut']
+            if fut.to_expiration_days <= 2:
+                return True
+
+        return False
+
+    def process_rollover(self):
+        return self.position.close_all_translist()
 
     def process_day(self):
         """
@@ -30,7 +41,10 @@ class EXOContinuousFut(ExoEngineBase):
 
         if len(self.position) == 0:
             fut = instr.futures[0]
-            return [Transaction(fut, self.date, 1.0, fut.price)]
+            if fut.to_expiration_days <= 2:
+                fut = instr.futures[1]
+
+            return [Transaction(fut, self.date, 1.0, fut.price, leg_name='fut')]
 
     def as_dict(self):
         """
@@ -55,18 +69,21 @@ if __name__ == "__main__":
     futures_limit = 3
     options_limit = 10
 
-    #datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, date, futures_limit, options_limit, exostorage)
+    datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
 
     server = 'h9ggwlagd1.database.windows.net'
-    user = 'steve'
-    password = 'KYYAtv9P'
+    user = 'modelread'
+    password = '4fSHRXwd4u'
     datasource = DataSourceSQL(server, user, password, assetindex, futures_limit, options_limit, exostorage)
 
     for i in range(100):
+        start_time = time.time()
         date = base_date + timedelta(days=i)
-        print(date)
+
         exo_engine = EXOContinuousFut('ES', date, datasource)
         # Load EXO information from mongo
         exo_engine.load()
         exo_engine.calculate()
+        end_time = time.time()
+        print("{0} Elasped: {1}".format(date, end_time-start_time))
     print('Done')

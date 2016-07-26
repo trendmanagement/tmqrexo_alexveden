@@ -77,6 +77,8 @@ class ExoEngineBaseTestCase(unittest.TestCase):
     def test_has_process_day_raises(self):
         exo_engine = ExoEngineBase(self.date, self.datasource)
         self.assertRaises(NotImplementedError, exo_engine.process_day)
+        self.assertRaises(NotImplementedError, exo_engine.process_rollover)
+        self.assertRaises(NotImplementedError, exo_engine.is_rollover)
 
 
     def test_as_dict(self):

@@ -21,6 +21,15 @@ class ExoEngineBase(object):
     def exo_name(self):
         raise NotImplementedError("This method must be overridden by child class of EXO engine")
 
+    def is_rollover(self):
+        raise NotImplementedError("This method must be overridden by child class of EXO engine")
+
+    def process_rollover(self):
+        """
+        Typically we should only close old position on rollover day
+        :return:
+        """
+        raise NotImplementedError("This method must be overridden by child class of EXO engine")
 
     def process_day(self):
         """
@@ -35,15 +44,28 @@ class ExoEngineBase(object):
         :return:
         """
         trans_list = []
+        roll_trans = []
+
+        # Proto-code
+        if self.is_rollover():
+            roll_trans = self.process_rollover()
+            if roll_trans is not None and len(roll_trans) > 0:
+                trans_list += roll_trans
+
+                for t in roll_trans:
+                    self.position.add(t)
+
+            # Process closed position PnL to change EXO price for current day
+            # ???
 
         # Processing new day
         new_transactions = self.process_day()
         if new_transactions is not None and len(new_transactions) > 0:
             trans_list += new_transactions
 
-        if len(trans_list) > 0:
-            for t in trans_list:
+            for t in new_transactions:
                 self.position.add(t)
+
 
         self._transactions += trans_list
 

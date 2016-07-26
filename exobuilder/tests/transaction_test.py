@@ -27,7 +27,7 @@ class TransactionTestCase(unittest.TestCase):
                               'monthint': 12,
                               'year': 2016}
         self.fut_contract = FutureContract(self.contract_dict, self.instrument)
-        self.trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        self.trans = Transaction(self.fut_contract, self.date, 4.0, 12.3, leg_name='leg1')
 
     def test_constructor(self):
         t = Transaction(self.fut_contract, self.date, 4.0, 12.3)
@@ -36,6 +36,11 @@ class TransactionTestCase(unittest.TestCase):
         self.assertEqual(t._date, self.date)
         self.assertEqual(t._qty, 4.0)
         self.assertEqual(t._price, 12.3)
+        self.assertEqual(t._leg_name, '')
+
+    def test_has_leg_name(self):
+        self.assertEqual(self.trans._leg_name, 'leg1')
+        self.assertEqual(self.trans.leg_name, 'leg1')
 
     def test_has_asset(self):
         self.assertEqual(self.trans.asset, self.fut_contract)

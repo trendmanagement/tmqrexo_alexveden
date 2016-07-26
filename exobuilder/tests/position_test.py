@@ -225,8 +225,8 @@ class PositionTestCase(unittest.TestCase):
 
     def test_as_dict(self):
         pos = Position()
-        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
-        pos.add(trans, leg_name='leg1')
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3, leg_name='leg1')
+        pos.add(trans)
 
         trans2 = Transaction(self.fut_contract, self.date, -2.0, 13.3)
         pos.add(trans2)
@@ -256,7 +256,7 @@ class PositionTestCase(unittest.TestCase):
 
     def test_from_dict(self):
         pos = Position()
-        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3, leg_name='fut1')
         pos.add(trans)
 
         trans2 = Transaction(self.fut_contract, self.date, -2.0, 13.3)
@@ -299,6 +299,9 @@ class PositionTestCase(unittest.TestCase):
         self.assertEqual(p['qty'], 2.0)
         self.assertEqual(p['value'], trans.usdvalue / 2)
 
+        self.assertEqual(1, len(p2.legs))
+        self.assertEqual(True, 'fut1' in p2.legs)
+        self.assertEqual(self.fut_contract, p2.legs['fut1'])
 
         self.assertEqual(100, p2._realized_pnl)
         self.assertEqual(p2.pnl, 100 + 200)
@@ -312,7 +315,7 @@ class PositionTestCase(unittest.TestCase):
 
     def test_close_all(self):
         pos = Position()
-        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3, leg_name='fut1')
         pos.add(trans)
 
         trans2 = Transaction(self.fut_contract, self.date, 2.0, 15.3)
@@ -330,6 +333,88 @@ class PositionTestCase(unittest.TestCase):
         self.fut_contract._price = 14.3
         trans = pos.close_all_translist()
         self.assertEqual([Transaction(self.fut_contract, self.date, -6.0, 14.3)], trans)
+        self.assertEqual('fut1', trans[0].leg_name)
         self.assertNotEqual(None, Transaction(self.fut_contract, self.date, -6.0, 14.3)) # For 100% coverage
+
+    def test_add_leg_has_legs(self):
+        pos = Position()
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3, leg_name='fut1')
+        pos.add(trans)
+
+        self.assertEqual(True, 'fut1' in pos.legs)
+
+    def test_add_leg_has_no_legs_if_leg_name_is_empty(self):
+        pos = Position()
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3, leg_name='')
+        pos.add(trans)
+
+        self.assertEqual(False, 'fut1' in pos.legs)
+
+    def test_add_leg_delete_leg_is_position_closed(self):
+        pos = Position()
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3, leg_name='fut1')
+        pos.add(trans)
+
+        self.assertEqual(True, 'fut1' in pos.legs)
+        self.assertEqual(1, len(pos.legs))
+
+        trans = Transaction(self.fut_contract, self.date, -4.0, 12.3, leg_name='')
+        pos.add(trans)
+
+        self.assertEqual(False, 'fut1' in pos.legs)
+        self.assertEqual(0, len(pos.legs))
+
+    def test_add_leg_expection_if_leg_name_duplicate_but_different_assets(self):
+        pos = Position()
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3, leg_name='fut1')
+        pos.add(trans)
+
+        self.assertEqual(True, 'fut1' in pos.legs)
+        self.assertEqual(1, len(pos.legs))
+
+        contract_dict = {'_id': '577a4fa34b01f47f84cab23c',
+                              'contractname': 'F.EPZ16',
+                              'cqgsymbol': 'F.EPZ16',
+                              'expirationdate': datetime(2016, 12, 16, 0, 0),
+                              'idcontract': 650,
+                              'idinstrument': 11,
+                              'month': 'Z',
+                              'monthint': 12,
+                              'year': 2016}
+        fut_contract2 = FutureContract(contract_dict, self.instrument)
+
+        trans = Transaction(fut_contract2, self.date, -4.0, 12.3, leg_name='fut1')
+        self.assertRaises(NameError, pos.add, trans)
+
+    def test_add_2_different_legs(self):
+        pos = Position()
+        trans = Transaction(self.fut_contract, self.date, 4.0, 12.3, leg_name='fut1')
+        pos.add(trans)
+
+        self.assertEqual(True, 'fut1' in pos.legs)
+        self.assertEqual(1, len(pos.legs))
+
+        contract_dict = {'_id': '577a4fa34b01f47f84cab23c',
+                              'contractname': 'F.EPZ16',
+                              'cqgsymbol': 'F.EPZ16',
+                              'expirationdate': datetime(2016, 12, 16, 0, 0),
+                              'idcontract': 650,
+                              'idinstrument': 11,
+                              'month': 'Z',
+                              'monthint': 12,
+                              'year': 2016}
+        fut_contract2 = FutureContract(contract_dict, self.instrument)
+
+        trans = Transaction(fut_contract2, self.date, -4.0, 12.3, leg_name='fut2')
+        pos.add(trans)
+
+        self.assertEqual(2, len(pos.legs))
+        self.assertEqual(True, 'fut1' in pos.legs)
+        self.assertEqual(True, 'fut2' in pos.legs)
+        self.assertEqual(fut_contract2, pos.legs['fut2'])
+        self.assertEqual(self.fut_contract, pos.legs['fut1'])
+
+
+
 
 
