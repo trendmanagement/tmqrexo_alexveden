@@ -447,7 +447,7 @@ class StrategyPointAndFigurePatterns(StrategyBase):
         else:
             # Unpacking optimization params
             #  in order in self.opts definition
-            direction, box_size, reversal_multiplier, window_percent, rules_index, period_median = params
+            direction, box_size, reversal_multiplier, window_percent, column_consec_move_count, rules_index, period_median = params
 
         # Defining EXO price
         px = self.data.exo
