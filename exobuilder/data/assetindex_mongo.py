@@ -8,6 +8,9 @@ class AssetIndexMongo(AssetIndexBase):
         self.client = MongoClient('mongodb://localhost:27017/')
         self.db = self.client['tmldb']
 
+        self.db.options.create_index([("idoption", pymongo.DESCENDING)])
+        self.db.options.create_index([("idcontract", pymongo.DESCENDING)])
+
     def get_instrument_info(self, symbol):
         """
         Returns underlying instrument information
@@ -34,7 +37,10 @@ class AssetIndexMongo(AssetIndexBase):
     def get_options_list(self, date, futurecontract):
         opt_chains = []
         for contract in self.db.options.aggregate([
-            {'$match': {'idcontract': futurecontract.dbid}},
+            {'$match': {
+                'idcontract': futurecontract.dbid,
+                'expirationdate': {'$gt': date},
+            }},
             {'$sort': {'strikeprice': 1}},
             {'$group': {
                 '_id': {'date': '$expirationdate'},
@@ -54,7 +60,7 @@ class AssetIndexMongo(AssetIndexBase):
         return self.db.contracts.find({'idcontract': dbid}).next()
 
     def get_option_contract(self, dbid):
-        return self.db.options.find({'idoption': dbid})
+        return self.db.options.find({'idoption': dbid}).next()
 
 
 

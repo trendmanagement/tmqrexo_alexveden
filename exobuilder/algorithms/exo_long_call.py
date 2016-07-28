@@ -1,7 +1,7 @@
 from exobuilder.contracts.futureschain import FuturesChain
 from exobuilder.contracts.futurecontract import FutureContract
 from exobuilder.tests.assetindexdict import AssetIndexDicts
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time as dttime
 from exobuilder.contracts.instrument import Instrument
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.datasource_sql import DataSourceSQL
@@ -13,7 +13,7 @@ import time
 
 import logging
 
-class EXOContinuousFut(ExoEngineBase):
+class EXOBullishCall(ExoEngineBase):
     def __init__(self, symbol, date, datasource, debug_mode=False):
         self._symbol = symbol
 
@@ -23,12 +23,13 @@ class EXOContinuousFut(ExoEngineBase):
 
     @property
     def exo_name(self):
-        return self._symbol + '_ContFut'
+        return self._symbol + '_BullishCall'
 
     def is_rollover(self):
         if len(self.position) != 0:
-            fut = self.position.legs['fut']
-            if fut.to_expiration_days <= 2:
+
+            opt = self.position.legs['opt_call']
+            if opt.to_expiration_days <= 2:
                 return True
 
         return False
@@ -53,20 +54,16 @@ class EXOContinuousFut(ExoEngineBase):
             if fut.to_expiration_days <= 2:
                 fut = instr.futures[1]
 
-            trans_list = [Transaction(fut, self.date, 1.0, fut.price, leg_name='fut')]
+            opt_chain = fut.options[0]
+            if opt_chain.to_expiration_days <= 2:
+                opt_chain = fut.options[1]
+
+            call = opt_chain[-2].C
+
+            trans_list = [
+                Transaction(call, self.date, 1.0, call.price, leg_name='opt_call'),
+            ]
             return trans_list
-
-
-    def as_dict(self):
-        """
-        Custom serialization logic for EXO
-        :return:
-        """
-        exo_dict = super().as_dict()
-        exo_dict['custom_class_name'] = 'EXOContinuousFut'
-        return exo_dict
-
-
 
 
 
@@ -76,8 +73,7 @@ if __name__ == "__main__":
     assetindex = AssetIndexMongo(mongo_connstr, mongo_db_name)
     exostorage = EXOStorage(mongo_connstr, mongo_db_name)
 
-    base_date = datetime(2011, 3, 1, 10, 15, 0)
-
+    base_date = datetime(2014, 1, 13, 10, 15, 0)
     futures_limit = 3
     options_limit = 10
 
@@ -90,21 +86,21 @@ if __name__ == "__main__":
     password = '4fSHRXwd4u'
     datasource = DataSourceSQL(server, user, password, assetindex, futures_limit, options_limit, exostorage)
 
-    enddate = datetime.combine( datetime.now().date(), (10, 15, 0))
+    enddate = datetime.combine(datetime.now().date(), dttime(10, 15, 0))
     currdate = base_date
 
-    #for i in range(100):
+    # for i in range(100):
     while currdate <= enddate:
         start_time = time.time()
-        #date = base_date + timedelta(days=i)
+        # date = base_date + timedelta(days=i)
         date = currdate
 
-        exo_engine = EXOContinuousFut('ES', date, datasource, debug_mode=DEBUG)
+        exo_engine = EXOBullishCall('ES', date, datasource, debug_mode=DEBUG)
         # Load EXO information from mongo
         exo_engine.load()
         exo_engine.calculate()
         end_time = time.time()
-        print("{0} Elasped: {1}".format(date, end_time-start_time))
 
         currdate += timedelta(days=1)
+        print("{0} Elasped: {1}".format(date, end_time-start_time))
     print('Done')

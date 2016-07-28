@@ -42,6 +42,10 @@ class OptionsChain(object):
         return self._expiration
 
     @property
+    def to_expiration_days(self):
+        return (self.expiration.date() - self._fut.instrument.date.date()).days
+
+    @property
     def contracts(self):
         return self._options
 

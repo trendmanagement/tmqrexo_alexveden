@@ -51,3 +51,6 @@ class Transaction(object):
                 return True
 
         return False
+
+    def __str__(self):
+        return "Leg: {0} / {1} x {2} Price: {3}".format(self.leg_name, self.asset.name, self.qty, self.price)

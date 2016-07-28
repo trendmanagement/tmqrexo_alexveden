@@ -3,8 +3,11 @@ from exobuilder.exo.transaction import Transaction
 import pandas as pd
 import pickle
 
+import logging
+
+
 class ExoEngineBase(object):
-    def __init__(self, date, datasource):
+    def __init__(self, date, datasource, debug_mode=False):
         self._position = Position()
         self._date = date
         self._datasource = datasource
@@ -12,6 +15,14 @@ class ExoEngineBase(object):
         self._extra_context = {}
         self._transactions = []
         self._old_transactions = []
+        self.debug_mode = debug_mode
+
+        if self.debug_mode:
+            logging.basicConfig(filename=self.name + '.log',
+                                filemode='w',  # Clear log on each run
+                                level=logging.DEBUG,
+                                format='%(message)s')
+            logging.debug("\nProcessing {0}".format(date))
 
     @property
     def name(self):
@@ -48,9 +59,15 @@ class ExoEngineBase(object):
 
         # Proto-code
         if self.is_rollover():
+            if self.debug_mode:
+                logging.debug("Rollover event occured")
+
             roll_trans = self.process_rollover()
             if roll_trans is not None and len(roll_trans) > 0:
                 trans_list += roll_trans
+                if self.debug_mode:
+                    logging.debug("Rolling position")
+                    self._log_transactions(roll_trans)
 
                 for t in roll_trans:
                     self.position.add(t)
@@ -61,10 +78,23 @@ class ExoEngineBase(object):
         # Processing new day
         new_transactions = self.process_day()
         if new_transactions is not None and len(new_transactions) > 0:
-            trans_list += new_transactions
 
+            if self.debug_mode:
+                logging.debug("OLD position:")
+                logging.debug(str(self.position))
+                self._log_transactions(new_transactions)
+
+            trans_list += new_transactions
             for t in new_transactions:
                 self.position.add(t)
+
+            if self.debug_mode:
+                logging.debug("NEW position:")
+                logging.debug(str(self.position))
+        else:
+            if self.debug_mode:
+                logging.debug("Current position:")
+                logging.debug(str(self.position))
 
 
         self._transactions += trans_list
@@ -142,3 +172,7 @@ class ExoEngineBase(object):
     @property
     def datasource(self):
         return self._datasource
+
+    def _log_transactions(self, trans_list):
+        for t in trans_list:
+            logging.debug("Transaction:\t {0}".format(t))

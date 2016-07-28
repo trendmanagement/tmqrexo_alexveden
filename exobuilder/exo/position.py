@@ -107,3 +107,20 @@ class Position(object):
     def __len__(self):
         return len(self.netpositions)
 
+
+    def __str__(self):
+        template = '{0:<10} | {1:<20} | {2:>10} | {3:>10} | {4:>10} | {5:>10} | \n'
+        result = 'Realized PnL: {0}\n'.format(self._realized_pnl)
+
+        result += template.format('Leg', 'Asset', 'Qty', 'PnL', 'EntryPrice', 'CurrentPrice')
+
+        for asset, pdic in self.netpositions.items():
+            result += template.format(pdic['leg_name'],
+                                      asset.name,
+                                      pdic['qty'],
+                                      round(asset.pointvalue * asset.price * pdic['qty'] - pdic['value'], 2),
+                                      round(pdic['value'] / asset.pointvalue / pdic['qty'], 2),
+                                      round(asset.price, 2))
+
+        return result
+
