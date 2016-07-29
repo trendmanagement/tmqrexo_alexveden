@@ -391,9 +391,9 @@ class StrategyPointAndFigurePatterns(StrategyBase):
         for i in pnf_df.index.unique():
             pnf_df.loc[i, 'box_count'] = pnf_df.close.ix[i].count()
 
-            bull_fail = ((pnf_df.box_count == reversal_multiplier) & (pnf_df.type == 'x')).groupby(
-                ((pnf_df.box_count == reversal_multiplier)
-                 & (pnf_df.type == 'x')).index).last()
+        bull_fail = ((pnf_df.box_count == reversal_multiplier) & (pnf_df.type == 'x')).groupby(
+            ((pnf_df.box_count == reversal_multiplier)
+             & (pnf_df.type == 'x')).index).last()
 
         pnf_first_column_value_df['bullish_failure'] = (bull_fail.shift(1) == True).groupby(
             (bull_fail.shift(1) == True).index).first()
