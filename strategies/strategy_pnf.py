@@ -389,7 +389,11 @@ class StrategyPointAndFigurePatterns(StrategyBase):
         pnf_df['o_col_samemove_count'] = pd.Series(same_move_count, index=o_col_upmove.index)
 
         for i in pnf_df.index.unique():
-            pnf_df.loc[i, 'box_count'] = pnf_df.close.ix[i].count()
+            if pnf_df.close.ix[i].size > 1.0:
+                pnf_df.loc[i, 'box_count'] = pnf_df.close.ix[i].count()
+
+            else:
+                pnf_df.loc[i, 'box_count'] = 1.0
 
         bull_fail = ((pnf_df.box_count == reversal_multiplier) & (pnf_df.type == 'x')).groupby(
             ((pnf_df.box_count == reversal_multiplier)
