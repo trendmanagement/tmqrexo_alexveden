@@ -11,11 +11,14 @@ from exobuilder.exo.exoenginebase import ExoEngineBase
 from exobuilder.exo.transaction import Transaction
 import time
 
-import logging
-
-class EXOBullishCall(ExoEngineBase):
-    def __init__(self, symbol, date, datasource, debug_mode=False):
+class EXOVerticalSpread(ExoEngineBase):
+    def __init__(self, symbol, direction, date, datasource, debug_mode=False):
+        self._direction = direction
         self._symbol = symbol
+
+        if self._direction != 1 and self._direction != -1:
+            raise ValueError('self._direction != 1 and self._direction != -1')
+
 
         super().__init__(date, datasource, debug_mode=debug_mode)
 
@@ -23,12 +26,15 @@ class EXOBullishCall(ExoEngineBase):
 
     @property
     def exo_name(self):
-        return self._symbol + '_BullishCall'
+        if self._direction == 1:
+            return self._symbol + '_CallSpread'
+        elif self._direction == -1:
+            return self._symbol + '_PutSpread'
 
     def is_rollover(self):
         if len(self.position) != 0:
 
-            opt = self.position.legs['opt_call']
+            opt = self.position.legs['opt_itm_leg']
             if opt.to_expiration_days <= 2:
                 return True
 
@@ -56,14 +62,31 @@ class EXOBullishCall(ExoEngineBase):
 
             opt_chain = fut.options[0]
             if opt_chain.to_expiration_days <= 2:
-                opt_chain = fut.options[1]
+                if len(fut.options) < 2:
+                    # Roll to next fut contract
+                    fut = instr.futures[1]
+                    opt_chain = fut.options[0]
+                else:
+                    # Use next option expiration
+                    opt_chain = fut.options[1]
 
-            call = opt_chain[0].C
+            if self._direction == 1:
+                itm_call = opt_chain[-2].C
+                otm_call = opt_chain[10].C
 
-            trans_list = [
-                Transaction(call, self.date, 1.0, call.price, leg_name='opt_call'),
-            ]
-            return trans_list
+                return [
+                    Transaction(itm_call, self.date, 1.0, itm_call.price, leg_name='opt_itm_leg'),
+                    Transaction(otm_call, self.date, -1.0, otm_call.price, leg_name='opt_otm_leg'),
+                ]
+            if self._direction == -1:
+                itm_put = opt_chain[2].P
+                otm_put = opt_chain[-10].P
+
+                return [
+                    Transaction(itm_put, self.date, 1.0, itm_put.price, leg_name='opt_itm_leg'),
+                    Transaction(otm_put, self.date, -1.0, otm_put.price, leg_name='opt_otm_leg'),
+                ]
+
 
 
 
@@ -89,16 +112,23 @@ if __name__ == "__main__":
     enddate = datetime.combine(datetime.now().date(), dttime(12, 45, 0))
     currdate = base_date
 
+    instruments = ['CL', 'ES']
+    directions = [1, -1]
+
     # for i in range(100):
     while currdate <= enddate:
         start_time = time.time()
         # date = base_date + timedelta(days=i)
         date = currdate
 
-        exo_engine = EXOBullishCall('ES', date, datasource, debug_mode=DEBUG)
-        # Load EXO information from mongo
-        exo_engine.load()
-        exo_engine.calculate()
+        for ticker in instruments:
+            for dir in directions:
+                with EXOVerticalSpread(ticker, dir, date, datasource, debug_mode=DEBUG) as exo_engine:
+                    # Load EXO information from mongo
+                    exo_engine.load()
+                    exo_engine.calculate()
+
+
         end_time = time.time()
 
         currdate += timedelta(days=1)

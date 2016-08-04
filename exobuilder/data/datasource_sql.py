@@ -45,7 +45,7 @@ class DataSourceSQL(DataSourceBase):
                 rfr_result = row
 
 
-            rfr_dic[date] = rfr_result["optioninputclose"]
+            rfr_dic[date] = rfr_result["optioninputclose"] / 100.0
             return self.extra_data_cache[key][date]
         else:
             raise KeyError("Unknown key for extra_data, only 'riskfreerate' supported.")

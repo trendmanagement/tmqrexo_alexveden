@@ -109,7 +109,7 @@ class Position(object):
 
 
     def __str__(self):
-        template = '{0:<10} | {1:<20} | {2:>10} | {3:>10} | {4:>10} | {5:>10} | \n'
+        template = '{0:<25} | {1:<20} | {2:>10} | {3:>10} | {4:>10} | {5:>10} | \n'
         result = 'Realized PnL: {0}\n'.format(self._realized_pnl)
 
         result += template.format('Leg', 'Asset', 'Qty', 'PnL', 'EntryPrice', 'CurrentPrice')
