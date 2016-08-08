@@ -122,14 +122,18 @@ class StrategyBolingerBands(StrategyBase):
         bb_multiperiod_pctb_down_direction = (df['bb_multiperiod_%b'].rank(pct=True).rolling(10).mean() <=
                                               df['bb_multiperiod_%b'].rank(pct=True).rolling(10).mean().rolling(
                                                   10).median())
+        # Trend 0:5
+        # Vola breakout 5:10
+        # High vola(BBands width percent rank > 80-90) 10:15
+        # %B rules 15:26
+        return up_trend, down_trend, multiperiod_up_trend, multiperiod_down_trend, bb_multiperiod_pctb_up_direction, bb_multiperiod_pctb_down_direction,\
+                bb_width_pctrank_less_20, bb_width_pctrank_less_10, bb_multiperiod_width_pctrank_less_20, bb_multiperiod_width_pctrank_less_10, bb_width_pctrank_less_50,\
+                bb_width_pctrank_more_80, bb_width_pctrank_more_90, bb_multiperiod_width_pctrank_more_80, bb_multiperiod_width_pctrank_more_90, bb_multiperiod_width_pctrank_less_50,\
+                bb_multiperiod_pctb_pctrank_less_20, bb_multiperiod_pctb_pctrank_less_10, \
+                bb_multiperiod_pctb_pctrank_more_80, bb_multiperiod_pctb_pctrank_more_90, bb_multiperiod_pctb_pctrank_more_50, \
+                bb_multiperiod_pctb_pctrank_less_50, bb_pctb_pctrank_less_20, bb_pctb_pctrank_less_10, bb_pctb_pctrank_less_50,\
+                bb_pctb_pctrank_more_80, bb_pctb_pctrank_more_90, bb_pctb_pctrank_more_50
 
-        return up_trend, down_trend, bb_width_pctrank_less_20, bb_width_pctrank_less_10, bb_width_pctrank_more_80,\
-        bb_width_pctrank_more_90, bb_width_pctrank_more_50, bb_width_pctrank_less_50, multiperiod_up_trend, \
-        multiperiod_down_trend, bb_multiperiod_width_pctrank_less_20, bb_multiperiod_width_pctrank_less_10,\
-        bb_multiperiod_width_pctrank_more_80, bb_multiperiod_width_pctrank_more_90, bb_multiperiod_width_pctrank_more_50,\
-        bb_multiperiod_width_pctrank_less_50, bb_multiperiod_pctb_pctrank_less_20, bb_multiperiod_pctb_pctrank_less_10,\
-        bb_multiperiod_pctb_pctrank_more_80, bb_multiperiod_pctb_pctrank_more_90, bb_multiperiod_pctb_pctrank_more_50,\
-        bb_multiperiod_pctb_pctrank_less_50, bb_multiperiod_pctb_up_direction, bb_multiperiod_pctb_down_direction
 
     def calculate(self, params=None, save_info=False):
         #
