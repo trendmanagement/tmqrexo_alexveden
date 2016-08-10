@@ -6,8 +6,8 @@ from datetime import datetime
 class DataSourceMongo(DataSourceBase):
     def __init__(self, conn_str, dbname, assetindex, futures_limit, options_limit, exostorage=None):
         super().__init__(assetindex, futures_limit, options_limit, exostorage=exostorage)
-        self.client = MongoClient('mongodb://localhost:27017/')
-        self.db = self.client['tmldb']
+        self.client = MongoClient(conn_str)
+        self.db = self.client[dbname]
 
         # Creating indexes for fast data fetching
         self.db.futures_data.create_index([('idcontract', pymongo.ASCENDING),('datetime', pymongo.ASCENDING)])
