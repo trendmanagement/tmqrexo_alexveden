@@ -60,7 +60,7 @@ class ExoEngineBaseTestCase(unittest.TestCase):
 
 
     def test_has_series(self):
-        self.assertTrue(isinstance(self.exo_engine.series, pd.Series))
+        self.assertTrue(isinstance(self.exo_engine.series, pd.DataFrame))
 
     def test_has_exo_name_and_raises(self):
         exo_engine = ExoEngineBase(self.date, self.datasource)

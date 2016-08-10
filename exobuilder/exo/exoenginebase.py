@@ -9,7 +9,7 @@ class ExoEngineBase(object):
         self._position = Position()
         self._date = date
         self._datasource = datasource
-        self._series = pd.Series()
+        self._series = pd.DataFrame()
         self._extra_context = {}
         self._transactions = []
         self._old_transactions = []
@@ -108,7 +108,7 @@ class ExoEngineBase(object):
 
         pnl = self.position.pnl
 
-        self.series[self.date] = pnl
+        self.series.at[self.date, 'exo'] = pnl
 
         # Save EXO state to DB
         self.save()

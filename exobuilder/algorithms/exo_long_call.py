@@ -102,5 +102,5 @@ if __name__ == "__main__":
         end_time = time.time()
 
         currdate += timedelta(days=1)
-        print("{0} Elasped: {1}".format(date, end_time-start_time))
+        print("{0} Elapsed: {1}".format(date, end_time-start_time))
     print('Done')
