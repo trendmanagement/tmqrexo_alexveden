@@ -71,7 +71,7 @@ class EXOContinuousFut(ExoEngineBase):
 
 
 if __name__ == "__main__":
-    mongo_connstr = 'mongodb://localhost:27017/'
+    mongo_connstr = 'mongodb://exowriter:qmWSy4K3@10.0.1.2/tmldb?authMechanism=SCRAM-SHA-1'
     mongo_db_name = 'tmldb'
     assetindex = AssetIndexMongo(mongo_connstr, mongo_db_name)
     exostorage = EXOStorage(mongo_connstr, mongo_db_name)
