@@ -14,12 +14,14 @@ import time
 import logging
 
 class EXOBullishCall(ExoEngineBase):
-    def __init__(self, symbol, date, datasource, debug_mode=False):
+    def __init__(self, symbol,  direction, date, datasource, log_file_path=''):
         self._symbol = symbol
 
-        super().__init__(date, datasource, debug_mode=debug_mode)
+        super().__init__(symbol, direction, date, datasource, log_file_path=log_file_path)
 
-
+    @staticmethod
+    def direction_type():
+        return 1
 
     @property
     def exo_name(self):
@@ -77,7 +79,7 @@ if __name__ == "__main__":
     futures_limit = 3
     options_limit = 10
 
-    DEBUG = True
+    DEBUG = '.'
 
     datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
 
@@ -95,7 +97,7 @@ if __name__ == "__main__":
         # date = base_date + timedelta(days=i)
         date = currdate
 
-        exo_engine = EXOBullishCall('ES', date, datasource, debug_mode=DEBUG)
+        exo_engine = EXOBullishCall('ES',0, date, datasource, log_file_path=DEBUG)
         # Load EXO information from mongo
         exo_engine.load()
         exo_engine.calculate()

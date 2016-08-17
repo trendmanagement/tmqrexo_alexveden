@@ -1,9 +1,7 @@
-from tradingcore.signalapp import SignalApp
+from tradingcore.signalapp import SignalApp, APPCLASS_DATA
 import time
-from datetime import  datetime
+from datetime import  datetime, time
 
 app = SignalApp('test', 'testclass')
 
-while True:
-    app.send("test", 'testclass', {'msg': 'Test message', 'date': datetime.now()})
-    time.sleep(1)
+app.send_to("ES", APPCLASS_DATA, {'msg': 'Test message', 'date': datetime.combine(datetime.now().date(), time(12, 45, 0))})

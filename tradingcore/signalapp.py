@@ -3,13 +3,23 @@ import pika
 import logging
 import sys
 from pika.credentials import PlainCredentials
+from datetime import datetime
 
 RABBIT_EXCHANGE = "TMQR_SIGNALS"
+
+from enum import Enum
+
+APPCLASS_DATA = 'DataFeed'
+APPCLASS_EXO = "ExoEngine"
+APPCLASS_ALPHA = "AlphaStrategy"
 
 class SignalApp(object):
     def __init__(self, appname, appclass, host='localhost', user='guest', password='guest'):
         connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host=host, credentials=PlainCredentials(user, password)))
+
+        self.appname = appname
+        self.appclass = appclass
 
         self.channel = connection.channel()
         self.channel.exchange_declare(exchange=RABBIT_EXCHANGE, exchange_type='topic')
@@ -22,8 +32,16 @@ class SignalApp(object):
                        routing_key='{0}.{1}'.format(appclass, appname))
 
 
+    def send(self, data):
+        """
+        Send data to default message ques appclass.appname
+        :return:
+        """
+        self.channel.basic_publish(exchange=RABBIT_EXCHANGE,
+                                   routing_key='{0}.{1}'.format(self.appclass, self.appname),
+                                   body=pickle.dumps(data))
 
-    def send(self, appname, appclass, data):
+    def send_to(self, appname, appclass, data):
         """
         Send data to RabbitMQ message queue by routing key = appclass.appname
         :param appname: app name to notify, could be '*' to notify all apps
@@ -49,4 +67,15 @@ class SignalApp(object):
 
         self.channel.basic_consume(pre_callback, queue=self.queue_name, no_ack=True)
         self.channel.start_consuming()
+
+    def status(self, status, message, context={}):
+        return {
+            'type': 'status',
+            'message': message,
+            'status': status,
+            'date': datetime.now(),
+            'context': context,
+            'appclass': self.appclass,
+            'appname': self.appname,
+        }
 

@@ -40,10 +40,10 @@ class ExoEngineBaseTestCase(unittest.TestCase):
                               'year': 2016}
         self.fut_contract = FutureContract(self.contract_dict, self.instrument)
         self.trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
-        self.exo_engine = EXOTestEngine(self.date, self.datasource)
+        self.exo_engine = EXOTestEngine('', '', self.date, self.datasource)
 
     def test_constructor(self):
-        exo_engine = ExoEngineBase(self.date, self.datasource)
+        exo_engine = ExoEngineBase('','', self.date, self.datasource)
 
         self.assertEqual(exo_engine._date, self.date)
         self.assertEqual(exo_engine._datasource, self.datasource)
@@ -63,7 +63,7 @@ class ExoEngineBaseTestCase(unittest.TestCase):
         self.assertTrue(isinstance(self.exo_engine.series, pd.DataFrame))
 
     def test_has_exo_name_and_raises(self):
-        exo_engine = ExoEngineBase(self.date, self.datasource)
+        exo_engine = ExoEngineBase('','', self.date, self.datasource)
 
         def name_raises():
             exo_engine.name
@@ -75,14 +75,14 @@ class ExoEngineBaseTestCase(unittest.TestCase):
         self.assertRaises(NotImplementedError, exo_name_raises)
 
     def test_has_process_day_raises(self):
-        exo_engine = ExoEngineBase(self.date, self.datasource)
+        exo_engine = ExoEngineBase('', '', self.date, self.datasource)
         self.assertRaises(NotImplementedError, exo_engine.process_day)
         self.assertRaises(NotImplementedError, exo_engine.process_rollover)
         self.assertRaises(NotImplementedError, exo_engine.is_rollover)
 
 
     def test_as_dict(self):
-        exo_engine = EXOTestEngine(self.date, self.datasource)
+        exo_engine = EXOTestEngine('', '', self.date, self.datasource)
         trans = Transaction(self.fut_contract, self.date, 4.0, 12.3)
         exo_engine.position.add(trans)
 
