@@ -76,7 +76,12 @@ class StrategyMachineLearnedSimple(StrategyBase):
 
         df = pd.DataFrame(preprocessing.scale(df), index=df.index, columns=df.columns)
 
-        df['target'] = (df.close.shift(-prediction_window) - df.close) < 0
+        if direction == -1:
+            df['target'] = (df.close.shift(-prediction_window) - df.close) < 0
+
+        elif direction == 1:
+            df['target'] = (df.close.shift(-prediction_window) - df.close) > 0
+
 
         train_features = df.drop('target', 1).ix[:'2013']
         train_target = df.target.ix[:'2013']
