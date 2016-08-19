@@ -60,7 +60,6 @@ def main():
                     smgr.pick()
                     # Saving results to swarms directory
                     smgr.save(os.path.join(TMQRPATH, "swarms"))
-        break
 
 
 if __name__ == '__main__':
