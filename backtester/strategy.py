@@ -64,7 +64,8 @@ class StrategyBase(object):
             if os.path.exists(self.exo_name):
                 self.data, self.exo_dict = matlab.loaddata(self.exo_name)
             else:
-                self.data, self.exo_dict = matlab.loaddata('../mat/' + self.exo_name + '.mat')
+                TMQRPATH = os.getenv("TMQRPATH", '')
+                self.data, self.exo_dict = matlab.loaddata(os.path.join(TMQRPATH, 'mat', self.exo_name.replace('.mat', '') + '.mat'))
 
     def check_context(self):
         if 'strategy' not in self.context:

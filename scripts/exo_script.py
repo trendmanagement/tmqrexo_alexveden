@@ -14,42 +14,11 @@ from exobuilder.data.datasource_sql import DataSourceSQL
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.exostorage import EXOStorage
 
+try:
+    from .settings import *
+except SystemError:
+    from scripts.settings import *
 
-# Importing EXO code
-from exobuilder.algorithms.exo_brokenwing import EXOBrokenwingCollar
-from exobuilder.algorithms.exo_vertical_spread import EXOVerticalSpread
-from exobuilder.algorithms.exo_bullish_collar import EXOBullishCollar
-
-#
-# Settings part
-#
-EXO_LIST = [
-    {
-        'name': 'CollarBW',
-        'class': EXOBrokenwingCollar,
-    },
-    {
-        'name': 'VerticalSpread',
-        'class': EXOVerticalSpread,
-    },
-]
-
-# MongoDB credentials
-#
-mongo_connstr = 'mongodb://localhost:27017/'
-mongo_db_name = 'tmldb'
-
-#
-# SQL Server credentials
-server = 'h9ggwlagd1.database.windows.net'
-user = 'modelread'
-password = '4fSHRXwd4u'
-
-#
-# RabbitMQ credentials
-RABBIT_HOST = 'localhost'
-RABBIT_USER = 'guest'
-RABBIT_PASSW = 'guest'
 
 class EXOScript:
     def __init__(self, args, loglevel):
@@ -99,14 +68,14 @@ class EXOScript:
             # Run first EXO calculation for this day
             logging.info("Run EXO calculation, at decision time")
 
-            assetindex = AssetIndexMongo(mongo_connstr, mongo_db_name)
-            exostorage = EXOStorage(mongo_connstr, mongo_db_name)
+            assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+            exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
             futures_limit = 3
             options_limit = 10
 
             #datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
-            datasource = DataSourceSQL(server, user, password, assetindex, futures_limit, options_limit, exostorage)
+            datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
 
             # Run EXO calculation
             self.run_exo_calc(datasource, decision_time, symbol, isbackfill=False)
@@ -150,13 +119,13 @@ class EXOScript:
         #
         logging.info("Run EXO backfill from {0}".format(self.args.backfill))
 
-        assetindex = AssetIndexMongo(mongo_connstr, mongo_db_name)
-        exostorage = EXOStorage(mongo_connstr, mongo_db_name)
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+        exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
         futures_limit = 3
         options_limit = 10
         # datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
-        datasource = DataSourceSQL(server, user, password, assetindex, futures_limit, options_limit, exostorage)
+        datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
 
         exec_time, decision_time = self.get_exec_time(self.args.backfill)
 
@@ -180,7 +149,7 @@ class EXOScript:
         self.signalapp.send(self.signalapp.status('INIT', 'Initiating EXO engine'))
 
         # Get information about decision and execution time
-        assetindex = AssetIndexMongo(mongo_connstr, mongo_db_name)
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         self.asset_info = assetindex.get_instrument_info(args.instrument)
 
 

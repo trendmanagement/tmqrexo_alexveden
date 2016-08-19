@@ -24,6 +24,10 @@ class ExoEngineBase(object):
             self.logger.write("\nProcessing {0}\n".format(date))
 
     @staticmethod
+    def names_list(symbol):
+        raise NotImplementedError("Each EXO class must implement names_list")
+
+    @staticmethod
     def direction_type():
         raise NotImplementedError("Each EXO class must implement direction type 1 Long, -1 Short, 0 Bidirectional")
 

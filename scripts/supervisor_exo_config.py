@@ -1,7 +1,11 @@
 import os
 import sys
 
-instruments = ['ES', 'CL']
+try:
+    from .settings import *
+except SystemError:
+    from scripts.settings import *
+
 
 supervisor_config_dir = 'supervisor_include'
 
@@ -24,7 +28,7 @@ directory={current_path}
 if not os.path.exists(os.path.join(current_path, supervisor_config_dir)):
     os.mkdir(os.path.join(current_path, supervisor_config_dir))
 
-for instr in instruments:
+for instr in INSTRUMENTS_LIST:
     file_contents = supervisor_conf_template.format(**{
             'instrument': instr,
             'script_file': script_file,

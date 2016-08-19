@@ -25,6 +25,10 @@ class EXOBrokenwingCollar(ExoEngineBase):
     def direction_type():
         return 0
 
+    @staticmethod
+    def names_list(symbol):
+        return [symbol + '_BullishCollarBW', symbol + '_BearishCollarBW']
+
     @property
     def exo_name(self):
         if self._direction == 1:

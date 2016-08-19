@@ -25,6 +25,10 @@ class EXOVerticalSpread(ExoEngineBase):
     def direction_type():
         return 0
 
+    @staticmethod
+    def names_list(symbol):
+        return [symbol + '_CallSpread', symbol + '_PutSpread']
+
     @property
     def exo_name(self):
         if self._direction == 1:
