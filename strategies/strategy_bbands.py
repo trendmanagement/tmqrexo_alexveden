@@ -14,13 +14,13 @@ import numpy as np
 import scipy
 
 
-class StrategyBolingerBands(StrategyBase):
+class StrategyBollingerBands(StrategyBase):
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
 
         # Define system's name
-        self.name = 'BolingerBands'
+        self.name = 'BollingerBands'
 
         self.check_context()
 
