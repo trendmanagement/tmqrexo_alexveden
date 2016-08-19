@@ -2,23 +2,34 @@ from exobuilder.exo.position import Position
 from exobuilder.exo.transaction import Transaction
 import pandas as pd
 import pickle
-
+import os
 
 class ExoEngineBase(object):
-    def __init__(self, date, datasource, debug_mode=False):
+    def __init__(self, symbol, direction, date, datasource, log_file_path=''):
         self._position = Position()
         self._date = date
         self._datasource = datasource
-        self._series = pd.Series()
+        self._series = pd.DataFrame()
         self._extra_context = {}
         self._transactions = []
         self._old_transactions = []
-        self.debug_mode = debug_mode
+        self.debug_mode = log_file_path != ''
         self.logger = None
 
-        if self.debug_mode:            
-            self.logger = open(self.name + '.log', 'a')
+        if self.debug_mode:
+            if not os.path.exists(log_file_path):
+                raise ValueError("log_file_path doesn't exists")
+
+            self.logger = open(os.path.join(log_file_path, self.name+'.log'), 'a')
             self.logger.write("\nProcessing {0}\n".format(date))
+
+    @staticmethod
+    def names_list(symbol):
+        raise NotImplementedError("Each EXO class must implement names_list")
+
+    @staticmethod
+    def direction_type():
+        raise NotImplementedError("Each EXO class must implement direction type 1 Long, -1 Short, 0 Bidirectional")
 
     @property
     def name(self):
@@ -108,7 +119,7 @@ class ExoEngineBase(object):
 
         pnl = self.position.pnl
 
-        self.series[self.date] = pnl
+        self.series.at[self.date, 'exo'] = pnl
 
         # Save EXO state to DB
         self.save()

@@ -175,10 +175,12 @@ class SwarmManager(object):
                 direction = 'Short'
 
         suffix = ''
-        if 'suffix' in self.context['strategy']:
+        if 'suffix' in self.context['strategy'] \
+                and self.context['strategy']['suffix'] is not None \
+                and len(self.context['strategy']['suffix']) > 0:
             suffix = "_" + self.context['strategy']['suffix']
 
-        return '{0}_{1}_{2}_{3}{4}'.format(underlying, exoname, strategyname, direction,suffix)
+        return '{0}_{1}_{2}_{3}{4}'.format(underlying, exoname, direction, strategyname, suffix)
 
     def get_swarm_stats(self, swarm_stats):
         if swarm_stats is None:

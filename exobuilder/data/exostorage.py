@@ -10,7 +10,11 @@ class EXOStorage(object):
     def load_series(self, exo_name):
         try:
             data = self.db.exo_data.find({'name': exo_name}).next()
-            return pickle.loads(data['series'])
+
+            # Loading metadata for EXO
+            exo_dic = {'pcf': [], 'pcfqty': [], 'margin': 0, 'underlying': '', 'name': exo_name}
+
+            return pickle.loads(data['series']), exo_dic
         except:
             return None
 

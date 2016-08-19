@@ -1,6 +1,7 @@
 .ipynb_checkpoints
 ### Python template
 # Byte-compiled / optimized / DLL files
+
 /swarms
 __pycache__/
 *.py[cod]
@@ -65,3 +66,4 @@ target/
 /notebooks/Golden StateWIP/swarms/
 /notebooks/example_campaign/swarms/
 /notebooks/scripts/swarms/
+/scripts/supervisor_include/

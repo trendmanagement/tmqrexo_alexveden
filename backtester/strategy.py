@@ -56,10 +56,16 @@ class StrategyBase(object):
             self.costs = cost_manager.get_costs(self.data.exo)
 
     def load_exodata(self):
-        if os.path.exists(self.exo_name):
-            self.data, self.exo_dict = matlab.loaddata(self.exo_name)
+        if 'exo_storage' in self.context['strategy']:
+            storage = self.context['strategy']['exo_storage']
+            self.data, self.exo_dict = storage.load_series(self.exo_name)
+            del self.context['strategy']['exo_storage']
         else:
-            self.data, self.exo_dict = matlab.loaddata('../mat/' + self.exo_name + '.mat')
+            if os.path.exists(self.exo_name):
+                self.data, self.exo_dict = matlab.loaddata(self.exo_name)
+            else:
+                TMQRPATH = os.getenv("TMQRPATH", '')
+                self.data, self.exo_dict = matlab.loaddata(os.path.join(TMQRPATH, 'mat', self.exo_name.replace('.mat', '') + '.mat'))
 
     def check_context(self):
         if 'strategy' not in self.context:

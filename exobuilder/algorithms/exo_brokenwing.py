@@ -12,17 +12,22 @@ from exobuilder.exo.transaction import Transaction
 import time
 
 class EXOBrokenwingCollar(ExoEngineBase):
-    def __init__(self, symbol, direction, date, datasource, debug_mode=False):
+    def __init__(self, symbol, direction, date, datasource, log_file_path=''):
         self._direction = direction
         self._symbol = symbol
 
         if self._direction != 1 and self._direction != -1:
             raise ValueError('self._direction != 1 and self._direction != -1')
 
+        super().__init__(symbol, direction, date, datasource, log_file_path=log_file_path)
 
-        super().__init__(date, datasource, debug_mode=debug_mode)
+    @staticmethod
+    def direction_type():
+        return 0
 
-
+    @staticmethod
+    def names_list(symbol):
+        return [symbol + '_BullishCollarBW', symbol + '_BearishCollarBW']
 
     @property
     def exo_name(self):
@@ -100,16 +105,16 @@ class EXOBrokenwingCollar(ExoEngineBase):
 
 
 if __name__ == "__main__":
-    mongo_connstr = 'mongodb://localhost:27017/'
+    mongo_connstr = 'mongodb://exowriter:qmWSy4K3@10.0.1.2/tmldb?authMechanism=SCRAM-SHA-1'
     mongo_db_name = 'tmldb'
     assetindex = AssetIndexMongo(mongo_connstr, mongo_db_name)
     exostorage = EXOStorage(mongo_connstr, mongo_db_name)
 
-    base_date = datetime(2014, 1, 13, 12, 45, 0)
+    base_date = datetime(2015, 1, 13, 12, 45, 0)
     futures_limit = 3
     options_limit = 10
 
-    DEBUG = True
+    DEBUG = '.'
 
     datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
 
@@ -132,7 +137,7 @@ if __name__ == "__main__":
 
         for ticker in instruments:
             for dir in directions:
-                with EXOBrokenwingCollar(ticker, dir, date, datasource, debug_mode=DEBUG) as exo_engine:
+                with EXOBrokenwingCollar(ticker, dir, date, datasource,log_file_path=DEBUG) as exo_engine:
                     # Load EXO information from mongo
                     exo_engine.load()
                     exo_engine.calculate()
