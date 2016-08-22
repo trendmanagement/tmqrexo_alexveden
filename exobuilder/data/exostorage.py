@@ -16,7 +16,7 @@ class EXOStorage(object):
 
             return pickle.loads(data['series']), exo_dic
         except:
-            return None
+            return None, None
 
 
     def load_exo(self, exo_name):

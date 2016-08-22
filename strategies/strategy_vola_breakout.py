@@ -12,23 +12,11 @@ import scipy
 
 
 class StrategyVolaBreakoutBands(StrategyBase):
+    name = 'VolatilityBreakout'
+
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
-
-        # Define system's name
-        self.name = 'VolatilityBreakout'
-
-        self.check_context()
-
-        # Define optimized params
-        self.opts = strategy_context['strategy']['opt_params']
-
-    def check_context(self):
-        #
-        # Do strategy specific checks
-        #
-        pass
 
 
     @property

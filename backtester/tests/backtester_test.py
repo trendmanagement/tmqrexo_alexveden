@@ -42,6 +42,7 @@ class BacktesterTestCase(unittest.TestCase):
         for i in range(len(inpos)):
             exp = pd.Series([0, 1, 1, 0, 0, 0, 0, 0, 0, 0])
             self.assertEqual(exp[i], inpos.values[i])
+
         self.assertEqual(True, False, msg="Need to discuss!")
 
     def test_stats_no_costs(self):
