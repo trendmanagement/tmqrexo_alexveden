@@ -171,7 +171,8 @@ class StrategyBase(object):
 
         return (swarm_name, equity, stats, inposition)
 
-    def run_swarm(self, filtered_swarm=None, filtered_swarm_equity=None):
+
+    def run_swarm_backtest(self, filtered_swarm=None, filtered_swarm_equity=None):
         '''
         Brute force all steps of self.opts and calculate base stats
         '''

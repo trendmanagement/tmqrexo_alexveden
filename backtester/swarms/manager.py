@@ -63,14 +63,14 @@ class SwarmManager(object):
     def run_swarm(self):
 
         # Run strategy swarm
-        self.swarm, self.swarm_stats, self.swarm_inposition = self.strategy.run_swarm()
+        self.swarm, self.swarm_stats, self.swarm_inposition = self.strategy.run_swarm_backtest()
         #
         # Average swarm multiplied by members_count
         #   for reproduce comparable results 'picked_swarm' vs 'avg_swarm'
         self.swarm_avg = SwarmManager.get_average_swarm(self.swarm) * self.context['swarm']['members_count']
 
     def _backtest_picked_swarm(self, filtered_swarm, filtered_swarm_equity):
-        swarm, swarm_stats, swarm_inposition = self.strategy.run_swarm(filtered_swarm, filtered_swarm_equity)
+        swarm, swarm_stats, swarm_inposition = self.strategy.run_swarm_backtest(filtered_swarm, filtered_swarm_equity)
         return swarm, swarm_inposition, swarm_stats
 
     def _get_nbest(self, ranked_results, nsystems):

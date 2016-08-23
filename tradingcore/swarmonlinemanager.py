@@ -1,9 +1,13 @@
 from exobuilder.data.exostorage import EXOStorage
+from backtester.swarms.manager import SwarmManager
 
 import pymongo
 from pymongo import MongoClient
 from datetime import datetime
 import pickle
+from copy import deepcopy
+from ast import literal_eval
+
 
 class SwarmOnlineManager:
     def __init__(self, mongo_connstr, mongo_dbname, strategy_context):
@@ -42,7 +46,6 @@ class SwarmOnlineManager:
             'alpha_params': alpha_params,
             'global_context': context,
             'update_date': datetime.now(),
-            'rebalance_date': datetime.now(),
             'equity': pickle.dumps(smgr.swarm_picked.sum(axis=1))
         }
 
@@ -54,6 +57,41 @@ class SwarmOnlineManager:
         for sctx in self.db['swarms'].find({'alpha_name': alpha_name, 'exo_name': exo_name}):
             result.append(sctx)
         return result
+
+    @staticmethod
+    def parse_param(opt_param_str):
+        return literal_eval(opt_param_str.strip())
+
+    @staticmethod
+    def get_alpha_params(swarm_dict):
+        """
+        Parse alpha-parameters tuple-string from MongoDB
+        :param swarm_dict: swarm dict from MongoDB
+        :return: list of tuples (params for alpha strategy)
+        """
+        return [SwarmOnlineManager.parse_param(p["opt_params"]) for p in swarm_dict['alpha_params']]
+
+    @staticmethod
+    def get_alpha_positions(inposition_df):
+        """
+        Generate 'alpha_params' dictionary to store alpha opt params and positions
+        :param inposition_df:
+        :return:
+        """
+        result = []
+        for c in inposition_df.columns:
+            last_pos = inposition_df[c][-1]
+            opt_param_str = c
+            direction = SwarmOnlineManager.parse_param(opt_param_str)[0]
+
+            result.append({
+                "opt_params": opt_param_str,
+                'position': last_pos * direction,
+            })
+        return result
+
+    def get_alpha_context(self, exo_name, swarm_dict):
+        pass
 
     def process(self, exo_name):
         """
@@ -68,17 +106,23 @@ class SwarmOnlineManager:
         StrategyClass = self.strategy_context['strategy']['class']
 
         # Load All swarms for Strategy and EXO name
-        swarms_context = self.load(exo_name, StrategyClass.name)
+        swarms_data = self.load(exo_name, StrategyClass.name)
 
-        for swmctx in swarms_context:
-            pass
-            # Create strategies instances for each opt_params set
+        for swm in swarms_data:
+            # Generate context for swarm
+            context = self.get_alpha_context(exo_name, swm)
+
+            # Initiate new Strategy class
+            strategy = StrategyClass(context)
+
+            swarm, swarm_stats, swarm_inposition = strategy.run_swarm_backtest()
 
             # Calculate strategies (get inposition value)
+            # Convert them to Mongo friendly dict
+            alpha_params = self.get_alpha_positions(swarm_inposition)
 
-            # Calculate swarm of strategies
 
-            # Calculate sum swarm equity
+            # Update swarm equity dynamic
 
             # Write recent state to Mongo
                 # Update swarm equity data
