@@ -58,40 +58,6 @@ class SwarmOnlineManager:
             result.append(sctx)
         return result
 
-    @staticmethod
-    def parse_param(opt_param_str):
-        return literal_eval(opt_param_str.strip())
-
-    @staticmethod
-    def get_alpha_params(swarm_dict):
-        """
-        Parse alpha-parameters tuple-string from MongoDB
-        :param swarm_dict: swarm dict from MongoDB
-        :return: list of tuples (params for alpha strategy)
-        """
-        return [SwarmOnlineManager.parse_param(p["opt_params"]) for p in swarm_dict['alpha_params']]
-
-    @staticmethod
-    def get_alpha_positions(inposition_df):
-        """
-        Generate 'alpha_params' dictionary to store alpha opt params and positions
-        :param inposition_df:
-        :return:
-        """
-        result = []
-        for c in inposition_df.columns:
-            last_pos = inposition_df[c][-1]
-            opt_param_str = c
-            direction = SwarmOnlineManager.parse_param(opt_param_str)[0]
-
-            result.append({
-                "opt_params": opt_param_str,
-                'position': last_pos * direction,
-            })
-        return result
-
-    def get_alpha_context(self, exo_name, swarm_dict):
-        pass
 
     def process(self, exo_name):
         """

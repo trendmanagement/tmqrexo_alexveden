@@ -156,6 +156,7 @@ class BacktesterTestCase(unittest.TestCase):
         swm = Swarm(STRATEGY_CONTEXT)
         swm._swarm = pd.DataFrame(swm_values, swm_index)
         swm._swarm_inposition = pd.DataFrame(np.ones((20, 2)), swm_index)
+        swm._swarm_exposure = pd.DataFrame(-np.ones((20, 2)), swm_index)
 
         swm_res = np.array([
            [ 0.], #0 - ignored by default
@@ -185,8 +186,8 @@ class BacktesterTestCase(unittest.TestCase):
 
         for k, v in expected[0].items():
             print(k)
-            self.assertEqual(k, swm.swarm_picked.index[k])
-            self.assertEqual(v, swm.swarm_picked[0][k])
+            self.assertEqual(k, swm.picked_swarm.index[k])
+            self.assertEqual(v, swm.picked_swarm[0][k])
 
 
     def test_rebalanceinformation_before_next_day(self):
@@ -248,6 +249,7 @@ class BacktesterTestCase(unittest.TestCase):
         swm = Swarm(STRATEGY_CONTEXT)
         swm._swarm = pd.DataFrame(swm_values, swm_index)
         swm._swarm_inposition = pd.DataFrame(np.ones((11, 2)), swm_index)
+        swm._swarm_exposure = pd.DataFrame(-np.ones((11, 2)), swm_index)
 
         swm_res = np.array([
            [ 0.], #0 - ignored by default
@@ -268,13 +270,173 @@ class BacktesterTestCase(unittest.TestCase):
         swm.pick()
 
         self.assertEqual(2, len(swm.rebalance_info))
-        self.assertEqual(True, 5 in swm.rebalance_info)
-        self.assertEqual(True, 10 in swm.rebalance_info)
+        self.assertEqual(5, swm.rebalance_info[0]['rebalance_date'])
+        self.assertEqual(10, swm.rebalance_info[1]['rebalance_date'])
 
         for k, v in expected[0].items():
             print(k)
-            self.assertEqual(k, swm.swarm_picked.index[k])
-            self.assertEqual(v, swm.swarm_picked[0][k])
+            self.assertEqual(k, swm.picked_swarm.index[k])
+            self.assertEqual(v, swm.picked_swarm[0][k])
 
+
+    def test_laststate_update(self):
+
+
+        def reblance_every_5th(swarm):
+            return pd.Series(swarm.index % 5 == 0, index=swarm.index)
+
+        STRATEGY_CONTEXT = {
+            'strategy': {
+                'class': StrategyMACrossTrail,
+                'exo_name': 'strategy_270225',
+                'direction': -1,
+                'opt_params': [
+                    # OptParam(name, default_value, min_value, max_value, step)
+                    OptParamArray('Direction', [-1]),
+                    OptParam('SlowMAPeriod', 20, 10, 40, 5),
+                    OptParam('FastMAPeriod', 2, 5, 20, 5),
+                    OptParam('MedianPeriod', 5, 2, 10, 1)
+                ],
+            },
+            'swarm': {
+                'members_count': 1,
+                'ranking_class': RankerHighestReturns(return_period=1),
+                'rebalance_time_function': reblance_every_5th
+            }
+        }
+        swm_index = np.array(range(11))
+        swm_values = np.array([
+           [ 0.,  0.], # 0
+           [ 1.,  -1.],
+           [ 2.,  -2.],
+           [ 3.,  -3.],
+           [ 4.,  -4.],
+           [ 5.,  -5.], # 5
+           [ 6.,  -6.],
+           [ 7.,  -7.],
+           [ 8.,  -8.],
+           [ 9.,  -9.],
+           [ 6.,  -6.], # 10
+           ])
+
+        swm = Swarm(STRATEGY_CONTEXT)
+        swm._swarm = pd.DataFrame(swm_values, swm_index)
+        swm._swarm_inposition = pd.DataFrame(np.ones((11, 2)), swm_index)
+        swm._swarm_exposure = pd.DataFrame(-np.ones((11, 2)), swm_index)
+
+        swm_res = np.array([
+            0., #0 - ignored by default
+            0.,
+            0.,
+            0.,
+            0.,
+            0., #5 - first rebalance (pick system #0)
+            0., # Apply delayed rebalance we checked rebalance on #5 but change the position at #6
+            1.,
+            2.,
+            3.,
+            0., #10 - pick another systems (but keep prev system change to next day)
+        ])
+
+        expected = pd.DataFrame(swm_res, index=swm_index)
+
+        swm.pick()
+
+        self.assertEqual(2, len(swm.rebalance_info))
+        self.assertEqual(5, swm.rebalance_info[0]['rebalance_date'])
+        self.assertEqual(10, swm.rebalance_info[1]['rebalance_date'])
+
+        for k, v in expected[0].items():
+            #print(k)
+            self.assertEqual(k, swm.picked_swarm.index[k])
+            self.assertEqual(v, swm.picked_swarm[0][k])
+
+        self.assertEqual(swm.last_date, 10)
+        self.assertEqual(swm.last_rebalance_date, 10)
+        self.assertEqual(swm.last_exposure, -1)
+        self.assertEqual(swm.last_members_list, [1])
+        self.assertEqual(True, np.all(swm.picked_equity.values == expected[0].values))
+
+
+        #
+        #  DO swarm update with new quotes
+        #
+        swm_index = np.array(range(14))
+
+
+        exo_price = np.array([
+            0.,  # 0 - ignored by default
+            0.,
+            0.,
+            0.,
+            0.,
+            0.,  # 5 - first rebalance (pick system #0)
+            0.,  # Apply delayed rebalance we checked rebalance on #5 but change the position at #6
+            1.,
+            2.,
+            3.,
+            0.,  # 10 - pick another systems (but keep prev system change to next day)
+            10., # Should be added with last exposure
+            11.,
+            13.
+        ])
+
+        swarm_exposure = np.array([
+            0.,  # 0 - ignored by default
+            0.,
+            0.,
+            0.,
+            0.,
+            0.,  # 5 - first rebalance (pick system #0)
+            0.,
+            0.,
+            0.,
+            0.,
+            0.,  # 10
+            2.,  # Should be added with last exposure
+            2.,
+            2.,
+        ])
+
+        #swm = Swarm(STRATEGY_CONTEXT)
+        # Little hack
+        swm._last_exoquote = 0.0 # exo_price on #10
+        self.assertEqual(swm.last_date, 10)
+        self.assertEqual(swm.last_rebalance_date, 10)
+        self.assertEqual(swm.last_exposure, -1)
+        self.assertEqual(swm.last_exoquote, 0)
+        self.assertEqual(swm.last_members_list, [1])
+
+        swm.laststate_update(pd.Series(exo_price, index=swm_index), pd.Series(swarm_exposure, index=swm_index))
+
+        self.assertEqual(swm.last_date, 13)
+        self.assertEqual(swm.last_rebalance_date, 10)
+        self.assertEqual(swm.last_exposure, 2)
+        self.assertEqual(swm.last_exoquote, 13)
+        self.assertEqual(swm.last_members_list, [1])
+
+        swm_res = np.array([
+            0.,  # 0 - ignored by default
+            0.,
+            0.,
+            0.,
+            0.,
+            0.,  # 5 - first rebalance (pick system #0)
+            0.,  # Apply delayed rebalance we checked rebalance on #5 but change the position at #6
+            1.,
+            2.,
+            3.,
+            0.,  # 10 - pick another systems (but keep prev system change to next day)
+            -10.,  # Apply delayed rebalance we checked rebalance on #10 but change the position at #11
+            -8.,
+            -4.,
+            ])
+        expected = pd.Series(swm_res, index=swm_index)
+
+        self.assertEqual(len(swm.picked_equity), len(expected))
+        for k, v in expected.items():
+            print(k)
+            self.assertEqual(k, swm.picked_equity.index[k])
+            self.assertEqual(v, swm.picked_equity.values[k])
 
 

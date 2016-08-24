@@ -1,10 +1,8 @@
 import numpy as np
 import pandas as pd
-from backtester.exoinfo import EXOInfo
 import pickle
 import os
-from collections import OrderedDict
-
+from ast import literal_eval
 
 class Swarm:
     def __init__(self, context):
@@ -25,20 +23,17 @@ class Swarm:
         self._picked_inposition = None
         self._picked_exposure = None
 
+        self._last_date = None
+        self._last_exoquote = None
+        self._last_exposure = None
+        self._last_members_list = None
+        self._last_rebalance_date = None
+
+        self._equity = None
+
         strategy_settings = self.context['strategy']
         # Initialize strategy class
         self.strategy = strategy_settings['class'](self.context)
-
-    @staticmethod
-    def get_average_swarm(swarm):
-        """
-        Returns swarm.diff().mean(axis=1).cumsum()
-
-        :param swarm:
-        :return:
-        """
-        eq_changes = swarm.diff()
-        return eq_changes.mean(axis=1).cumsum()
 
     def run_swarm(self):
         # Run strategy swarm
@@ -46,10 +41,11 @@ class Swarm:
         #
         # Average swarm multiplied by members_count
         #   for reproduce comparable results 'picked_swarm' vs 'avg_swarm'
-        self._swarm_avg = self.get_average_swarm(self._swarm) * self.context['swarm']['members_count']
+        eq_changes = self._swarm.diff()
+        self._swarm_avg = eq_changes.mean(axis=1).cumsum() * self.context['swarm']['members_count']
 
     @property
-    def swarm_equity(self):
+    def raw_equity(self):
         """
         Raw swarm cumulative equity (average swarm equity)
         :return:
@@ -59,7 +55,7 @@ class Swarm:
         return self._swarm_avg
 
     @property
-    def swarm(self):
+    def raw_swarm(self):
         """
         Raw swarm equities DataFrame
         :return:
@@ -69,7 +65,7 @@ class Swarm:
         return self._swarm
 
     @property
-    def swarm_inposition(self):
+    def raw_inposition(self):
         """
         Raw swarm inposition flag
         :return:
@@ -78,7 +74,7 @@ class Swarm:
             raise ValueError("Run run_swarm() method before access this property")
         return self._swarm_inposition
 
-    def swarm_exposure(self):
+    def raw_exposure(self):
         """
         Raw swarm exposure = PositionSize * Direction * InPosition
         :return:
@@ -117,8 +113,15 @@ class Swarm:
             raise ValueError("Run pick() method before access this property")
         return self._picked_exposure
 
-
-
+    @property
+    def picked_equity(self):
+        """
+        Net equity of picked swarm
+        :return:
+        """
+        if self._equity is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._equity
 
 
     @property
@@ -151,7 +154,7 @@ class Swarm:
 
         swarm_members = None
         swarm_members_next = None
-        rebalance_info = OrderedDict()
+        rebalance_info = []
 
         #
         # Clear ranking class cache if applicable
@@ -191,17 +194,31 @@ class Swarm:
                 #swarm_members, rank_info = ranker_14days(swm_slice, nSystems)
                 swarm_members_next, rank_info = rankerclass.rank(swm_slice, nSystems)
 
-                rebalance_info[self._swarm.index[i]] = {
+                rebalance_info.append({
                     'rebalance_date': self._swarm.index[i],
                     'best_members': swarm_members_next,
                     'rank_info': rank_info
-                }
+                })
 
         self._picked_swarm = pd.DataFrame(picked_swarm_equity, self._swarm.index)
         self._picked_inposition = pd.DataFrame(picked_swarm_inposition, self._swarm.index)
         self._picked_exposure = pd.DataFrame(picked_swarm_exposure, self._swarm.index)
-
         self.rebalance_info = rebalance_info
+
+        # Storing last state values used in online calculations
+        self.fill_last_state()
+
+    def fill_last_state(self):
+        """
+        Store last state values used in online calculations
+        :return:
+        """
+        self._last_exposure = self.picked_exposure.iloc[-1].sum()
+        self._last_date = self.picked_swarm.index[-1]
+        self._last_members_list = self.rebalance_info[-1]['best_members']
+        self._last_rebalance_date = self.rebalance_info[-1]['rebalance_date']
+        self._last_exoquote = self.strategy.data['exo'].iloc[-1]
+        self._equity = self.picked_swarm.sum(axis=1)
 
     @property
     def exo_name(self):
@@ -260,6 +277,140 @@ class Swarm:
 
         with open(fn, 'rb') as f:
             return pickle.load(f)
+
+
+
+
+
+    @property
+    def last_date(self):
+        """
+        Last date of swarm calculation
+        :return:
+        """
+        if self._last_date is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._last_date
+
+    @property
+    def last_exposure(self):
+        """
+        Last net exposure of picked swarm
+        :return:
+        """
+        if self._last_exposure is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._last_exposure
+
+    @property
+    def last_exoquote(self):
+        """
+        Last EXO quote
+        :return:
+        """
+        if self._last_exoquote is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._last_exoquote
+
+    @property
+    def last_members_list(self):
+        """
+        Last member list for picked swarm
+        :return:
+        """
+        if self._last_members_list is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._last_members_list
+
+    @property
+    def last_rebalance_date(self):
+        """
+        Last rebalance date
+        :return:
+        """
+        if self._last_rebalance_date is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._last_rebalance_date
+
+
+    def laststate_to_dict(self):
+        """
+        Return last state of swarm for online trading
+        for MongoDB saving
+        :return:
+        """
+        state_dict = {
+            'last_date': self.last_date,
+            'last_exposure': self.last_exposure,
+            'last_exoquote': self.last_exoquote,
+            'last_members_list': self.last_members_list,
+            'last_rebalance_date': self.last_rebalance_date,
+            'picked_equity': pickle.dumps(self.picked_equity),
+        }
+        return state_dict
+
+
+    def laststate_update(self, exo_price, swarm_exposure):
+        """
+        Updates last equity, exposure, exo_quote (used for real time run)
+        :param exo_price: price series of EXO
+        :param swarm_exposure: last net swarm exposure
+        :return: None
+        """
+        if self._equity is None or len(self._equity) <= 1:
+            raise ValueError("Improperly initiated error: self._equity is None or len(self._equity) <= 1")
+
+        # 1. Filter exo_price and swarm_exposure >= self.last_date
+        _exo_price = exo_price[exo_price.index >= self.last_date]
+        _swarm_exposure = swarm_exposure[swarm_exposure.index >= self.last_date]
+
+        if len(_exo_price) != len(_swarm_exposure):
+            raise ValueError("len(_exo_price) != len(_swarm_exposure)")
+
+
+        for i in range(len(_exo_price)):
+            # Do sanity checks
+            # Check that date index matches
+            if _exo_price.index[i] != _swarm_exposure.index[i]:
+                raise ValueError("len(_exo_price) != len(_swarm_exposure)")
+
+            # Check that exo_quote is matching in history
+            # To avoid calculation mistakes
+            if _exo_price.index[i] == self.last_date:
+                if _exo_price.values[i] != self.last_exoquote:
+                    raise ValueError("New historical EXO price doesn't match the last_exoquote on same day! Is EXO recalculated?")
+
+                # Just ignore same date swarm updates
+            else: # Date of EXO price > self.last_date
+
+                # We have new quote data
+                # Update equity series with (exo_price[i] - self.last_exoquote) * self.last_exposure
+
+                # Use previous exposure to calculate quotes
+                self._equity[_exo_price.index[i]] = self._equity.values[-1] + (_exo_price.values[i] - self.last_exoquote) * self.last_exposure
+
+                # Update self.last_* properties for next loop step
+                self._last_exoquote = _exo_price.values[i]
+                self._last_date = _exo_price.index[i]
+                self._last_exposure = _swarm_exposure.values[i]
+
+    @staticmethod
+    def parse_params(members_list):
+        """
+        Parse alpha-parameters tuple-string from MongoDB
+        :param members_list: list of strings with stingified tuples params
+        :return: list of tuples (params for alpha strategy)
+        """
+        return [literal_eval(p.strip()) for p in members_list]
+
+    @staticmethod
+    def laststate_from_dict(state_dict, strategy_context):
+        """
+        Restores last swarm state from dictionary
+        :return:
+        """
+        # TODO: implement load swarm last state from dict (Mongo)
+        pass
 
 
 
