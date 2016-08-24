@@ -58,7 +58,7 @@ STRATEGY_CONTEXT = {
             'ignore_if_avg_swarm_negative_change_period': 14,  # AvgSwarm change period
 
         },
-        'rebalance_time_function': SwarmRebalance.every_monday,
+        'rebalance_time_function': SwarmRebalance.every_friday,
 
         'global_filter_function': SwarmFilter.swingpoint_threshold,
         'global_filter_params': {

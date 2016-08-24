@@ -5,24 +5,6 @@ import pickle
 import os
 from collections import OrderedDict
 
-def ranker_14days(swarm_slice, nsystems):
-    result = []
-    rank_info = []
-    # Select required window for calculations
-    ss = swarm_slice #.iloc[-100:, :]
-
-    # Calculate 14-period equity returns and sort values
-    last_diff = ss.diff(periods=14).iloc[-1, :].sort_values(ascending=False).dropna()
-
-    # Pick best nsystems
-    best = last_diff[:nsystems]
-
-    for k, v in best.items():
-        if not np.isnan(v) and v > 0:
-            result.append(k)
-            rank_info.append({'rank_value': v})
-
-    return result, rank_info
 
 class Swarm:
     def __init__(self, context):
@@ -33,9 +15,11 @@ class Swarm:
         """
         self.context = context
         self.global_filter = None
-        self.rebalancetime = None
-        self.swarm_stats = None
+        self._rebalancetime = None
 
+        self._swarm = None
+        self._swarm_stats = None
+        self._swarm_inposition = None
 
         strategy_settings = self.context['strategy']
         # Initialize strategy class
@@ -54,11 +38,29 @@ class Swarm:
 
     def run_swarm(self):
         # Run strategy swarm
-        self.swarm, self.swarm_stats, self.swarm_inposition = self.strategy.run_swarm_backtest()
+        self._swarm, self._swarm_stats, self._swarm_inposition = self.strategy.run_swarm_backtest()
         #
         # Average swarm multiplied by members_count
         #   for reproduce comparable results 'picked_swarm' vs 'avg_swarm'
-        self.swarm_avg = self.get_average_swarm(self.swarm) * self.context['swarm']['members_count']
+        self.swarm_avg = self.get_average_swarm(self._swarm) * self.context['swarm']['members_count']
+
+    @property
+    def swarm(self):
+        if self._swarm is None:
+            raise ValueError("Run run_swarm() method before access this property")
+        return self._swarm
+
+    @property
+    def swarm_inposition(self):
+        if self._swarm_inposition is None:
+            raise ValueError("Run run_swarm() method before access this property")
+        return self._swarm_inposition
+
+    @property
+    def rebalancetime(self):
+        if self._rebalancetime is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._rebalancetime
 
 
     def pick(self):
@@ -70,53 +72,118 @@ class Swarm:
 
         swarm_settings = self.context['swarm']
         nSystems = swarm_settings['members_count']
-        rankerfunc = swarm_settings['ranking_function']
-        rankerparams = None
-        if 'ranking_params' in swarm_settings:
-            rankerparams = swarm_settings['ranking_params']
-        self.rebalancetime = swarm_settings['rebalance_time_function'](self.swarm)
+        rankerclass = swarm_settings['ranking_class']
 
-        picked_swarm_equity = np.zeros((len(self.swarm), nSystems))
-        picked_swarm_inposition = np.zeros((len(self.swarm), nSystems))
+        self._rebalancetime = swarm_settings['rebalance_time_function'](self._swarm)
+
+        picked_swarm_equity = np.zeros((len(self._swarm), nSystems))
+        picked_swarm_inposition = np.zeros((len(self._swarm), nSystems))
         swarm_members = None
+        swarm_members_next = None
         rebalance_info = OrderedDict()
 
-        for i in range(1, len(self.rebalancetime)):
+        #
+        # Clear ranking class cache is applicable
+        #
+        rankerclass.clear()
+
+        for i in range(1, len(self._rebalancetime)):
             if swarm_members is not None and len(swarm_members) > 0:
                 # Comment:
                 # - get swarm / filter it by picked members columns
                 # - Calculate diff() to previous equity values
                 # NB this is matrix operation!
-                last_swm_eq_change = self.swarm[swarm_members].iloc[i-1:i+1].diff().values[-1]
+                last_swm_eq_change = self._swarm[swarm_members].iloc[i - 1:i + 1].diff().values[-1]
 
                 # - Add swarm's equity change to picked swarm equity
                 # NB this is matrix operation!
                 picked_swarm_equity[i] = picked_swarm_equity[i-1] + last_swm_eq_change
 
                 # Store picked in position data
-                picked_swarm_inposition[i] = self.swarm_inposition[swarm_members].iloc[i].values
+                picked_swarm_inposition[i] = self._swarm_inposition[swarm_members].iloc[i].values
+
+                swarm_members = swarm_members_next
             else:
                 # NB this is matrix operation!
+                swarm_members = swarm_members_next
                 picked_swarm_equity[i] = picked_swarm_equity[i - 1]
 
             # == True - to avoid NaN values to pass condition
-            if self.rebalancetime[i-1] == True:
+            if self._rebalancetime[i] == True:
                 # To avoid future referencing in ranking functions use slicing
-                swm_slice = self.swarm.iloc[:i, :]
+                swm_slice = self._swarm.iloc[:i + 1, :]
 
                 # Pick new ranked swarm members
-                swarm_members, rank_info = ranker_14days(swm_slice, nSystems)
-                #swarm_members, rank_info = rankerfunc(swm_slice, nSystems)
+                #swarm_members, rank_info = ranker_14days(swm_slice, nSystems)
+                swarm_members_next, rank_info = rankerclass.rank(swm_slice, nSystems)
 
-                rebalance_info[self.swarm.index[i]] = {
-                    'rebalance_date': self.swarm.index[i],
-                    'best_members': swarm_members,
+                rebalance_info[self._swarm.index[i]] = {
+                    'rebalance_date': self._swarm.index[i],
+                    'best_members': swarm_members_next,
                     'rank_info': rank_info
                 }
 
-        self.swarm_picked = pd.DataFrame(picked_swarm_equity, self.swarm.index)
-        self.swarm_picked_inposition = pd.DataFrame(picked_swarm_inposition, self.swarm.index)
+        self.swarm_picked = pd.DataFrame(picked_swarm_equity, self._swarm.index)
+        self.swarm_picked_inposition = pd.DataFrame(picked_swarm_inposition, self._swarm.index)
         self.rebalance_info = rebalance_info
+
+    @property
+    def exo_name(self):
+        return self.strategy.exoinfo.exo_info['name']
+
+    @property
+    def name(self):
+        """
+        Return swarm manager human-readable name
+        Underlying_EXOName_Strategy_Direction
+        :return:
+        """
+        exoname = self.strategy.exoinfo.exo_info['name']
+        strategyname = self.strategy.name
+
+        direction_param = self.context['strategy']['opt_params'][0]
+
+        if direction_param.name.lower() != 'direction':
+            raise ValueError('First OptParam of strategy must be Direction')
+
+        if len(direction_param.array) == 2:
+            direction = 'Bidir'
+        else:
+            if direction_param.array[0] == 1:
+                direction = 'Long'
+            elif direction_param.array[0] == -1:
+                direction = 'Short'
+
+        suffix = ''
+        if 'suffix' in self.context['strategy'] \
+                and self.context['strategy']['suffix'] is not None \
+                and len(self.context['strategy']['suffix']) > 0:
+            suffix = "_" + self.context['strategy']['suffix']
+
+        return '{0}_{1}_{2}{3}'.format(exoname, direction, strategyname, suffix)
+
+    def save(self, directory,  filename=None):
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+
+        if filename is None:
+            fn = os.path.join(directory, self.name + '.swm')
+        else:
+            fn = filename
+
+        with open(fn, 'wb') as f:
+            pickle.dump(self, f)
+
+    @staticmethod
+    def load(filename=None, strategy_context=None, directory=''):
+        fn = filename
+
+        if strategy_context is not None:
+            smgr = Swarm(strategy_context)
+            fn = os.path.join(directory, smgr.name()+'.swm')
+
+        with open(fn, 'rb') as f:
+            return pickle.load(f)
 
 
 

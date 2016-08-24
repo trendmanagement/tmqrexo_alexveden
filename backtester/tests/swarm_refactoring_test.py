@@ -11,6 +11,7 @@ from backtester.swarms.ranking import SwarmRanker
 from backtester.swarms.rebalancing import SwarmRebalance
 from backtester.swarms.filters import SwarmFilter
 from backtester.costs import CostsManagerEXOFixed
+from backtester.swarms.rankingclasses import *
 
 from strategies.strategy_macross_with_trail import StrategyMACrossTrail
 
@@ -66,7 +67,7 @@ class BacktesterTestCase(unittest.TestCase):
                     'ignore_if_avg_swarm_negative_change_period': 14,  # AvgSwarm change period
 
                 },
-                'rebalance_time_function': SwarmRebalance.every_monday,
+                'rebalance_time_function': SwarmRebalance.every_friday,
                 # SwarmFilter.swingpoint_daily - original TMQR Swingpoint logics from Matlab
                 # SwarmFilter.volatility_chandelier - Alex's volatility based logic (old name: SwarmFilter.swingpoint_threshold)
             },
@@ -75,16 +76,120 @@ class BacktesterTestCase(unittest.TestCase):
         smgr = SwarmManager(STRATEGY_CONTEXT)
         smgr.run_swarm()
 
-        swm = Swarm(STRATEGY_CONTEXT)
+        STRATEGY_CONTEXT2 = {
+            'strategy': {
+                'class': StrategyMACrossTrail,
+                'exo_name': 'strategy_270225',
+                'direction': -1,
+                'opt_params': [
+                    # OptParam(name, default_value, min_value, max_value, step)
+                    OptParamArray('Direction', [-1]),
+                    OptParam('SlowMAPeriod', 20, 10, 40, 5),
+                    OptParam('FastMAPeriod', 2, 5, 20, 5),
+                    OptParam('MedianPeriod', 5, 2, 10, 1)
+                ],
+            },
+            'swarm': {
+                'members_count': 2,
+                'ranking_class': RankerHighestReturns(return_period=14),
+                'rebalance_time_function': SwarmRebalance.every_friday,
+            },
+        }
+
+        swm = Swarm(STRATEGY_CONTEXT2)
         swm.run_swarm()
 
         swm.pick()
 
-        self.assertEqual(np.all(smgr.swarm.values == swm.swarm.values), True)
-        self.assertEqual(np.all(smgr.swarm_inposition.values == swm.swarm_inposition.values), True)
+        self.assertEqual(np.all(smgr.swarm.values == swm._swarm.values), True)
+        self.assertEqual(np.all(smgr.swarm_inposition.values == swm._swarm_inposition.values), True)
 
 
     def test_pick_equity_calculation(self):
+
+
+        def reblance_every_5th(swarm):
+            return pd.Series(swarm.index % 5 == 0, index=swarm.index)
+
+        STRATEGY_CONTEXT = {
+            'strategy': {
+                'class': StrategyMACrossTrail,
+                'exo_name': 'strategy_270225',
+                'direction': -1,
+                'opt_params': [
+                    # OptParam(name, default_value, min_value, max_value, step)
+                    OptParamArray('Direction', [-1]),
+                    OptParam('SlowMAPeriod', 20, 10, 40, 5),
+                    OptParam('FastMAPeriod', 2, 5, 20, 5),
+                    OptParam('MedianPeriod', 5, 2, 10, 1)
+                ],
+            },
+            'swarm': {
+                'members_count': 1,
+                'ranking_class': RankerHighestReturns(return_period=1),
+                'rebalance_time_function': reblance_every_5th
+            }
+        }
+        swm_index = np.array(range(20))
+        swm_values = np.array([
+           [ 0.,  0.], # 0
+           [ 1.,  -1.],
+           [ 2.,  -2.],
+           [ 3.,  -3.],
+           [ 4.,  -4.],
+           [ 5.,  -5.], # 5
+           [ 6.,  -6.],
+           [ 7.,  -7.],
+           [ 8.,  -8.],
+           [ 9.,  -9.],
+           [ 6.,  -6.], # 10
+           [ 5.,  -5.],
+           [ 4.,  -4.],
+           [ 3.,  -3.],
+           [ 2.,  -2.],
+           [ 1.,  -1.],   #15
+           [ 0.,  0.],
+           [ -1.,  1.],
+           [ -2.,  2.],
+           [ -3.,  3.]])
+
+        swm = Swarm(STRATEGY_CONTEXT)
+        swm._swarm = pd.DataFrame(swm_values, swm_index)
+        swm._swarm_inposition = pd.DataFrame(np.ones((20, 2)), swm_index)
+
+        swm_res = np.array([
+           [ 0.], #0 - ignored by default
+           [ 0.],
+           [ 0.],
+           [ 0.],
+           [ 0.],
+           [ 0.], #5 - first rebalance (pick system #0)
+           [ 0.], # Apply delayed rebalance we checked rebalance on #5 but change the position at #6
+           [ 1.],
+           [ 2.],
+           [ 3.],
+           [ 0.], #10 - pick another systems (but keep prev system change to next day)
+           [ -1.], # Apply delayed rebalance we checked rebalance on #10 but change the position at #11
+           [ 0.],
+           [ 1.],
+           [ 2.],
+           [ 3.], #15 - keep system #1
+           [ 4.],
+           [ 5.],
+           [ 6.],
+           [ 7.]] )
+
+        expected = pd.DataFrame(swm_res, index=swm_index)
+
+        swm.pick()
+
+        for k, v in expected[0].items():
+            print(k)
+            self.assertEqual(k, swm.swarm_picked.index[k])
+            self.assertEqual(v, swm.swarm_picked[0][k])
+
+
+    def test_rebalanceinformation_before_next_day(self):
 
         def riseup(swarm_slice, nsystems):
             result = []
@@ -121,11 +226,11 @@ class BacktesterTestCase(unittest.TestCase):
             },
             'swarm': {
                 'members_count': 1,
-                'ranking_function': riseup,
+                'ranking_class': RankerHighestReturns(return_period=1),
                 'rebalance_time_function': reblance_every_5th
             }
         }
-        swm_index = np.array(range(20))
+        swm_index = np.array(range(11))
         swm_values = np.array([
            [ 0.,  0.], # 0
            [ 1.,  -1.],
@@ -138,19 +243,11 @@ class BacktesterTestCase(unittest.TestCase):
            [ 8.,  -8.],
            [ 9.,  -9.],
            [ 6.,  -6.], # 10
-           [ 5.,  -5.],
-           [ 4.,  -4.],
-           [ 3.,  -3.],
-           [ 2.,  -2.],
-           [ 1.,  -1.],   #15
-           [ 0.,  0.],
-           [ -1.,  1.],
-           [ -2.,  2.],
-           [ -3.,  3.]])
+           ])
 
         swm = Swarm(STRATEGY_CONTEXT)
-        swm.swarm = pd.DataFrame(swm_values, swm_index)
-        swm.swarm_inposition = pd.DataFrame(np.ones((20, 2)), swm_index)
+        swm._swarm = pd.DataFrame(swm_values, swm_index)
+        swm._swarm_inposition = pd.DataFrame(np.ones((11, 2)), swm_index)
 
         swm_res = np.array([
            [ 0.], #0 - ignored by default
@@ -164,24 +261,20 @@ class BacktesterTestCase(unittest.TestCase):
            [ 2.],
            [ 3.],
            [ 0.], #10 - pick another systems (but keep prev system change to next day)
-           [ -1.], # Apply delayed rebalance we checked rebalance on #10 but change the position at #11
-           [ 0.],
-           [ 1.],
-           [ 2.],
-           [ 3.], #15 - keep system #1
-           [ 4.],
-           [ 5.],
-           [ 6.],
-           [ 7.]] )
+        ])
 
         expected = pd.DataFrame(swm_res, index=swm_index)
 
         swm.pick()
+
+        self.assertEqual(2, len(swm.rebalance_info))
+        self.assertEqual(True, 5 in swm.rebalance_info)
+        self.assertEqual(True, 10 in swm.rebalance_info)
 
         for k, v in expected[0].items():
             print(k)
             self.assertEqual(k, swm.swarm_picked.index[k])
             self.assertEqual(v, swm.swarm_picked[0][k])
 
-        pass
+
 

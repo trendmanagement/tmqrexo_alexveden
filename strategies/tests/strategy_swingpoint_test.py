@@ -39,7 +39,7 @@ STRATEGY_CONTEXT = {
     'swarm': {
         'members_count': 5,
         'ranking_function': SwarmRanker.highestreturns_14days,
-        'rebalance_time_function': SwarmRebalance.every_monday,
+        'rebalance_time_function': SwarmRebalance.every_friday,
         'global_filter_function': SwarmFilter.swingpoint_threshold,
         'global_filter_params': {
             'up_factor': 3.0,

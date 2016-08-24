@@ -27,11 +27,11 @@ class SwarmRebalance(object):
         return pd.Series(month != month.shift(1), index=swarm.index)
 
     @ staticmethod
-    def every_monday(swarm):
+    def every_friday(swarm):
         """
         Swarm rebalance function 'every week on monday'
         :param swarm:
         :return:
         True|False - array (swarm.index shape)
         """
-        return pd.Series(swarm.index.dayofweek == 0, index=swarm.index)
+        return pd.Series(swarm.index.dayofweek == 4, index=swarm.index)
