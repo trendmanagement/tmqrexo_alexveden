@@ -21,6 +21,10 @@ class Swarm:
         self._swarm_stats = None
         self._swarm_inposition = None
 
+        self._picked_swarm = None
+        self._picked_inposition = None
+        self._picked_exposure = None
+
         strategy_settings = self.context['strategy']
         # Initialize strategy class
         self.strategy = strategy_settings['class'](self.context)
@@ -38,26 +42,91 @@ class Swarm:
 
     def run_swarm(self):
         # Run strategy swarm
-        self._swarm, self._swarm_stats, self._swarm_inposition = self.strategy.run_swarm_backtest()
+        self._swarm, self._swarm_exposure, self._swarm_inposition = self.strategy.run_swarm_backtest()
         #
         # Average swarm multiplied by members_count
         #   for reproduce comparable results 'picked_swarm' vs 'avg_swarm'
-        self.swarm_avg = self.get_average_swarm(self._swarm) * self.context['swarm']['members_count']
+        self._swarm_avg = self.get_average_swarm(self._swarm) * self.context['swarm']['members_count']
+
+    @property
+    def swarm_equity(self):
+        """
+        Raw swarm cumulative equity (average swarm equity)
+        :return:
+        """
+        if self._swarm_avg is None:
+            raise ValueError("Run run_swarm() method before access this property")
+        return self._swarm_avg
 
     @property
     def swarm(self):
+        """
+        Raw swarm equities DataFrame
+        :return:
+        """
         if self._swarm is None:
             raise ValueError("Run run_swarm() method before access this property")
         return self._swarm
 
     @property
     def swarm_inposition(self):
+        """
+        Raw swarm inposition flag
+        :return:
+        """
         if self._swarm_inposition is None:
             raise ValueError("Run run_swarm() method before access this property")
         return self._swarm_inposition
 
+    def swarm_exposure(self):
+        """
+        Raw swarm exposure = PositionSize * Direction * InPosition
+        :return:
+        """
+        if self._swarm_exposure is None:
+            raise ValueError("Run run_swarm() method before access this property")
+        return self._swarm_exposure
+
+    @property
+    def picked_swarm(self):
+        """
+        Picked swarm equities DataFrame
+        :return:
+        """
+        if self._picked_swarm is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._picked_swarm
+
+    @property
+    def picked_inposition(self):
+        """
+        Picked swarm InPosition DataFrame
+        :return:
+        """
+        if self._picked_inposition is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._picked_inposition
+
+    @property
+    def picked_exposure(self):
+        """
+        Picked swarm exposure = PositionSize * Direction * InPosition
+        :return:
+        """
+        if self._picked_exposure is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._picked_exposure
+
+
+
+
+
     @property
     def rebalancetime(self):
+        """
+        Rebalance time Series
+        :return:
+        """
         if self._rebalancetime is None:
             raise ValueError("Run pick() method before access this property")
         return self._rebalancetime
@@ -78,12 +147,14 @@ class Swarm:
 
         picked_swarm_equity = np.zeros((len(self._swarm), nSystems))
         picked_swarm_inposition = np.zeros((len(self._swarm), nSystems))
+        picked_swarm_exposure = np.zeros((len(self._swarm), nSystems))
+
         swarm_members = None
         swarm_members_next = None
         rebalance_info = OrderedDict()
 
         #
-        # Clear ranking class cache is applicable
+        # Clear ranking class cache if applicable
         #
         rankerclass.clear()
 
@@ -101,6 +172,9 @@ class Swarm:
 
                 # Store picked in position data
                 picked_swarm_inposition[i] = self._swarm_inposition[swarm_members].iloc[i].values
+
+                # Store swarm exposure in position data
+                picked_swarm_exposure[i] = self._swarm_exposure[swarm_members].iloc[i].values
 
                 swarm_members = swarm_members_next
             else:
@@ -123,8 +197,10 @@ class Swarm:
                     'rank_info': rank_info
                 }
 
-        self.swarm_picked = pd.DataFrame(picked_swarm_equity, self._swarm.index)
-        self.swarm_picked_inposition = pd.DataFrame(picked_swarm_inposition, self._swarm.index)
+        self._picked_swarm = pd.DataFrame(picked_swarm_equity, self._swarm.index)
+        self._picked_inposition = pd.DataFrame(picked_swarm_inposition, self._swarm.index)
+        self._picked_exposure = pd.DataFrame(picked_swarm_exposure, self._swarm.index)
+
         self.rebalance_info = rebalance_info
 
     @property

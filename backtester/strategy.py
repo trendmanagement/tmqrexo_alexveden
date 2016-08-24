@@ -174,7 +174,7 @@ class StrategyBase(object):
         #equity, stats = backtester.stats(pl, inposition, self.positionsize, self.costs)
         equity, stats_dict = stats(pl, inposition.astype(np.uint8), self.positionsize, self.costs)
 
-        return (swarm_name, equity, stats_dict, inposition)
+        return (swarm_name, equity, self.positionsize*direction*inposition, inposition)
 
 
     def run_swarm_backtest(self, filtered_swarm=None, filtered_swarm_equity=None):
@@ -182,7 +182,7 @@ class StrategyBase(object):
         Brute force all steps of self.opts and calculate base stats
         '''
         result = {}
-        result_stats = {}
+        result_exposure = {}
         result_inpos = {}
 
         # Storing temporary filter state
@@ -207,9 +207,9 @@ class StrategyBase(object):
         pool_results = pool.map(self._calc_swarm_member, opts_list)
 
         for pool_res in pool_results:
-            swarm_name, equity, stats, inposition = pool_res
+            swarm_name, equity, swarm_exposure, inposition = pool_res
             result[swarm_name] = equity
-            result_stats[swarm_name] = stats
+            result_exposure[swarm_name] = swarm_exposure
             result_inpos[swarm_name] = inposition
 
         pool.close()
@@ -217,7 +217,7 @@ class StrategyBase(object):
 
         self._filtered_swarm = None
 
-        return pd.DataFrame.from_dict(result), None, pd.DataFrame.from_dict(result_inpos, dtype=np.int8)
+        return pd.DataFrame.from_dict(result), pd.DataFrame.from_dict(result_exposure), pd.DataFrame.from_dict(result_inpos, dtype=np.int8)
 
     def calculate(self, params=None, save_info=False):
         """
@@ -228,4 +228,4 @@ class StrategyBase(object):
         :return:
         tripple (swarm_member_name, entry_rule, exit_rule)
         """
-        return None, None, None
+        return None, None, None, None
