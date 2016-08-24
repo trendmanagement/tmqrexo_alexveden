@@ -2,10 +2,13 @@ import os
 import itertools
 import numpy as np
 import pandas as pd
-from backtester import backtester
 from multiprocessing import Pool
 from backtester import matlab
 from backtester.exoinfo import EXOInfo
+
+import pyximport; pyximport.install()
+from backtester import backtester
+from backtester.backtester_fast import backtest, stats
 
 class OptParam(object):
     """
@@ -153,7 +156,8 @@ class StrategyBase(object):
         swarm_name, entry_rule, exit_rule, calc_info = self.calculate(opts)
 
         # Backtesting routine
-        pl, inposition = backtester.backtest(self.data, entry_rule, exit_rule, direction)
+        pl, inposition = backtest(self.data, entry_rule.values, exit_rule.values, direction)
+        #pl, inposition = backtester.backtest(self.data, entry_rule, exit_rule, direction)
 
 
         # Apply global filter to trading system entries
@@ -167,9 +171,10 @@ class StrategyBase(object):
                 inposition = inposition & filtered_inpos
 
         # Do backtest
-        equity, stats = backtester.stats(pl, inposition, self.positionsize, self.costs)
+        #equity, stats = backtester.stats(pl, inposition, self.positionsize, self.costs)
+        equity, stats_dict = stats(pl, inposition.astype(np.uint8), self.positionsize, self.costs)
 
-        return (swarm_name, equity, stats, inposition)
+        return (swarm_name, equity, stats_dict, inposition)
 
 
     def run_swarm_backtest(self, filtered_swarm=None, filtered_swarm_equity=None):
@@ -212,7 +217,7 @@ class StrategyBase(object):
 
         self._filtered_swarm = None
 
-        return pd.DataFrame.from_dict(result), pd.DataFrame.from_dict(result_stats, dtype=np.float).T, pd.DataFrame.from_dict(result_inpos, dtype=np.int8)
+        return pd.DataFrame.from_dict(result), None, pd.DataFrame.from_dict(result_inpos, dtype=np.int8)
 
     def calculate(self, params=None, save_info=False):
         """
