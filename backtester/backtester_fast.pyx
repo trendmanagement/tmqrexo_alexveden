@@ -159,3 +159,74 @@ def stats(pl, inposition, positionsize=None, costs=None):
                 equity[i] = equity[i-1]
 
     return pd.Series(equity, index=inposition.index), None
+
+@cython.cdivision(True)
+@cython.boundscheck(False)
+def stats_exposure(price, exposure, costs=None, extendedstats=False):
+    """
+    Calculate equity and summary statistics, based on output of `backtest` method
+    :param price: price of EXO or another asset
+    :param exposure: exposure of asset
+    :param costs: transaction costs expressed as base points of price
+    :return: tuple (equity, stats)
+        - equity - is cumulative profits array
+        - stats - is a dict() if extendedstats=True
+    """
+    # Calculate trade-by-trade payoffs
+    cdef float profit = 0.0
+    cdef int entry_i = -1
+    cdef float barsintrade = 0.0
+    cdef float summae = 0.0
+    cdef float mae = 0.0
+    cdef float costs_sum = 0.0
+
+    cdef np.ndarray[DTYPE_t_float, ndim=1] _price = price.values
+    cdef np.ndarray[DTYPE_t_float, ndim=1] _exposure
+
+    try:
+        _exposure = exposure.values
+    except AttributeError:
+        _exposure = exposure
+
+    cdef int barcount = _price.shape[0]
+
+    cdef np.ndarray[DTYPE_t_float, ndim=1] equity = np.zeros(barcount)
+
+    cdef int i = 0
+    cdef int v = 0
+    cdef float _costs_value = 0.0
+    cdef psize = 0.0
+
+    cdef int has_costs = costs is not None
+
+    cdef np.ndarray[DTYPE_t_float, ndim=1] _costs
+
+    if has_costs:
+        _costs = costs.values
+
+    for i in range(1, barcount):
+        # Calculate cumulative profit inside particular trade
+        current_exp = _exposure[i]
+        prev_exp = _exposure[i-1]
+
+        profit = (_price[i] - _price[i-1]) * prev_exp
+
+        # Apply transaction costs
+        # Apply on entry point
+        if has_costs and current_exp != prev_exp:
+            _costs_value = (-abs(_costs[i]) * abs(prev_exp-current_exp))
+            profit += _costs_value
+
+        equity[i] = equity[i-1] + profit
+        '''
+            # Apply transaction costs
+            # Apply on entry point
+            if has_costs and i == entry_i:
+                _costs_value = (-abs(_costs[i]) * psize * 2)
+                costs_sum +=_costs_value
+                profit += _costs_value
+
+            equity[i] = equity[entry_i-1] + profit
+        '''
+
+    return pd.Series(equity, index=price.index), None

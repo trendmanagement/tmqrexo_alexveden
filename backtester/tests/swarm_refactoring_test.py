@@ -15,12 +15,16 @@ from backtester.swarms.rankingclasses import *
 
 from strategies.strategy_macross_with_trail import StrategyMACrossTrail
 
+from copy import deepcopy
+import pyximport; pyximport.install()
+from backtester.backtester_fast import stats_exposure
+
 class BacktesterTestCase(unittest.TestCase):
     def test_compare_swarm_results(self):
         STRATEGY_CONTEXT = {
             'strategy': {
                 'class': StrategyMACrossTrail,
-                'exo_name': 'strategy_270225',
+                'exo_name': './strategy_270225.mat',
                 'direction': -1,
                 'opt_params': [
                     # OptParam(name, default_value, min_value, max_value, step)
@@ -79,7 +83,7 @@ class BacktesterTestCase(unittest.TestCase):
         STRATEGY_CONTEXT2 = {
             'strategy': {
                 'class': StrategyMACrossTrail,
-                'exo_name': 'strategy_270225',
+                'exo_name': './strategy_270225.mat',
                 'direction': -1,
                 'opt_params': [
                     # OptParam(name, default_value, min_value, max_value, step)
@@ -114,7 +118,7 @@ class BacktesterTestCase(unittest.TestCase):
         STRATEGY_CONTEXT = {
             'strategy': {
                 'class': StrategyMACrossTrail,
-                'exo_name': 'strategy_270225',
+                'exo_name': './strategy_270225.mat',
                 'direction': -1,
                 'opt_params': [
                     # OptParam(name, default_value, min_value, max_value, step)
@@ -153,10 +157,57 @@ class BacktesterTestCase(unittest.TestCase):
            [ -2.,  2.],
            [ -3.,  3.]])
 
+        exo_price = np.array([
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,  # 5
+            6,
+            7,
+            8,
+            9,
+            6,  # 10
+            5,
+            4,
+            3,
+            2,
+            1,
+            0,
+            -1,
+            -2,
+            -3
+        ])
+        exposure_values = np.array([
+            [1., -1.],  # 0
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],  # 5
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],  # 10
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+        ])
+
         swm = Swarm(STRATEGY_CONTEXT)
         swm._swarm = pd.DataFrame(swm_values, swm_index)
         swm._swarm_inposition = pd.DataFrame(np.ones((20, 2)), swm_index)
-        swm._swarm_exposure = pd.DataFrame(-np.ones((20, 2)), swm_index)
+        swm._swarm_exposure = pd.DataFrame(exposure_values, swm_index, dtype=np.float)
+        swm.strategy.data = pd.DataFrame({'exo': pd.Series(exo_price, index=swm_index, dtype=np.float)})
+        swm.strategy.costs = None
 
         swm_res = np.array([
            [ 0.], #0 - ignored by default
@@ -246,10 +297,44 @@ class BacktesterTestCase(unittest.TestCase):
            [ 6.,  -6.], # 10
            ])
 
+        exposure_values = np.array([
+            [1., -1.],  # 0
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],  # 5
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],  # 10
+        ])
+
+        exo_price = np.array([
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,   # 5
+            6,
+            7,
+            8,
+            9,
+            6    #10
+        ])
+
         swm = Swarm(STRATEGY_CONTEXT)
         swm._swarm = pd.DataFrame(swm_values, swm_index)
         swm._swarm_inposition = pd.DataFrame(np.ones((11, 2)), swm_index)
-        swm._swarm_exposure = pd.DataFrame(-np.ones((11, 2)), swm_index)
+        swm._swarm_exposure = pd.DataFrame(exposure_values, swm_index, dtype=np.float)
+        swm.strategy.data = pd.DataFrame({'exo': pd.Series(exo_price, index=swm_index, dtype=np.float)})
+        swm.strategy.costs = None
+
+        #equity1, _st_pass = stats_exposure(swm.strategy.data['exo'], swm._swarm_exposure[1], costs=None)
+
+
 
         swm_res = np.array([
            [ 0.], #0 - ignored by default
@@ -288,7 +373,7 @@ class BacktesterTestCase(unittest.TestCase):
         STRATEGY_CONTEXT = {
             'strategy': {
                 'class': StrategyMACrossTrail,
-                'exo_name': 'strategy_270225',
+                'exo_name': './strategy_270225.mat',
                 'direction': -1,
                 'opt_params': [
                     # OptParam(name, default_value, min_value, max_value, step)
@@ -319,10 +404,39 @@ class BacktesterTestCase(unittest.TestCase):
            [ 6.,  -6.], # 10
            ])
 
+        exo_price = np.array([
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,  # 5
+            6,
+            7,
+            8,
+            9,
+            6  # 10
+        ])
+        exposure_values = np.array([
+            [1., -1.],  # 0
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],  # 5
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],
+            [1., -1.],  # 10
+        ])
+
         swm = Swarm(STRATEGY_CONTEXT)
         swm._swarm = pd.DataFrame(swm_values, swm_index)
         swm._swarm_inposition = pd.DataFrame(np.ones((11, 2)), swm_index)
-        swm._swarm_exposure = pd.DataFrame(-np.ones((11, 2)), swm_index)
+        swm._swarm_exposure = pd.DataFrame(exposure_values, swm_index, dtype=np.float)
+        swm.strategy.data = pd.DataFrame({'exo': pd.Series(exo_price, index=swm_index, dtype=np.float)})
+        swm.strategy.costs = None
 
         swm_res = np.array([
             0., #0 - ignored by default
@@ -353,7 +467,7 @@ class BacktesterTestCase(unittest.TestCase):
 
         self.assertEqual(swm.last_date, 10)
         self.assertEqual(swm.last_rebalance_date, 10)
-        self.assertEqual(swm.last_exposure, -1)
+        self.assertEqual(swm.last_exposure, 1)
         self.assertEqual(swm.last_members_list, [1])
         self.assertEqual(True, np.all(swm.picked_equity.values == expected[0].values))
 
@@ -401,6 +515,8 @@ class BacktesterTestCase(unittest.TestCase):
         #swm = Swarm(STRATEGY_CONTEXT)
         # Little hack
         swm._last_exoquote = 0.0 # exo_price on #10
+        # Little hack
+        swm._last_exposure = -1
         self.assertEqual(swm.last_date, 10)
         self.assertEqual(swm.last_rebalance_date, 10)
         self.assertEqual(swm.last_exposure, -1)
@@ -438,5 +554,69 @@ class BacktesterTestCase(unittest.TestCase):
             print(k)
             self.assertEqual(k, swm.picked_equity.index[k])
             self.assertEqual(v, swm.picked_equity.values[k])
+
+
+    def test_laststate_update_real(self):
+        STRATEGY_CONTEXT = {
+            'strategy': {
+                'class': StrategyMACrossTrail,
+                'exo_name': './strategy_270225.mat',
+                'direction': -1,
+                'opt_params': [
+                    # OptParam(name, default_value, min_value, max_value, step)
+                    OptParamArray('Direction', [-1]),
+                    OptParam('SlowMAPeriod', 20, 10, 40, 5),
+                    OptParam('FastMAPeriod', 2, 5, 20, 5),
+                    OptParam('MedianPeriod', 5, 2, 10, 1)
+                ],
+            },
+            'swarm': {
+                'members_count': 3,
+                'ranking_class': RankerHighestReturns(return_period=1),
+                'rebalance_time_function': SwarmRebalance.every_friday
+            }
+        }
+
+        swm_full = Swarm(STRATEGY_CONTEXT)
+        swm_full.run_swarm()
+        swm_full.pick()
+
+
+        swm_start = Swarm(STRATEGY_CONTEXT)
+        swm_start.strategy.data = swm_start.strategy.data.ix[:'2016-03-04']
+        swm_start.run_swarm()
+        swm_start.pick()
+
+        ctx = deepcopy(STRATEGY_CONTEXT)
+        ctx['strategy']['opt_preset'] = Swarm.parse_params(swm_start.last_members_list)
+        swm_next = Swarm(ctx)
+        swm_next.strategy.data = swm_next.strategy.data.ix[:'2016-03-11']
+        swm_next.run_swarm()
+
+        self.assertEqual(19165.0, swm_start.picked_equity.ix['2016-03-04'])
+        self.assertEqual(19165.0, swm_full.picked_equity.ix['2016-03-04'])
+
+        self.assertEqual(-2, swm_start.last_exposure)
+
+        # Updating swm_start (assuming that it was loaded from DB)
+        swm_start.laststate_update(swm_next.strategy.data['exo'], swm_next.raw_exposure.sum(axis=1))
+
+        self.assertEqual(19165.0, swm_start.picked_equity.ix['2016-03-04'])
+        self.assertEqual(19165.0, swm_full.picked_equity.ix['2016-03-04'])
+
+        self.assertAlmostEqual(19335.0, swm_start.picked_equity.ix['2016-03-07'])
+        self.assertAlmostEqual(19335.0, swm_full.picked_equity.ix['2016-03-07'])
+
+        self.assertAlmostEqual(18990.0, swm_start.picked_equity.ix['2016-03-10'])
+        self.assertAlmostEqual(18990.0, swm_full.picked_equity.ix['2016-03-10'])
+
+        self.assertAlmostEqual(20235.0, swm_start.picked_equity.ix['2016-03-11'])
+        self.assertAlmostEqual(20235.0, swm_full.picked_equity.ix['2016-03-11'])
+
+        self.assertEqual(-3, swm_start.last_exposure)
+
+        pass
+
+
 
 

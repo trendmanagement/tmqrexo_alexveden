@@ -8,7 +8,7 @@ from backtester.exoinfo import EXOInfo
 
 import pyximport; pyximport.install()
 from backtester import backtester
-from backtester.backtester_fast import backtest, stats
+from backtester.backtester_fast import backtest, stats_exposure
 
 class OptParam(object):
     """
@@ -170,11 +170,14 @@ class StrategyBase(object):
             else:
                 inposition = inposition & filtered_inpos
 
-        # Do backtest
-        #equity, stats = backtester.stats(pl, inposition, self.positionsize, self.costs)
-        equity, stats_dict = stats(pl, inposition.astype(np.uint8), self.positionsize, self.costs)
+        # Do backtest (exposure based)
+        # Exposure Direction * PositionSize * InPositionFlag
+        exposure = inposition.astype(np.uint8) * float(direction) * self.positionsize
 
-        return (swarm_name, equity, self.positionsize*direction*inposition, inposition)
+        # Do quick backtest (equity line only without stats)
+        equity, stats_dict = stats_exposure(self.data['exo'], exposure, self.costs, extendedstats=False)
+
+        return (swarm_name, equity, exposure, inposition)
 
 
     def run_swarm_backtest(self, filtered_swarm=None, filtered_swarm_equity=None):

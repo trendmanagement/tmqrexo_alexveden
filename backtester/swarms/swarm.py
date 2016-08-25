@@ -3,6 +3,8 @@ import pandas as pd
 import pickle
 import os
 from ast import literal_eval
+import pyximport; pyximport.install()
+from backtester.backtester_fast import stats_exposure
 
 class Swarm:
     def __init__(self, context):
@@ -35,14 +37,7 @@ class Swarm:
         # Initialize strategy class
         self.strategy = strategy_settings['class'](self.context)
 
-    def run_swarm(self):
-        # Run strategy swarm
-        self._swarm, self._swarm_exposure, self._swarm_inposition = self.strategy.run_swarm_backtest()
-        #
-        # Average swarm multiplied by members_count
-        #   for reproduce comparable results 'picked_swarm' vs 'avg_swarm'
-        eq_changes = self._swarm.diff()
-        self._swarm_avg = eq_changes.mean(axis=1).cumsum() * self.context['swarm']['members_count']
+
 
     @property
     def raw_equity(self):
@@ -74,6 +69,7 @@ class Swarm:
             raise ValueError("Run run_swarm() method before access this property")
         return self._swarm_inposition
 
+    @property
     def raw_exposure(self):
         """
         Raw swarm exposure = PositionSize * Direction * InPosition
@@ -134,6 +130,14 @@ class Swarm:
             raise ValueError("Run pick() method before access this property")
         return self._rebalancetime
 
+    def run_swarm(self):
+        # Run strategy swarm
+        self._swarm, self._swarm_exposure, self._swarm_inposition = self.strategy.run_swarm_backtest()
+        #
+        # Average swarm multiplied by members_count
+        #   for reproduce comparable results 'picked_swarm' vs 'avg_swarm'
+        eq_changes = self._swarm.diff()
+        self._swarm_avg = eq_changes.mean(axis=1).cumsum() * self.context['swarm']['members_count']
 
     def pick(self):
         """
@@ -163,27 +167,12 @@ class Swarm:
 
         for i in range(1, len(self._rebalancetime)):
             if swarm_members is not None and len(swarm_members) > 0:
-                # Comment:
-                # - get swarm / filter it by picked members columns
-                # - Calculate diff() to previous equity values
-                # NB this is matrix operation!
-                last_swm_eq_change = self._swarm[swarm_members].iloc[i - 1:i + 1].diff().values[-1]
-
-                # - Add swarm's equity change to picked swarm equity
-                # NB this is matrix operation!
-                picked_swarm_equity[i] = picked_swarm_equity[i-1] + last_swm_eq_change
-
                 # Store picked in position data
                 picked_swarm_inposition[i] = self._swarm_inposition[swarm_members].iloc[i].values
 
                 # Store swarm exposure in position data
                 picked_swarm_exposure[i] = self._swarm_exposure[swarm_members].iloc[i].values
 
-                swarm_members = swarm_members_next
-            else:
-                # NB this is matrix operation!
-                swarm_members = swarm_members_next
-                picked_swarm_equity[i] = picked_swarm_equity[i - 1]
 
             # == True - to avoid NaN values to pass condition
             if self._rebalancetime[i] == True:
@@ -192,13 +181,19 @@ class Swarm:
 
                 # Pick new ranked swarm members
                 #swarm_members, rank_info = ranker_14days(swm_slice, nSystems)
-                swarm_members_next, rank_info = rankerclass.rank(swm_slice, nSystems)
+                swarm_members, rank_info = rankerclass.rank(swm_slice, nSystems)
 
                 rebalance_info.append({
                     'rebalance_date': self._swarm.index[i],
-                    'best_members': swarm_members_next,
+                    'best_members': swarm_members,
                     'rank_info': rank_info
                 })
+
+
+        # Do backtest based on exposure stats
+        for i in range(nSystems):
+            _stats_dict = None
+            picked_swarm_equity[:, i], _stats_dict = stats_exposure(self.strategy.data['exo'], picked_swarm_exposure[:, i], self.strategy.costs)
 
         self._picked_swarm = pd.DataFrame(picked_swarm_equity, self._swarm.index)
         self._picked_inposition = pd.DataFrame(picked_swarm_inposition, self._swarm.index)
@@ -350,15 +345,17 @@ class Swarm:
         return state_dict
 
 
-    def laststate_update(self, exo_price, swarm_exposure):
+    def laststate_update(self, exo_price, swarm_exposure, costs=None):
         """
         Updates last equity, exposure, exo_quote (used for real time run)
         :param exo_price: price series of EXO
         :param swarm_exposure: last net swarm exposure
+        :param costs: EXO costs array
         :return: None
         """
         if self._equity is None or len(self._equity) <= 1:
             raise ValueError("Improperly initiated error: self._equity is None or len(self._equity) <= 1")
+
 
         # 1. Filter exo_price and swarm_exposure >= self.last_date
         _exo_price = exo_price[exo_price.index >= self.last_date]
@@ -386,8 +383,16 @@ class Swarm:
                 # We have new quote data
                 # Update equity series with (exo_price[i] - self.last_exoquote) * self.last_exposure
 
+                # Similar to backtester_fast.stats_exposure() backtesting algorithm
+                profit = (_exo_price.values[i] - self.last_exoquote) * self.last_exposure
+                if costs is not None and self.last_exposure != _swarm_exposure.values[i]:
+                    _costs_value = (-abs(costs[i]) * abs(self.last_exposure - _swarm_exposure.values[i]))
+                    profit += _costs_value
+                    # TODO: store costs_value into costs array
+
+
                 # Use previous exposure to calculate quotes
-                self._equity[_exo_price.index[i]] = self._equity.values[-1] + (_exo_price.values[i] - self.last_exoquote) * self.last_exposure
+                self._equity[_exo_price.index[i]] = self._equity.values[-1] + profit
 
                 # Update self.last_* properties for next loop step
                 self._last_exoquote = _exo_price.values[i]
