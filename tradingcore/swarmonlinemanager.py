@@ -1,12 +1,9 @@
 from exobuilder.data.exostorage import EXOStorage
-from backtester.swarms.manager import SwarmManager
-
+from backtester.swarms.swarm import Swarm
 import pymongo
 from pymongo import MongoClient
 from datetime import datetime
-import pickle
-from copy import deepcopy
-from ast import literal_eval
+
 
 
 class SwarmOnlineManager:
@@ -18,7 +15,7 @@ class SwarmOnlineManager:
         self.mongo_connstr = mongo_connstr
         self.mongo_dbname = mongo_dbname
 
-    def save(self, direction, smgr, global_context={}):
+    def save(self, swm, global_context={}):
         """
         Stores information about swarm state in the MongoDB
         :param direction: Long/short [1 ; -1]
@@ -26,31 +23,11 @@ class SwarmOnlineManager:
         :param global_context:  dict for additional info
         :return:
         """
-        # TODO: AttributeError: 'int' object has no attribute 'swarm_ispicked'
-        df_picked = smgr.swarm_ispicked.tail(1).T
-        picked_aplhas = df_picked[df_picked[df_picked.columns[0]] == 1]
-        alpha_params = []
-        for a in picked_aplhas.index:
-            alpha_params.append({
-                'opt_params': a
-            })
-
-        context = global_context.copy()
-        context['global_filter'] = True # Dummy # TODO: add support of global filter
-
-        data = {
-            'swarm_name': smgr.get_swarm_name(),
-            'exo_name': smgr.get_exo_name(),
-            'alpha_name': smgr.strategy.name,
-            'direction': direction,
-            'alpha_params': alpha_params,
-            'global_context': context,
-            'update_date': datetime.now(),
-            'equity': pickle.dumps(smgr.swarm_picked.sum(axis=1))
-        }
+        data = swm.laststate_to_dict()
+        data['global_context'] = global_context
 
         # Storing data in the DB
-        self.db['swarms'].replace_one({'swarm_name': smgr.get_swarm_name()}, data, upsert=True)
+        self.db['swarms'].replace_one({'swarm_name': swm.name}, data, upsert=True)
 
     def load(self, exo_name, alpha_name):
         result = []
@@ -74,26 +51,18 @@ class SwarmOnlineManager:
         # Load All swarms for Strategy and EXO name
         swarms_data = self.load(exo_name, StrategyClass.name)
 
-        for swm in swarms_data:
+        for swm_dict in swarms_data:
             # Generate context for swarm
-            context = self.get_alpha_context(exo_name, swm)
+            context = self.strategy_context
+            context['strategy']['exo_storage'] = exo_storage
 
-            # Initiate new Strategy class
-            strategy = StrategyClass(context)
+            # Restoring swarms last state from dict
+            swm = Swarm.laststate_from_dict(swm_dict, context)
 
-            swarm, swarm_stats, swarm_inposition = strategy.run_swarm_backtest()
+            # Update swarm equity dynamic and last state
+            swm.update()
 
-            # Calculate strategies (get inposition value)
-            # Convert them to Mongo friendly dict
-            alpha_params = self.get_alpha_positions(swarm_inposition)
-
-
-            # Update swarm equity dynamic
-
-            # Write recent state to Mongo
-                # Update swarm equity data
-                # Update each swarm position
-
-            # Notify trading engine that swarm was calculated (?)
+            # Saving swarm state to Mongo
+            self.save(swm)
 
 
