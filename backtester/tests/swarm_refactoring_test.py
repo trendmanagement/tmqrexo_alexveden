@@ -588,7 +588,7 @@ class BacktesterTestCase(unittest.TestCase):
         swm_start.pick()
 
         ctx = deepcopy(STRATEGY_CONTEXT)
-        ctx['strategy']['opt_preset'] = Swarm.parse_params(swm_start.last_members_list)
+        ctx['strategy']['opt_preset'] = Swarm._parse_params(swm_start.last_members_list)
         swm_next = Swarm(ctx)
         swm_next.strategy.data = swm_next.strategy.data.ix[:'2016-03-11']
         swm_next.run_swarm()
@@ -614,6 +614,116 @@ class BacktesterTestCase(unittest.TestCase):
         self.assertAlmostEqual(20235.0, swm_full.picked_equity.ix['2016-03-11'])
 
         self.assertEqual(-3, swm_start.last_exposure)
+
+        pass
+
+
+    def test_laststate_save_load(self):
+        STRATEGY_CONTEXT = {
+            'strategy': {
+                'class': StrategyMACrossTrail,
+                'exo_name': './strategy_270225.mat',
+                'direction': -1,
+                'opt_params': [
+                    # OptParam(name, default_value, min_value, max_value, step)
+                    OptParamArray('Direction', [-1]),
+                    OptParam('SlowMAPeriod', 20, 10, 40, 5),
+                    OptParam('FastMAPeriod', 2, 5, 20, 5),
+                    OptParam('MedianPeriod', 5, 2, 10, 1)
+                ],
+            },
+            'swarm': {
+                'members_count': 3,
+                'ranking_class': RankerHighestReturns(return_period=1),
+                'rebalance_time_function': SwarmRebalance.every_friday
+            }
+        }
+
+        swm = Swarm(STRATEGY_CONTEXT)
+        swm.run_swarm()
+        swm.pick()
+
+        self.assertEqual(False, swm._islast_state)
+
+        s = swm.laststate_to_dict()
+        import pickle
+
+        self.assertEqual(s['direction'], -1)
+        self.assertEqual(s['alpha_name'], StrategyMACrossTrail.name)
+        self.assertEqual(s['exo_name'], swm.exo_name )
+        self.assertEqual(s['swarm_name'], swm.name )
+        self.assertEqual(s['picked_equity'],  pickle.dumps(swm.picked_equity))
+        self.assertEqual(s['last_rebalance_date'], swm.last_rebalance_date)
+        self.assertEqual(s['last_members_list'], swm.last_members_list)
+        self.assertEqual(s['last_exoquote'], swm.last_exoquote )
+        self.assertEqual(s['last_prev_exposure'], swm.last_prev_exposure)
+        self.assertEqual(s['last_exposure'], swm.last_exposure)
+        self.assertEqual(s['last_date'], swm.last_date)
+
+        swm = Swarm.laststate_from_dict(s, STRATEGY_CONTEXT)
+        self.assertEqual(True, swm._islast_state)
+
+        self.assertEqual(swm.direction[0], -1)
+        self.assertEqual(swm.strategy.name, StrategyMACrossTrail.name)
+        self.assertEqual(s['exo_name'], swm.exo_name)
+        self.assertEqual(s['swarm_name'], swm.name)
+        self.assertEqual(s['last_rebalance_date'], swm.last_rebalance_date)
+        self.assertEqual(s['last_members_list'], swm.last_members_list)
+        self.assertEqual(s['last_exoquote'], swm.last_exoquote)
+        self.assertEqual(s['last_prev_exposure'], swm.last_prev_exposure)
+        self.assertEqual(s['last_exposure'], swm.last_exposure)
+        self.assertEqual(s['last_date'], swm.last_date)
+
+        eq = pickle.loads(s['picked_equity'])
+
+        self.assertEqual(True, np.all(eq == swm.picked_equity.values))
+
+
+    def test_laststate_update_real_high_level(self):
+        STRATEGY_CONTEXT = {
+            'strategy': {
+                'class': StrategyMACrossTrail,
+                'exo_name': './strategy_270225.mat',
+                'direction': -1,
+                'opt_params': [
+                    # OptParam(name, default_value, min_value, max_value, step)
+                    OptParamArray('Direction', [-1]),
+                    OptParam('SlowMAPeriod', 20, 10, 40, 5),
+                    OptParam('FastMAPeriod', 2, 5, 20, 5),
+                    OptParam('MedianPeriod', 5, 2, 10, 1)
+                ],
+            },
+            'swarm': {
+                'members_count': 3,
+                'ranking_class': RankerHighestReturns(return_period=1),
+                'rebalance_time_function': SwarmRebalance.every_friday
+            }
+        }
+
+
+        swm_start = Swarm(STRATEGY_CONTEXT)
+        swm_start.strategy.data = swm_start.strategy.data.ix[:'2016-03-04']
+        swm_start.run_swarm()
+        swm_start.pick()
+
+        self.assertEqual(19165.0, swm_start.picked_equity.ix['2016-03-04'])
+        self.assertEqual(-2, swm_start.last_exposure)
+
+
+        swarm_dict = swm_start.laststate_to_dict()
+        # Loading and updating swarm online
+        swm_start = Swarm.laststate_from_dict(swarm_dict, STRATEGY_CONTEXT)
+        swm_start.update()
+
+
+        self.assertEqual(19165.0, swm_start.picked_equity.ix['2016-03-04'])
+
+        self.assertAlmostEqual(19335.0, swm_start.picked_equity.ix['2016-03-07'])
+
+        self.assertAlmostEqual(18990.0, swm_start.picked_equity.ix['2016-03-10'])
+
+        self.assertAlmostEqual(20235.0, swm_start.picked_equity.ix['2016-03-11'])
+
 
         pass
 

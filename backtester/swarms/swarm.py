@@ -5,9 +5,10 @@ import os
 from ast import literal_eval
 import pyximport; pyximport.install()
 from backtester.backtester_fast import stats_exposure
+from copy import  deepcopy
 
 class Swarm:
-    def __init__(self, context):
+    def __init__(self, context, laststate=False):
         """
         Initialize picking engine with context
         :param context: dict(), strategy setting context
@@ -32,6 +33,8 @@ class Swarm:
         self._last_rebalance_date = None
 
         self._equity = None
+
+        self._islast_state = laststate
 
         strategy_settings = self.context['strategy']
         # Initialize strategy class
@@ -145,6 +148,8 @@ class Swarm:
         :param swarm:
         :return:
         """
+        if self._islast_state:
+            raise Exception("This swarm loaded from LastState Dict pick() it not applicable")
 
         swarm_settings = self.context['swarm']
         nSystems = swarm_settings['members_count']
@@ -203,21 +208,44 @@ class Swarm:
         # Storing last state values used in online calculations
         self.fill_last_state()
 
+        # Apply separate backtesting engine func
+        #  due to position netting in the swarm we will have different costs
+        #  Also store Extended stats dictionary for swarms statistics
+        self._equity, self._stats_dict = stats_exposure(self.strategy.data['exo'], self.picked_exposure.sum(axis=1), self.strategy.costs, extendedstats=True)
+
     def fill_last_state(self):
         """
         Store last state values used in online calculations
         :return:
         """
         self._last_exposure = self.picked_exposure.iloc[-1].sum()
+        self._last_prev_exposure = self.picked_exposure.iloc[-2].sum()
         self._last_date = self.picked_swarm.index[-1]
         self._last_members_list = self.rebalance_info[-1]['best_members']
         self._last_rebalance_date = self.rebalance_info[-1]['rebalance_date']
         self._last_exoquote = self.strategy.data['exo'].iloc[-1]
-        self._equity = self.picked_swarm.sum(axis=1)
+
 
     @property
     def exo_name(self):
         return self.strategy.exoinfo.exo_info['name']
+
+    @property
+    def direction(self):
+        direction_param = self.context['strategy']['opt_params'][0]
+
+        if direction_param.name.lower() != 'direction':
+            raise ValueError('First OptParam of strategy must be Direction')
+
+        if len(direction_param.array) == 2:
+            return 0,'Bidir'
+        else:
+            if direction_param.array[0] == 1:
+                return 1, 'Long'
+            elif direction_param.array[0] == -1:
+                return -1, 'Short'
+
+            raise ValueError("Unexpected direction parameter value")
 
     @property
     def name(self):
@@ -229,26 +257,13 @@ class Swarm:
         exoname = self.strategy.exoinfo.exo_info['name']
         strategyname = self.strategy.name
 
-        direction_param = self.context['strategy']['opt_params'][0]
-
-        if direction_param.name.lower() != 'direction':
-            raise ValueError('First OptParam of strategy must be Direction')
-
-        if len(direction_param.array) == 2:
-            direction = 'Bidir'
-        else:
-            if direction_param.array[0] == 1:
-                direction = 'Long'
-            elif direction_param.array[0] == -1:
-                direction = 'Short'
-
         suffix = ''
         if 'suffix' in self.context['strategy'] \
                 and self.context['strategy']['suffix'] is not None \
                 and len(self.context['strategy']['suffix']) > 0:
             suffix = "_" + self.context['strategy']['suffix']
 
-        return '{0}_{1}_{2}{3}'.format(exoname, direction, strategyname, suffix)
+        return '{0}_{1}_{2}{3}'.format(exoname, self.direction[1], strategyname, suffix)
 
     def save(self, directory,  filename=None):
         if not os.path.isdir(directory):
@@ -298,6 +313,16 @@ class Swarm:
         return self._last_exposure
 
     @property
+    def last_prev_exposure(self):
+        """
+        Last net exposure of picked swarm
+        :return:
+        """
+        if self._last_prev_exposure is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._last_prev_exposure
+
+    @property
     def last_exoquote(self):
         """
         Last EXO quote
@@ -335,14 +360,42 @@ class Swarm:
         :return:
         """
         state_dict = {
+            # Swarm structure info
             'last_date': self.last_date,
             'last_exposure': self.last_exposure,
+            'last_prev_exposure': self.last_prev_exposure,
             'last_exoquote': self.last_exoquote,
             'last_members_list': self.last_members_list,
             'last_rebalance_date': self.last_rebalance_date,
             'picked_equity': pickle.dumps(self.picked_equity),
+            # General info
+            'swarm_name': self.name,
+            'exo_name': self.exo_name,
+            'alpha_name': self.strategy.name,
+            'direction': self.direction[0],
         }
         return state_dict
+
+    @staticmethod
+    def laststate_from_dict(state_dict, strategy_context):
+        """
+        Restores last swarm state from dictionary
+        :return:
+        """
+        ctx = deepcopy(strategy_context)
+        ctx['strategy']['opt_preset'] = Swarm._parse_params(state_dict['last_members_list'])
+        # Creating new swarm in special mode (used for online updates)
+        swm = Swarm(ctx, laststate=True)
+
+        swm._last_rebalance_date = state_dict['last_rebalance_date']
+        swm._last_date = state_dict['last_date']
+        swm._last_exposure = state_dict['last_exposure']
+        swm._last_prev_exposure = state_dict['last_prev_exposure']
+        swm._last_exoquote = state_dict['last_exoquote']
+        swm._last_members_list = state_dict['last_members_list']
+        swm._equity = pickle.loads(state_dict['picked_equity'])
+
+        return swm
 
 
     def laststate_update(self, exo_price, swarm_exposure, costs=None):
@@ -397,10 +450,21 @@ class Swarm:
                 # Update self.last_* properties for next loop step
                 self._last_exoquote = _exo_price.values[i]
                 self._last_date = _exo_price.index[i]
+                self._last_prev_exposure = self._last_exposure
                 self._last_exposure = _swarm_exposure.values[i]
 
+    def update(self):
+        if not self._islast_state:
+            raise Exception("update() method only applicable to swarms loaded from online last state dict")
+
+        # Run predefined swarm parameters
+        self.run_swarm()
+
+        # Update equity and another last state values
+        self.laststate_update(self.strategy.data['exo'], self.raw_exposure.sum(axis=1))
+
     @staticmethod
-    def parse_params(members_list):
+    def _parse_params(members_list):
         """
         Parse alpha-parameters tuple-string from MongoDB
         :param members_list: list of strings with stingified tuples params
@@ -408,14 +472,7 @@ class Swarm:
         """
         return [literal_eval(p.strip()) for p in members_list]
 
-    @staticmethod
-    def laststate_from_dict(state_dict, strategy_context):
-        """
-        Restores last swarm state from dictionary
-        :return:
-        """
-        # TODO: implement load swarm last state from dict (Mongo)
-        pass
+
 
 
 
