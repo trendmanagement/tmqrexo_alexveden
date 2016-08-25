@@ -6,12 +6,16 @@ except SystemError:
 try:
     from .settings_local import *
 except SystemError:
+    try:
+        from scripts.settings_local import *
+    except SystemError:
+        pass
     pass
 
 
 import os, sys
 import importlib
-from backtester.swarms.manager import SwarmManager
+from backtester.swarms.swarm import Swarm
 from backtester.strategy import OptParamArray
 from tradingcore.swarmonlinemanager import SwarmOnlineManager
 
@@ -62,17 +66,17 @@ def main():
                     context['strategy']['opt_params'][0] = OptParamArray('Direction', [direction])
                     context['strategy']['suffix'] = m.STRATEGY_SUFFIX
 
-                    smgr = SwarmManager(context)
-                    smgr.run_swarm()
-                    smgr.pick()
+                    swm = Swarm(context)
+                    swm.run_swarm()
+                    swm.pick()
                     # Saving results to swarms directory
-                    smgr.save(os.path.join(TMQRPATH, "swarms"))
+                    swm.save(os.path.join(TMQRPATH, "swarms"))
 
                     #
                     # Saving last EXO state to online DB
                     #
                     swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
-                    swmonline.save(exo, direction, smgr)
+                    swmonline.save(swm)
 
 if __name__ == '__main__':
     main()
