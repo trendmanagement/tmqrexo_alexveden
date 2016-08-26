@@ -16,12 +16,12 @@ from exobuilder.data.exostorage import EXOStorage
 
 try:
     from .settings import *
-except ImportError:
+except SystemError:
     from scripts.settings import *
 
 try:
     from .settings_local import *
-except ImportError:
+except SystemError:
     try:
         from scripts.settings_local import *
     except ImportError:
