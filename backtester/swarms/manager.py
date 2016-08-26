@@ -3,6 +3,8 @@ import pandas as pd
 from backtester.exoinfo import EXOInfo
 import pickle
 import os
+import warnings
+
 
 
 class SwarmManager(object):
@@ -15,6 +17,7 @@ class SwarmManager(object):
         :param context: dict(), strategy setting context
         :return:
         """
+        warnings.warn("SwarmManager class is deprecated use Swarm class instead", DeprecationWarning)
         self.context = context
         self.global_filter = None
         self.rebalancetime = None

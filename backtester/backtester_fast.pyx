@@ -229,4 +229,4 @@ def stats_exposure(price, exposure, costs=None, extendedstats=False):
             equity[i] = equity[entry_i-1] + profit
         '''
 
-    return pd.Series(equity, index=price.index), None
+    return pd.Series(equity, index=price.index), {'note:' 'Not implemented yet'}

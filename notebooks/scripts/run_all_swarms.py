@@ -11,7 +11,7 @@ from backtester.swarms.filters import SwarmFilter
 from backtester.costs import CostsManagerEXOFixed
 from backtester.exoinfo import EXOInfo
 
-from backtester.positionsizing import PositionSizingBase
+
 import pandas as pd
 import numpy as np
 import scipy

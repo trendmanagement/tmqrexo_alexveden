@@ -122,6 +122,16 @@ class Swarm:
             raise ValueError("Run pick() method before access this property")
         return self._equity
 
+    @property
+    def picked_stats(self):
+        """
+        Picked swarm base statistics
+        :return:
+        """
+        if self._swarm_stats is None:
+            raise ValueError("Run pick() method before access this property")
+        return self._swarm_stats
+
 
     @property
     def rebalancetime(self):
@@ -172,11 +182,17 @@ class Swarm:
 
         for i in range(1, len(self._rebalancetime)):
             if swarm_members is not None and len(swarm_members) > 0:
-                # Store picked in position data
-                picked_swarm_inposition[i] = self._swarm_inposition[swarm_members].iloc[i].values
+                _swm_inposition = self._swarm_inposition[swarm_members]
+                _swm_exposure = self._swarm_exposure[swarm_members]
+                for j in range(len(swarm_members)):
+                    # Add value-by-values to avoid cases when swarm members count < nSystems (exception raised)
 
-                # Store swarm exposure in position data
-                picked_swarm_exposure[i] = self._swarm_exposure[swarm_members].iloc[i].values
+
+                    # Store picked in position data
+                    picked_swarm_inposition[i][j] = _swm_inposition.iat[i, j]
+
+                    # Store swarm exposure in position data
+                    picked_swarm_exposure[i][j] = _swm_exposure.iat[i, j]
 
 
             # == True - to avoid NaN values to pass condition
@@ -211,7 +227,7 @@ class Swarm:
         # Apply separate backtesting engine func
         #  due to position netting in the swarm we will have different costs
         #  Also store Extended stats dictionary for swarms statistics
-        self._equity, self._stats_dict = stats_exposure(self.strategy.data['exo'], self.picked_exposure.sum(axis=1), self.strategy.costs, extendedstats=True)
+        self._equity, self._swarm_stats = stats_exposure(self.strategy.data['exo'], self.picked_exposure.sum(axis=1), self.strategy.costs, extendedstats=True)
 
     def fill_last_state(self):
         """
@@ -283,7 +299,7 @@ class Swarm:
 
         if strategy_context is not None:
             smgr = Swarm(strategy_context)
-            fn = os.path.join(directory, smgr.name()+'.swm')
+            fn = os.path.join(directory, smgr.name+'.swm')
 
         with open(fn, 'rb') as f:
             return pickle.load(f)
