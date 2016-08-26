@@ -28,3 +28,8 @@ class EXOStorage(object):
     def save_exo(self, exo_dict):
         exo_name = exo_dict['name']
         return self.db.exo_data.replace_one({'name': exo_name}, exo_dict, upsert=True)
+
+    def exo_list(self):
+        data = self.db.exo_data.find({})
+
+        return [exo['name'] for exo in data]

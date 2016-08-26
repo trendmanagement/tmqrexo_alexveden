@@ -19,6 +19,15 @@ try:
 except SystemError:
     from scripts.settings import *
 
+try:
+    from .settings_local import *
+except SystemError:
+    try:
+        from scripts.settings_local import *
+    except SystemError:
+        pass
+    pass
+
 
 class EXOScript:
     def __init__(self, args, loglevel):

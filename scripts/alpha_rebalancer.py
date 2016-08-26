@@ -17,6 +17,7 @@ import os, sys
 import importlib
 from backtester.swarms.swarm import Swarm
 from backtester.strategy import OptParamArray
+from exobuilder.data.exostorage import EXOStorage
 from tradingcore.swarmonlinemanager import SwarmOnlineManager
 
 TMQRPATH = os.getenv("TMQRPATH", '')
@@ -49,7 +50,10 @@ def get_exo_names_mat():
 
 def main():
     # Getting the list of all EXOs / instruments
-    exo_names = get_exo_names_mat()
+    #exo_names = get_exo_names_mat()
+
+    exo_storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+    exo_names = exo_storage.exo_list()
 
     for exo in exo_names:
         print("Processing EXO: " + exo)
@@ -65,6 +69,7 @@ def main():
                     context['strategy']['exo_name'] = exo
                     context['strategy']['opt_params'][0] = OptParamArray('Direction', [direction])
                     context['strategy']['suffix'] = m.STRATEGY_SUFFIX
+                    context['strategy']['exo_storage'] = exo_storage
 
                     swm = Swarm(context)
                     swm.run_swarm()
