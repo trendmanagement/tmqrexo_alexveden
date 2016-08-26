@@ -29,9 +29,6 @@ class StrategySwingPoint(StrategyBase):
         nDays = len(sp_df)
         longSignalPrice = sp_df['sphLevel'].values
         shortSignalPrice = sp_df['splLevel'].values
-        sphVolume = sp_df['sphVolume'].values
-        splVolume = sp_df['splVolume'].values
-        volumeSeries = sp_df['volumeSeries'].values
 
         # Filling results with zeros
         bullish_breakout_confirmed = np.zeros(nDays, dtype=np.int8)
