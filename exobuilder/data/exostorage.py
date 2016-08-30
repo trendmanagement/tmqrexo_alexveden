@@ -16,7 +16,10 @@ class EXOStorage(object):
             # Loading metadata for EXO
             exo_dic = {'pcf': [], 'pcfqty': [], 'margin': 0, 'underlying': '', 'name': exo_name}
 
-            return pickle.loads(data['series']), exo_dic
+            series_df = pickle.loads(data['series'])
+            series_df.index = pd.to_datetime(series_df.index)
+
+            return series_df, exo_dic
         except:
             return None, None
 
