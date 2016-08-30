@@ -6,7 +6,7 @@ from strategies.strategy_renko_no_exit_on_patterns import StrategyRenkoPatterns_
 
 STRATEGY_NAME = "Renko"
 
-STRATEGY_SUFFIX = 'no-exit-on-patterns'
+STRATEGY_SUFFIX = ''
 
 STRATEGY_CONTEXT = {
     'strategy': {

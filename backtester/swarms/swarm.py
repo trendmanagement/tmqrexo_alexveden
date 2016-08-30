@@ -243,6 +243,20 @@ class Swarm:
 
 
     @property
+    def instrument(self):
+        if '_' in self.exo_name:
+            return self.exo_name.split('_')[0]
+
+        return self.exo_name
+
+    @property
+    def exo_type(self):
+        if '_' in self.exo_name:
+            return self.exo_name.split('_')[1]
+
+        return self.exo_name
+
+    @property
     def exo_name(self):
         return self.strategy.exoinfo.exo_info['name']
 
@@ -389,6 +403,8 @@ class Swarm:
             'exo_name': self.exo_name,
             'alpha_name': self.strategy.name,
             'direction': self.direction[0],
+            'instrument': self.instrument,
+            'exo_type': self.exo_type,
         }
         return state_dict
 
