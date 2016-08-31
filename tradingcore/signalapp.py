@@ -13,6 +13,7 @@ from enum import Enum
 APPCLASS_DATA = 'DataFeed'
 APPCLASS_EXO = "ExoEngine"
 APPCLASS_ALPHA = "AlphaStrategy"
+APPCLASS_SIGNALS = "Signals"
 
 class SignalApp(object):
     def __init__(self, appname, appclass, host='localhost', user='guest', password='guest'):

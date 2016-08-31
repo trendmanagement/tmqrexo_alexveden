@@ -53,5 +53,16 @@ class MsgAlphaState(MsgBase):
         self.rebalamce_date = swarm.last_rebalance_date
         self.last_date = swarm.last_date
 
+class MsgAlphaSignal(MsgBase):
+    mtype = 'alphasignal'
+
+    def __init__(self, alphastate_msg, pos_list, context={}):
+        super().__init__()
+        self.swarm_name = alphastate_msg.swarm_name
+        self.exo_name = alphastate_msg.exo_name
+        self.instrument = alphastate_msg.instrument
+        self.exposure = alphastate_msg.exposure
+        self.positions = pos_list
+
 
 

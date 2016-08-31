@@ -58,7 +58,7 @@ class EXOScript:
         return EXO_LIST
 
     def on_new_quote(self, appclass, appname, data):
-        exec_time, decision_time = self.get_exec_time(datetime.now())
+        exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
 
         start_time = time.time()
 
@@ -100,10 +100,7 @@ class EXOScript:
         else:
             logging.debug("Waiting next decision time")
 
-    def get_exec_time(self, dt):
-        exec_time = datetime.combine(dt.date(), self.asset_info["customdayboundarytime"].time())
-        decision_time = datetime.combine(dt.date(), self.asset_info["customdayboundarytime"].time()) - timedelta(minutes=self.asset_info["decisionoffsetminutes"])
-        return exec_time, decision_time
+
 
     def run_exo_calc(self, datasource, decision_time, symbol, isbackfill):
         # Running all EXOs builder algos
@@ -137,9 +134,9 @@ class EXOScript:
         # datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
         datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
 
-        exec_time, decision_time = self.get_exec_time(self.args.backfill)
+        exec_time, decision_time = AssetIndexMongo.get_exec_time(self.args.backfill, self.asset_info)
 
-        exec_time_end, decision_time_end = self.get_exec_time(datetime.now())
+        exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
         # TODO: before calculation we need to do rollback of old transactions (to maintain EXO granularity)
 
         while decision_time <= decision_time_end:
