@@ -414,7 +414,8 @@ class Swarm:
         Restores last swarm state from dictionary
         :return:
         """
-        ctx = deepcopy(strategy_context)
+
+        ctx = strategy_context
         ctx['strategy']['opt_preset'] = Swarm._parse_params(state_dict['last_members_list'])
         # Creating new swarm in special mode (used for online updates)
         swm = Swarm(ctx, laststate=True)
@@ -492,8 +493,12 @@ class Swarm:
         # Run predefined swarm parameters
         self.run_swarm()
 
-        # Update equity and another last state values
-        self.laststate_update(self.strategy.data['exo'], self.raw_exposure.sum(axis=1))
+        if len(self.raw_exposure) > 0:
+            # Update equity and another last state values
+            self.laststate_update(self.strategy.data['exo'], self.raw_exposure.sum(axis=1))
+        else:
+            # TODO: decide if it is unexpected case when no systems picked in some reasons?
+            pass
 
     @staticmethod
     def _parse_params(members_list):

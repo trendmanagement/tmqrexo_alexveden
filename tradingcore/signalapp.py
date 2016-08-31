@@ -4,6 +4,7 @@ import logging
 import sys
 from pika.credentials import PlainCredentials
 from datetime import datetime
+from tradingcore.messages import MsgBase
 
 RABBIT_EXCHANGE = "TMQR_SIGNALS"
 
@@ -37,9 +38,16 @@ class SignalApp(object):
         Send data to default message ques appclass.appname
         :return:
         """
-        self.channel.basic_publish(exchange=RABBIT_EXCHANGE,
-                                   routing_key='{0}.{1}'.format(self.appclass, self.appname),
-                                   body=pickle.dumps(data))
+        if isinstance(data, MsgBase):
+            data.sender_appname = self.appname
+            data.sender_appclass = self.appclass
+            self.channel.basic_publish(exchange=RABBIT_EXCHANGE,
+                                       routing_key='{0}.{1}'.format(self.appclass, self.appname),
+                                       body=pickle.dumps(data.as_dict()))
+        else:
+            self.channel.basic_publish(exchange=RABBIT_EXCHANGE,
+                                       routing_key='{0}.{1}'.format(self.appclass, self.appname),
+                                       body=pickle.dumps(data))
 
     def send_to(self, appname, appclass, data):
         """
@@ -49,9 +57,16 @@ class SignalApp(object):
         :param data: pickle friendly object
         :return:
         """
-        self.channel.basic_publish(exchange=RABBIT_EXCHANGE,
-                              routing_key='{0}.{1}'.format(appclass, appname),
-                              body=pickle.dumps(data))
+        if isinstance(data, MsgBase):
+            data.sender_appname = self.appname
+            data.sender_appclass = self.appclass
+            self.channel.basic_publish(exchange=RABBIT_EXCHANGE,
+                                       routing_key='{0}.{1}'.format(appclass, appname),
+                                       body=pickle.dumps(data.as_dict()))
+        else:
+            self.channel.basic_publish(exchange=RABBIT_EXCHANGE,
+                                  routing_key='{0}.{1}'.format(appclass, appname),
+                                  body=pickle.dumps(data))
 
     def listen(self, callback):
         def pre_callback(ch, method, properties, body):
@@ -63,19 +78,11 @@ class SignalApp(object):
                 raise ValueError('Bad routing key format: {0}'.format(method.routing_key))
 
             data_object = pickle.loads(body)
-            callback(tok[0], tok[1], data_object)
+            appclass = tok[0]
+            appname = tok[1]
+            callback(appclass, appname, data_object)
 
         self.channel.basic_consume(pre_callback, queue=self.queue_name, no_ack=True)
         self.channel.start_consuming()
 
-    def status(self, status, message, context={}):
-        return {
-            'type': 'status',
-            'message': message,
-            'status': status,
-            'date': datetime.now(),
-            'context': context,
-            'appclass': self.appclass,
-            'appname': self.appname,
-        }
 

@@ -8,6 +8,7 @@ import time
 import pymongo
 from pymongo import MongoClient
 from tradingcore.signalapp import SignalApp, APPCLASS_DATA, APPCLASS_EXO
+from tradingcore.messages import *
 
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.datasource_sql import DataSourceSQL
@@ -91,7 +92,7 @@ class EXOScript:
 
             end_time = time.time()
             # TODO: textlog status
-            self.signalapp.send(self.signalapp.status('OK', 'EXO Processed', context={'instrument': symbol, 'date': quote_date, 'exec_time': end_time-start_time}))
+            self.signalapp.send(MsgStatus('OK', 'EXO Processed', context={'instrument': symbol, 'date': quote_date, 'exec_time': end_time-start_time}))
 
 
 
@@ -121,8 +122,8 @@ class EXOScript:
                         exo_engine.load()
                         exo_engine.calculate()
                         if not isbackfill:
-                            # TODO: Send signal to alphas that EXO price is ready
-                            pass
+                            # Sending signal to alphas that EXO price is ready
+                            self.signalapp.send(MsgEXOQuote(exo_engine.exo_name, decision_time))
 
     def do_backfill(self):
         #
@@ -155,7 +156,7 @@ class EXOScript:
 
         # Initialize EXO engine SignalApp (report first status)
         self.signalapp = SignalApp(self.args.instrument, APPCLASS_EXO, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
-        self.signalapp.send(self.signalapp.status('INIT', 'Initiating EXO engine'))
+        self.signalapp.send(MsgStatus('INIT', 'Initiating EXO engine'))
 
         # Get information about decision and execution time
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)

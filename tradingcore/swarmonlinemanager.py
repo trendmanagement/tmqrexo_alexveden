@@ -36,10 +36,11 @@ class SwarmOnlineManager:
         return result
 
 
-    def process(self, exo_name):
+    def process(self, exo_name, swm_callback=None):
         """
         Run this method every time when new EXO quote comes
-        :param exo_name:
+        :param exo_name: exo_name in MongoDB
+        :param swm_callback: swarm_callback after swarm is updated
         :return:
         """
         # Read EXO quote data from Mongo
@@ -55,14 +56,20 @@ class SwarmOnlineManager:
             # Generate context for swarm
             context = self.strategy_context
             context['strategy']['exo_storage'] = exo_storage
+            context['strategy']['exo_name'] = exo_name
 
             # Restoring swarms last state from dict
             swm = Swarm.laststate_from_dict(swm_dict, context)
+
 
             # Update swarm equity dynamic and last state
             swm.update()
 
             # Saving swarm state to Mongo
             self.save(swm)
+
+            if swm_callback is not None:
+                # Run Swarm callback (to notify framework that swarm is updated)
+                swm_callback(swm)
 
 
