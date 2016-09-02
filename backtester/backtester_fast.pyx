@@ -230,3 +230,59 @@ def stats_exposure(price, exposure, costs=None, extendedstats=False):
         '''
 
     return pd.Series(equity, index=price.index), {'note:' 'Not implemented yet'}
+
+
+@cython.cdivision(True)
+@cython.boundscheck(False)
+def backtest_equity(df):
+    """
+    Quick backtest function based on equity (used by ranking algorithm)
+    :param df:
+    :return:
+    """
+
+    # Calculate trade-by-trade payoffs
+    cdef float netprofit = 0.0
+    cdef float sumwin = 0.0
+    cdef float sumloss = 0.0
+    cdef float wincount = 0.0
+    cdef float tradescount = 0.0
+    cdef float eqhigh = 0.0
+    cdef float maxdd = 0.0
+    cdef float px_chg = 0.0
+
+
+    cdef np.ndarray[DTYPE_t_float, ndim=1] px = df.values
+    cdef int barcount = px.shape[0]
+
+    cdef int i = 1
+
+    for i in range(1, barcount):
+        px_chg = px[i] - px[i-1]
+
+        netprofit += px_chg
+
+        eqhigh = max(eqhigh, netprofit)
+        maxdd = min(maxdd, netprofit - eqhigh)
+
+        if px_chg > 0:
+            wincount += 1.0
+            sumwin += px_chg
+        else:
+            sumloss += px_chg
+
+        tradescount += 1.0
+
+    try:
+        modsharpe = np.mean(px) / np.std(px)
+    except ZeroDivisionError:
+        modsharpe = np.nan
+
+    return {'strategy': df.name,
+            'stats_pricechange_modsharpe': modsharpe,
+            'stats_netprofit': netprofit,
+            'stats_max_dd': maxdd,
+            'stats_recovery_factor': netprofit / abs(maxdd),
+            'stats_profit_factor': sumwin / abs(sumloss),
+            'stats_winrate': wincount / tradescount
+            }

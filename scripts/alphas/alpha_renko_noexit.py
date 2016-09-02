@@ -24,7 +24,7 @@ STRATEGY_CONTEXT = {
     },
     'swarm': {
         'members_count': 5,
-        'ranking_class': RankerHighestReturns(return_period=14),
+        'ranking_class': RankerBestWithCorrel(window_size=-1, correl_threshold=0.5),
         'rebalance_time_function': SwarmRebalance.every_friday,
 
     },
