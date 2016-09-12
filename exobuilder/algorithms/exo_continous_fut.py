@@ -26,6 +26,10 @@ class EXOContinuousFut(ExoEngineBase):
         return 1
 
 
+    @staticmethod
+    def names_list(symbol):
+        return [symbol + '_ContFut']
+
     @property
     def exo_name(self):
         return self._symbol + '_ContFut'

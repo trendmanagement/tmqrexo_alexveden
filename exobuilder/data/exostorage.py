@@ -10,6 +10,11 @@ class EXOStorage(object):
         self.db = self.client[dbname]
 
     def load_series(self, exo_name):
+        """
+        Load EXO index series from MongoDB
+        :param exo_name: name of EXO index
+        :return: (tuple) series_df, exo_dic
+        """
         try:
             data = self.db.exo_data.find({'name': exo_name}).next()
 
@@ -25,23 +30,41 @@ class EXOStorage(object):
 
 
     def load_exo(self, exo_name):
+        """
+        Load EXO collection from Mongo (as is)
+        :param exo_name:
+        :return: EXO collection dict
+        """
         try:
             return self.db.exo_data.find({'name': exo_name}).next()
         except:
             return None
 
     def save_exo(self, exo_dict):
+        """
+        Save EXO collections to MongoDB
+        :param exo_dict: EXO collection dict
+        :return: PyMondo.replace_one() result
+        """
         exo_name = exo_dict['name']
         return self.db.exo_data.replace_one({'name': exo_name}, exo_dict, upsert=True)
 
     def exo_list(self, exo_filter='*'):
-
+        """
+        Return EXO list stored in MongoDB
+        :param exo_filter: '*' - include all, wildcard is allowed (like, 'ES_Bullish*')
+        :return: list of EXO names
+        """
         re_val = exo_filter.replace('*','.*')
 
         data = self.db.exo_data.find({'name': re.compile(re_val, re.IGNORECASE)})
         return [exo['name'] for exo in data]
 
     def swarms_info(self):
+        """
+        Aggregate swarm information by instrument, product, alpha type
+        :return: dict of swarms information aggregation
+        """
         return self.db['swarms'].aggregate(
             [
                 {
@@ -56,6 +79,14 @@ class EXOStorage(object):
         ).next()
 
     def swarms_list(self, instruments_list=('*',), direction=(1, -1, 0), alpha_list=('*',), exo_list=('*',)):
+        """
+        Select swarms from Mongo using case INSENSITIVE filters (wildcards allowed)
+        :param instruments_list: instruments list filter like '*', 'CL*', 'CL*9'
+        :param direction: direction filter (1=Long, -1=Short, 0=Bidirectional)
+        :param alpha_list: alpha name filter
+        :param exo_list: exo list filter
+        :return: Pandas.DataFrame(swarms_picked_equity), list(mongo_swarms_dicts)
+        """
         def re_pattern(values_list, prepend='', append=''):
             result = ""
             for i,v in enumerate(values_list):

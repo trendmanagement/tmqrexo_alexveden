@@ -55,7 +55,25 @@ class EXOScript:
         return True
 
     def get_exo_list(self, args):
-        return EXO_LIST
+        if args.exolist == "*":
+            return EXO_LIST
+        else:
+            print(args.exolist)
+            result = []
+            list_set = {}
+            for e in args.exolist.split(','):
+                # Avoid duplicates
+                if e.lower() not in list_set:
+                    for exo_setts in EXO_LIST:
+                        if exo_setts['name'].lower() == e.lower():
+                            list_set[e.lower()] = exo_setts
+                            result.append(exo_setts)
+            if len(result) == 0:
+                raise ValueError("EXO list is empty, bad filter? ({0})".format(args.exolist))
+
+
+            return result
+
 
     def on_new_quote(self, appclass, appname, data):
         exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
@@ -194,7 +212,7 @@ if __name__ == '__main__':
         "-E",
         "--exolist",
         help="List of EXO products to calculate default: %(default)s",
-        action="append",
+        action="store",
         default='*')
 
 

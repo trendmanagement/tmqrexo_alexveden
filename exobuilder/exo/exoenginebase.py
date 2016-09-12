@@ -3,6 +3,8 @@ from exobuilder.exo.transaction import Transaction
 import pandas as pd
 import pickle
 import os
+import datetime
+
 
 class ExoEngineBase(object):
     def __init__(self, symbol, direction, date, datasource, log_file_path='', is_eod=True):
@@ -120,7 +122,8 @@ class ExoEngineBase(object):
 
         pnl = self.position.pnl
         if self.is_eod:
-            self.series.at[self.date.date(), 'exo'] = pnl
+            dt = datetime.datetime.combine(self.date.date(), datetime.time(0, 00))
+            self.series.at[dt, 'exo'] = pnl
         else:
             self.series.at[self.date, 'exo'] = pnl
 

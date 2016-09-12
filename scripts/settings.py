@@ -1,7 +1,7 @@
 # Importing EXO code
 from exobuilder.algorithms.exo_brokenwing import EXOBrokenwingCollar
 from exobuilder.algorithms.exo_vertical_spread import EXOVerticalSpread
-from exobuilder.algorithms.exo_bullish_collar import EXOBullishCollar
+from exobuilder.algorithms.exo_continous_fut import EXOContinuousFut
 
 
 
@@ -22,6 +22,11 @@ EXO_LIST = [
         'name': 'VerticalSpread',
         'class': EXOVerticalSpread,
     },
+    {
+        'name': 'ContFut',
+        'class': EXOContinuousFut,
+    },
+
 ]
 
 # MongoDB credentials
