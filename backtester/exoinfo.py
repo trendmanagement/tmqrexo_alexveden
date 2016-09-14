@@ -25,4 +25,4 @@ class EXOInfo(object):
         Cumulative dollar values index of EXO price
         :return:
         """
-        return self.data.exo.diff().cumsum()
+        return self.data['exo'].diff().cumsum()

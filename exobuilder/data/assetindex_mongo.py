@@ -5,8 +5,8 @@ from pymongo import MongoClient
 
 class AssetIndexMongo(AssetIndexBase):
     def __init__(self, conn_str, dbname):
-        self.client = MongoClient('mongodb://localhost:27017/')
-        self.db = self.client['tmldb']
+        self.client = MongoClient(conn_str)
+        self.db = self.client[dbname]
 
         self.db.options.create_index([("idoption", pymongo.DESCENDING)])
         self.db.options.create_index([("idcontract", pymongo.DESCENDING)])

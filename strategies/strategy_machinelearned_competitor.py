@@ -15,23 +15,11 @@ import scipy
 
 
 class StrategyMachineLearnedCompetitor(StrategyBase):
+    name = 'MachineLearnedCompetitor'
+
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
-
-        # Define system's name
-        self.name = 'MachineLearnedCompetitor'
-
-        self.check_context()
-
-        # Define optimized params
-        self.opts = strategy_context['strategy']['opt_params']
-
-    def check_context(self):
-        #
-        # Do strategy specific checks
-        #
-        pass
 
     def calc_entry_rules(self, rolling_window_period, pctrank_value):
 
