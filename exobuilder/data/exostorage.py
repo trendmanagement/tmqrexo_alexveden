@@ -120,3 +120,15 @@ class EXOStorage(object):
             series_dict[s['swarm_name']] = pickle.loads(s['picked_equity'])
 
         return pd.DataFrame(series_dict), swarm_data
+
+    def swarms_positions(self, alpha_list=None):
+        result = {}
+        if alpha_list is None:
+            cursor = self.db['swarms'].find({'swarm_name': {'$in': alpha_list }})
+        else:
+            cursor = self.db['swarms'].find()
+
+        for c in cursor:
+            result[c['swarm_name']] = {'exposure': c['last_exposure'], 'exo_name': c['exo_name']}
+
+        return result

@@ -22,6 +22,12 @@ class DataSourceBase(object):
         raise NotImplementedError()
 
     def get(self, item, date):
+        """
+        Gets contract instance
+        :param item: Contract hash code or Instrument name
+        :param date: current date
+        :return: Instrument / FutureContract / OptionContract class instance
+        """
         if isinstance(item, int):
             #
             # Get item by hash instrument, or future, or option
@@ -64,3 +70,34 @@ class DataSourceBase(object):
             #
             data_dict = self.assetindex.get_instrument_info(item)
             return Instrument(self, data_dict, date, self.futures_limit, self.options_limit)
+
+    def get_info(self, item):
+        """
+        Gets contract meta-information by hash
+        :param item: contract hash-code
+        :return: dict with contract meta-information (i.e. entire Mongo collection)
+        """
+        if isinstance(item, int):
+            #
+            # Get item by hash instrument, or future, or option
+            #
+            if item < FUT_HASH_ROOT:
+                raise NotImplementedError("Unknown asset hash")
+            elif item < FUT_HASH_ROOT + HASH_ROOT_STEP:
+                # Get future contract
+                fut_contract_dic = self.assetindex.get_future_contract(item - FUT_HASH_ROOT)
+                fut_contract_dic['name'] = fut_contract_dic['contractname']
+                fut_contract_dic['_type'] = 'fut'
+                return fut_contract_dic
+            elif item < OPT_HASH_ROOT + HASH_ROOT_STEP:
+                # Get option contract
+                # Fetch contracts meta information from asset index
+                opt_contract_dic = self.assetindex.get_option_contract(item - OPT_HASH_ROOT)
+                opt_contract_dic['name'] = opt_contract_dic['optionname']
+                opt_contract_dic['_type'] = 'opt'
+                return opt_contract_dic
+            else:
+                raise NotImplementedError("Unknown asset hash")
+        else:
+            raise NotImplementedError("Only hash getting supported")
+

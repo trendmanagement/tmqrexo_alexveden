@@ -29,6 +29,10 @@ class Position(object):
         return pnl + self._realized_pnl
 
     def close_all_translist(self):
+        """
+        Returns list of transaction to close EXO position
+        :return:
+        """
         transactions = []
         for asset, netposition in self.netpositions.items():
             transactions.append(Transaction(asset, asset.date, -netposition['qty'], asset.price, leg_name=netposition['leg_name']))
@@ -72,6 +76,10 @@ class Position(object):
                     del self.legs[pdic['leg_name']]
 
     def as_dict(self):
+        """
+        Serialize Position to dictionary
+        :return:
+        """
         positions = {}
 
         for asset, pos in self.netpositions.items():
@@ -84,6 +92,13 @@ class Position(object):
 
     @staticmethod
     def from_dict(position_dict, datasource, date):
+        """
+        Initiate Position instance from dict (ex. from Mongo collection dict)
+        :param position_dict: MongoDB collection dict
+        :param datasource: Datasource to fetch all contracts instances
+        :param date: current date
+        :return: new Position class instance
+        """
         p = Position()
 
         positions = {}
@@ -100,9 +115,23 @@ class Position(object):
         for asset, posdic in positions.items():
             if 'leg_name' in posdic and posdic['leg_name'] != '':
                 p._legs[posdic['leg_name']] = asset
-
-
         return p
+
+    @staticmethod
+    def get_info(position_dict, datasource):
+        """
+        Returns information about current EXO position structure, holdings names and qty
+        :param position_dict: MongoDB collection dict
+        :param datasource: Datasource to fetch all contracts inforamation
+        :return:
+        """
+        positions = {}
+        for asset_hash, pos_data in position_dict['positions'].items():
+            asset_info = datasource.get_info(int(asset_hash))
+            positions[asset_info['name']] = {'qty': pos_data['qty'], 'asset': asset_info}
+
+        return positions
+
 
     def __len__(self):
         return len(self.netpositions)
