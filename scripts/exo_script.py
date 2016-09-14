@@ -8,6 +8,7 @@ import time
 import pymongo
 from pymongo import MongoClient
 from tradingcore.signalapp import SignalApp, APPCLASS_DATA, APPCLASS_EXO
+from tradingcore.messages import *
 
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.datasource_sql import DataSourceSQL
@@ -18,6 +19,15 @@ try:
     from .settings import *
 except SystemError:
     from scripts.settings import *
+
+try:
+    from .settings_local import *
+except SystemError:
+    try:
+        from scripts.settings_local import *
+    except ImportError:
+        pass
+    pass
 
 
 class EXOScript:
@@ -45,10 +55,28 @@ class EXOScript:
         return True
 
     def get_exo_list(self, args):
-        return EXO_LIST
+        if args.exolist == "*":
+            return EXO_LIST
+        else:
+            print(args.exolist)
+            result = []
+            list_set = {}
+            for e in args.exolist.split(','):
+                # Avoid duplicates
+                if e.lower() not in list_set:
+                    for exo_setts in EXO_LIST:
+                        if exo_setts['name'].lower() == e.lower():
+                            list_set[e.lower()] = exo_setts
+                            result.append(exo_setts)
+            if len(result) == 0:
+                raise ValueError("EXO list is empty, bad filter? ({0})".format(args.exolist))
+
+
+            return result
+
 
     def on_new_quote(self, appclass, appname, data):
-        exec_time, decision_time = self.get_exec_time(datetime.now())
+        exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
 
         start_time = time.time()
 
@@ -82,7 +110,7 @@ class EXOScript:
 
             end_time = time.time()
             # TODO: textlog status
-            self.signalapp.send(self.signalapp.status('OK', 'EXO Processed', context={'instrument': symbol, 'date': quote_date, 'exec_time': end_time-start_time}))
+            self.signalapp.send(MsgStatus('OK', 'EXO Processed', context={'instrument': symbol, 'date': quote_date, 'exec_time': end_time-start_time}))
 
 
 
@@ -90,10 +118,7 @@ class EXOScript:
         else:
             logging.debug("Waiting next decision time")
 
-    def get_exec_time(self, dt):
-        exec_time = datetime.combine(dt.date(), self.asset_info["customdayboundarytime"].time())
-        decision_time = datetime.combine(dt.date(), self.asset_info["customdayboundarytime"].time()) - timedelta(minutes=self.asset_info["decisionoffsetminutes"])
-        return exec_time, decision_time
+
 
     def run_exo_calc(self, datasource, decision_time, symbol, isbackfill):
         # Running all EXOs builder algos
@@ -112,8 +137,8 @@ class EXOScript:
                         exo_engine.load()
                         exo_engine.calculate()
                         if not isbackfill:
-                            # TODO: Send signal to alphas that EXO price is ready
-                            pass
+                            # Sending signal to alphas that EXO price is ready
+                            self.signalapp.send(MsgEXOQuote(exo_engine.exo_name, decision_time))
 
     def do_backfill(self):
         #
@@ -127,9 +152,9 @@ class EXOScript:
         # datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
         datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
 
-        exec_time, decision_time = self.get_exec_time(self.args.backfill)
+        exec_time, decision_time = AssetIndexMongo.get_exec_time(self.args.backfill, self.asset_info)
 
-        exec_time_end, decision_time_end = self.get_exec_time(datetime.now())
+        exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
         # TODO: before calculation we need to do rollback of old transactions (to maintain EXO granularity)
 
         while decision_time <= decision_time_end:
@@ -146,7 +171,7 @@ class EXOScript:
 
         # Initialize EXO engine SignalApp (report first status)
         self.signalapp = SignalApp(self.args.instrument, APPCLASS_EXO, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
-        self.signalapp.send(self.signalapp.status('INIT', 'Initiating EXO engine'))
+        self.signalapp.send(MsgStatus('INIT', 'Initiating EXO engine'))
 
         # Get information about decision and execution time
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
@@ -187,7 +212,7 @@ if __name__ == '__main__':
         "-E",
         "--exolist",
         help="List of EXO products to calculate default: %(default)s",
-        action="append",
+        action="store",
         default='*')
 
 

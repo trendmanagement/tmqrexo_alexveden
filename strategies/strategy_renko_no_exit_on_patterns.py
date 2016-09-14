@@ -16,23 +16,11 @@ import scipy
 
 
 class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
+    name = 'RenkoPatterns_no_exit_on_patterns'
+
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
-
-        # Define system's name
-        self.name = 'RenkoPatterns_no_exit_on_patterns'
-
-        self.check_context()
-
-        # Define optimized params
-        self.opts = strategy_context['strategy']['opt_params']
-
-    def check_context(self):
-        #
-        # Do strategy specific checks
-        #
-        pass
 
     def calc_entry_rules(self, box_size, move_count):
 

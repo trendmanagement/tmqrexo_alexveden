@@ -15,23 +15,11 @@ import scipy
 
 
 class StrategyIchimokuCloud(StrategyBase):
+    name = 'IchimokuCloud'
+
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
-
-        # Define system's name
-        self.name = 'IchimokuCloud'
-
-        self.check_context()
-
-        # Define optimized params
-        self.opts = strategy_context['strategy']['opt_params']
-
-    def check_context(self):
-        #
-        # Do strategy specific checks
-        #
-        pass
 
     def calc_entry_rules(self, conversion_line_period, base_line_period, leading_spans_lookahead_period,
                          leading_span_b_period,

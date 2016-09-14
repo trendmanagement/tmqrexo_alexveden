@@ -3,9 +3,11 @@ from exobuilder.exo.transaction import Transaction
 import pandas as pd
 import pickle
 import os
+import datetime
+
 
 class ExoEngineBase(object):
-    def __init__(self, symbol, direction, date, datasource, log_file_path=''):
+    def __init__(self, symbol, direction, date, datasource, log_file_path='', is_eod=True):
         self._position = Position()
         self._date = date
         self._datasource = datasource
@@ -15,6 +17,7 @@ class ExoEngineBase(object):
         self._old_transactions = []
         self.debug_mode = log_file_path != ''
         self.logger = None
+        self.is_eod = is_eod
 
         if self.debug_mode:
             if not os.path.exists(log_file_path):
@@ -118,8 +121,11 @@ class ExoEngineBase(object):
         self._transactions += trans_list
 
         pnl = self.position.pnl
-
-        self.series.at[self.date, 'exo'] = pnl
+        if self.is_eod:
+            dt = datetime.datetime.combine(self.date.date(), datetime.time(0, 00))
+            self.series.at[dt, 'exo'] = pnl
+        else:
+            self.series.at[self.date, 'exo'] = pnl
 
         # Save EXO state to DB
         self.save()

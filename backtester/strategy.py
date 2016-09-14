@@ -2,10 +2,13 @@ import os
 import itertools
 import numpy as np
 import pandas as pd
-from backtester import backtester
 from multiprocessing import Pool
 from backtester import matlab
 from backtester.exoinfo import EXOInfo
+
+import pyximport; pyximport.install()
+from backtester import backtester
+from backtester.backtester_fast import backtest, stats_exposure
 
 class OptParam(object):
     """
@@ -31,13 +34,16 @@ class StrategyBase(object):
     """
     Base class for swarming strategy
     """
+    name = 'BaseStrategy'
+
     def __init__(self, strategy_context):
-        self.name = 'BaseStrategy'
         self.opts = None
         self.costs = None
+
+        # Checking context integrity
+        self.check_context(strategy_context)
         self.context = strategy_context
 
-        self.check_context()
 
         self.exo_name = strategy_context['strategy']['exo_name']
         self.load_exodata()
@@ -52,13 +58,18 @@ class StrategyBase(object):
         # Set costs
         #
         if 'costs' in self.context:
-            cost_manager = self.context['costs']['manager'](self.exo_dict, self.context)
-            self.costs = cost_manager.get_costs(self.data.exo)
+            self.init_costs()
+
+    def init_costs(self):
+        cost_manager = self.context['costs']['manager'](self.exo_dict, self.context)
+        self.costs = cost_manager.get_costs(self.data.exo)
 
     def load_exodata(self):
         if 'exo_storage' in self.context['strategy']:
             storage = self.context['strategy']['exo_storage']
             self.data, self.exo_dict = storage.load_series(self.exo_name)
+            if self.data is None:
+                raise KeyError("EXO ('{0}') not found in EXOStorage engine".format(self.exo_name))
             del self.context['strategy']['exo_storage']
         else:
             if os.path.exists(self.exo_name):
@@ -67,34 +78,39 @@ class StrategyBase(object):
                 TMQRPATH = os.getenv("TMQRPATH", '')
                 self.data, self.exo_dict = matlab.loaddata(os.path.join(TMQRPATH, 'mat', self.exo_name.replace('.mat', '') + '.mat'))
 
-    def check_context(self):
-        if 'strategy' not in self.context:
-            raise ValueError('"strategy" settings not found')
+    def check_context(self, context):
+        if 'strategy' not in context:
+            raise KeyError('"strategy" settings not found')
 
-        strategy_settings = self.context['strategy']
+        strategy_settings = context['strategy']
 
+        if 'class' not in strategy_settings:
+            raise KeyError('"class" settings not found in strategy settings')
         if 'exo_name' not in strategy_settings:
-            raise ValueError('"exo_name" settings not found in strategy settings')
-        if 'direction' not in strategy_settings:
-            raise ValueError('"direction" settings not found in strategy settings')
+            raise KeyError('"exo_name" settings not found in strategy settings')
         if 'opt_params' not in strategy_settings:
-            raise ValueError('"opt_params" settings not found in strategy settings')
+            raise KeyError('"opt_params" settings not found in strategy settings')
 
-        if 'costs' in self.context:
+        if 'costs' in context:
             #
             # Check the costs manager settings
             #
-            if 'manager' not in self.context['costs']:
-                raise ValueError('"manager" settings not found in strategy settings')
+            if 'manager' not in context['costs']:
+                raise KeyError('"manager" settings not found in strategy settings')
 
     def get_member_name(self, opt_param):
         return str(opt_param)
 
     def slice_opts(self):
-        if self.opts is None:
+        opts = self.context['strategy']['opt_params']
+        if opts is None:
             return [None]
+
+        if 'opt_preset' in self.context['strategy']:
+            return self.context['strategy']['opt_preset']
+
         result = []
-        for o in self.opts:
+        for o in opts:
             if type(o) == OptParam:
                 # Including last step in sample
                 result.append(np.arange(o.min, o.max+o.step, o.step))
@@ -118,17 +134,7 @@ class StrategyBase(object):
         return params_universe
 
     def default_opts(self):
-        """
-        Returns default tuple params for opts
-        :return:
-        """
-        if self.opts is None:
-            return None
-        results = []
-
-        for o in self.opts:
-            results.append(o.default)
-        return tuple(results)
+        raise NotImplementedError("Method 'default_opts' is obsolete")
 
     @property
     def positionsize(self):
@@ -150,7 +156,8 @@ class StrategyBase(object):
         swarm_name, entry_rule, exit_rule, calc_info = self.calculate(opts)
 
         # Backtesting routine
-        pl, inposition = backtester.backtest(self.data, entry_rule, exit_rule, direction)
+        pl, inposition = backtest(self.data, entry_rule.values, exit_rule.values, direction)
+        #pl, inposition = backtester.backtest(self.data, entry_rule, exit_rule, direction)
 
 
         # Apply global filter to trading system entries
@@ -163,17 +170,22 @@ class StrategyBase(object):
             else:
                 inposition = inposition & filtered_inpos
 
-        # Do backtest
-        equity, stats = backtester.stats(pl, inposition, self.positionsize, self.costs)
+        # Do backtest (exposure based)
+        # Exposure Direction * PositionSize * InPositionFlag
+        exposure = inposition.astype(np.uint8) * float(direction) * self.positionsize
 
-        return (swarm_name, equity, stats, inposition)
+        # Do quick backtest (equity line only without stats)
+        equity, stats_dict = stats_exposure(self.data['exo'], exposure, self.costs, extendedstats=False)
 
-    def run_swarm(self, filtered_swarm=None, filtered_swarm_equity=None):
+        return (swarm_name, equity, exposure, inposition)
+
+
+    def run_swarm_backtest(self, filtered_swarm=None, filtered_swarm_equity=None):
         '''
         Brute force all steps of self.opts and calculate base stats
         '''
         result = {}
-        result_stats = {}
+        result_exposure = {}
         result_inpos = {}
 
         # Storing temporary filter state
@@ -198,9 +210,9 @@ class StrategyBase(object):
         pool_results = pool.map(self._calc_swarm_member, opts_list)
 
         for pool_res in pool_results:
-            swarm_name, equity, stats, inposition = pool_res
+            swarm_name, equity, swarm_exposure, inposition = pool_res
             result[swarm_name] = equity
-            result_stats[swarm_name] = stats
+            result_exposure[swarm_name] = swarm_exposure
             result_inpos[swarm_name] = inposition
 
         pool.close()
@@ -208,7 +220,7 @@ class StrategyBase(object):
 
         self._filtered_swarm = None
 
-        return pd.DataFrame.from_dict(result), pd.DataFrame.from_dict(result_stats, dtype=np.float).T, pd.DataFrame.from_dict(result_inpos, dtype=np.int8)
+        return pd.DataFrame.from_dict(result), pd.DataFrame.from_dict(result_exposure), pd.DataFrame.from_dict(result_inpos, dtype=np.int8)
 
     def calculate(self, params=None, save_info=False):
         """
@@ -219,4 +231,4 @@ class StrategyBase(object):
         :return:
         tripple (swarm_member_name, entry_rule, exit_rule)
         """
-        return None, None, None
+        return None, None, None, None

@@ -15,23 +15,11 @@ import scipy
 
 
 class StrategyPointAndFigurePatterns(StrategyBase):
+    name = 'PointAndFigurePatterns'
+
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
-
-        # Define system's name
-        self.name = 'PointAndFigurePatterns'
-
-        self.check_context()
-
-        # Define optimized params
-        self.opts = strategy_context['strategy']['opt_params']
-
-    def check_context(self):
-        #
-        # Do strategy specific checks
-        #
-        pass
 
     def calc_entry_rules(self, box_size, reversal_multiplier, column_consec_move_count, window_percent):
 

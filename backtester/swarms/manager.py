@@ -3,18 +3,21 @@ import pandas as pd
 from backtester.exoinfo import EXOInfo
 import pickle
 import os
+import warnings
+
 
 
 class SwarmManager(object):
     """
     Swarm picking algorithms class
     """
-    def __init__(self, context=None):
+    def __init__(self, context):
         """
         Initialize picking engine with context
         :param context: dict(), strategy setting context
         :return:
         """
+        warnings.warn("SwarmManager class is deprecated use Swarm class instead", DeprecationWarning)
         self.context = context
         self.global_filter = None
         self.rebalancetime = None
@@ -63,14 +66,14 @@ class SwarmManager(object):
     def run_swarm(self):
 
         # Run strategy swarm
-        self.swarm, self.swarm_stats, self.swarm_inposition = self.strategy.run_swarm()
+        self.swarm, self.swarm_stats, self.swarm_inposition = self.strategy.run_swarm_backtest()
         #
         # Average swarm multiplied by members_count
         #   for reproduce comparable results 'picked_swarm' vs 'avg_swarm'
         self.swarm_avg = SwarmManager.get_average_swarm(self.swarm) * self.context['swarm']['members_count']
 
     def _backtest_picked_swarm(self, filtered_swarm, filtered_swarm_equity):
-        swarm, swarm_stats, swarm_inposition = self.strategy.run_swarm(filtered_swarm, filtered_swarm_equity)
+        swarm, swarm_stats, swarm_inposition = self.strategy.run_swarm_backtest(filtered_swarm, filtered_swarm_equity)
         return swarm, swarm_inposition, swarm_stats
 
     def _get_nbest(self, ranked_results, nsystems):
@@ -104,14 +107,14 @@ class SwarmManager(object):
         rankerfunc = swarm_settings['ranking_function']
         rankerparams = None
         if 'ranking_params' in swarm_settings:
-            rakerparams = swarm_settings['ranking_params']
+            rankerparams = swarm_settings['ranking_params']
         self.rebalancetime = swarm_settings['rebalance_time_function'](self.swarm)
 
 
         #
         #   Ranking each swarm member's equity
         #
-        ranks = rankerfunc(self.swarm, self.rebalancetime, rakerparams)
+        ranks = rankerfunc(self.swarm, self.rebalancetime, rankerparams)
 
         is_picked_df = pd.DataFrame(0, index=self.swarm.index, columns=self.swarm.columns, dtype=np.int8)
         nbest = None
@@ -149,7 +152,10 @@ class SwarmManager(object):
 
         self.swarm_picked, self.swarm_picked_inposition, self.swarm_picked_stats = self._backtest_picked_swarm(filtered_swarm, filtered_equity)
         self.swarm_picked_margin = self.swarm_picked_inposition.sum(axis=1) * self.strategy.exoinfo.margin()
-        #return self.swarm_picked
+        self.swarm_ispicked = is_picked_df
+
+    def get_exo_name(self):
+        return self.strategy.exoinfo.exo_info['name']
 
     def get_swarm_name(self):
         """
@@ -157,7 +163,7 @@ class SwarmManager(object):
         Underlying_EXOName_Strategy_Direction
         :return:
         """
-        underlying = self.strategy.exoinfo.exo_info['underlying']
+        #underlying = self.strategy.exoinfo.exo_info['underlying']
         exoname = self.strategy.exoinfo.exo_info['name']
         strategyname = self.strategy.name
 
@@ -180,7 +186,7 @@ class SwarmManager(object):
                 and len(self.context['strategy']['suffix']) > 0:
             suffix = "_" + self.context['strategy']['suffix']
 
-        return '{0}_{1}_{2}_{3}{4}'.format(underlying, exoname, direction, strategyname, suffix)
+        return '{0}_{1}_{2}{3}'.format(exoname, direction, strategyname, suffix)
 
     def get_swarm_stats(self, swarm_stats):
         if swarm_stats is None:

@@ -39,7 +39,7 @@ def loaddata(path):
     futures_dollar_price = mat['optStr']['priceLegSeries'][0][0][iFut] / mat['optStr']['tickIncrement'][0][0][0][0] * mat['optStr']['tickValue'][0][0][0][0]
 
     info = {
-        'name': mat['optStr']['cfgName'][0][0][0],
+        'name': mat['optStr']['instrumentSymbol'][0][0][0] + '_' + mat['optStr']['cfgName'][0][0][0],
         'underlying': mat['optStr']['instrumentSymbol'][0][0][0],
         'tickincrement': mat['optStr']['tickIncrement'][0][0][0][0],
         'tickvalue': mat['optStr']['tickValue'][0][0][0][0],
