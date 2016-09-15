@@ -6,6 +6,7 @@ from ast import literal_eval
 import pyximport; pyximport.install()
 from backtester.backtester_fast import stats_exposure
 from copy import  deepcopy
+import inspect
 
 class Swarm:
     def __init__(self, context, laststate=False):
@@ -234,6 +235,10 @@ class Swarm:
         Store last state values used in online calculations
         :return:
         """
+        if len(self.picked_exposure) < 2 or len(self.rebalance_info) < 2:
+            # Insufficient data
+            return
+
         self._last_exposure = self.picked_exposure.iloc[-1].sum()
         self._last_prev_exposure = self.picked_exposure.iloc[-2].sum()
         self._last_date = self.picked_swarm.index[-1]
@@ -382,6 +387,15 @@ class Swarm:
             raise ValueError("Run pick() method before access this property")
         return self._last_rebalance_date
 
+    def context_to_jsondict(self, context):
+        if isinstance(context, dict):
+            return {k: self.context_to_jsondict(v) for k, v in context.items()}
+        elif isinstance(context, list):
+            return [self.context_to_jsondict(elem) for elem in context]
+        elif inspect.isclass(context):
+            return context.__name__
+        else:
+            return str(context)  # no container, just values (str, int, float)
 
     def laststate_to_dict(self):
         """
@@ -405,6 +419,8 @@ class Swarm:
             'direction': self.direction[0],
             'instrument': self.instrument,
             'exo_type': self.exo_type,
+            # Context info
+            'context_info': self.context_to_jsondict(self.context)
         }
         return state_dict
 
