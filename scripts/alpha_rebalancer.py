@@ -3,10 +3,22 @@ try:
 except SystemError:
     from scripts.settings import *
 
+try:
+    from .settings_local import *
+except SystemError:
+    try:
+        from scripts.settings_local import *
+    except ImportError:
+        pass
+    pass
+
+
 import os, sys
 import importlib
-from backtester.swarms.manager import SwarmManager
+from backtester.swarms.swarm import Swarm
 from backtester.strategy import OptParamArray
+from exobuilder.data.exostorage import EXOStorage
+from tradingcore.swarmonlinemanager import SwarmOnlineManager
 
 TMQRPATH = os.getenv("TMQRPATH", '')
 
@@ -38,7 +50,10 @@ def get_exo_names_mat():
 
 def main():
     # Getting the list of all EXOs / instruments
-    exo_names = get_exo_names_mat()
+    #exo_names = get_exo_names_mat()
+
+    exo_storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+    exo_names = exo_storage.exo_list()
 
     for exo in exo_names:
         print("Processing EXO: " + exo)
@@ -52,15 +67,21 @@ def main():
                     print('Running alpha: ' + m.STRATEGY_NAME + ' Direction: {0}'.format(direction))
                     context = m.STRATEGY_CONTEXT
                     context['strategy']['exo_name'] = exo
-                    context['strategy'][ 'opt_params'][0] = OptParamArray('Direction', [direction])
+                    context['strategy']['opt_params'][0] = OptParamArray('Direction', [direction])
                     context['strategy']['suffix'] = m.STRATEGY_SUFFIX
+                    context['strategy']['exo_storage'] = exo_storage
 
-                    smgr = SwarmManager(context)
-                    smgr.run_swarm()
-                    smgr.pick()
+                    swm = Swarm(context)
+                    swm.run_swarm()
+                    swm.pick()
                     # Saving results to swarms directory
-                    smgr.save(os.path.join(TMQRPATH, "swarms"))
+                    swm.save(os.path.join(TMQRPATH, "swarms"))
 
+                    #
+                    # Saving last EXO state to online DB
+                    #
+                    swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
+                    swmonline.save(swm)
 
 if __name__ == '__main__':
     main()
