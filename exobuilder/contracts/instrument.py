@@ -31,11 +31,11 @@ class Instrument(object):
 
     @property
     def name(self):
-        return self._datadic['symbol']
+        return self._datadic['exchangesymbol']
 
     @property
     def symbol(self):
-        return self._datadic['symbol']
+        return self._datadic['exchangesymbol']
 
     @property
     def point_value_futures(self):

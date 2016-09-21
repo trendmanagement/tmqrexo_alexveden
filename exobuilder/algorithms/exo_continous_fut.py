@@ -14,6 +14,8 @@ import time
 
 
 import logging
+from exobuilder.algorithms.rollover_helper import RolloverHelper
+
 
 class EXOContinuousFut(ExoEngineBase):
     def __init__(self, symbol, direction, date, datasource, log_file_path=''):
@@ -36,10 +38,10 @@ class EXOContinuousFut(ExoEngineBase):
 
     def is_rollover(self):
         if len(self.position) != 0:
-            fut = self.position.legs['fut']
-            if fut.to_expiration_days <= 2:
-                return True
-
+            for p in self.position.legs.values():
+                rh = RolloverHelper(p.instrument)
+                if rh.is_rollover(p):
+                    return True
         return False
 
 
@@ -58,9 +60,17 @@ class EXOContinuousFut(ExoEngineBase):
 
 
         if len(self.position) == 0:
-            fut = instr.futures[0]
-            if fut.to_expiration_days <= 2:
-                fut = instr.futures[1]
+            instr = self.datasource.get(self._symbol, self.date)
+            rh = RolloverHelper(instr)
+            fut, opt_chain = rh.get_active_chains()
+            if fut is None:
+                if self.debug_mode:
+                    self.logger.write(
+                        'Futures contract or option chain not found.\n\tFuture: {0}\tOption chain: {1}\n'.format(
+                            fut,
+                            opt_chain
+                        ))
+                return []
 
             trans_list = [Transaction(fut, self.date, 1.0, fut.price, leg_name='fut')]
             return trans_list

@@ -10,6 +10,7 @@ from exobuilder.data.exostorage import EXOStorage
 from exobuilder.exo.exoenginebase import ExoEngineBase
 from exobuilder.exo.transaction import Transaction
 import time
+from exobuilder.algorithms.rollover_helper import RolloverHelper
 
 class EXOBrokenwingCollar(ExoEngineBase):
     def __init__(self, symbol, direction, date, datasource, log_file_path=''):
@@ -38,14 +39,11 @@ class EXOBrokenwingCollar(ExoEngineBase):
 
     def is_rollover(self):
         if len(self.position) != 0:
-
-            opt = self.position.legs['opt_otm_leg']
-            if opt.to_expiration_days <= 2:
-                return True
-
+            for p in self.position.legs.values():
+                rh = RolloverHelper(p.instrument)
+                if rh.is_rollover(p):
+                    return True
         return False
-
-
 
     def process_rollover(self):
         trans_list = self.position.close_all_translist()
@@ -57,23 +55,20 @@ class EXOBrokenwingCollar(ExoEngineBase):
         Main EXO's position management method
         :return: list of Transactions to process
         """
-        instr = self.datasource.get(self._symbol, self.date)
 
 
         if len(self.position) == 0:
-            fut = instr.futures[0]
-            if fut.to_expiration_days <= 2:
-                fut = instr.futures[1]
-
-            opt_chain = fut.options[0]
-            if opt_chain.to_expiration_days <= 2:
-                if len(fut.options) < 2:
-                    # Roll to next fut contract
-                    fut = instr.futures[1]
-                    opt_chain = fut.options[0]
-                else:
-                    # Use next option expiration
-                    opt_chain = fut.options[1]
+            instr = self.datasource.get(self._symbol, self.date)
+            rh = RolloverHelper(instr)
+            fut, opt_chain = rh.get_active_chains()
+            if fut is None or opt_chain is None:
+                if self.debug_mode:
+                    self.logger.write(
+                        'Futures contract or option chain not found.\n\tFuture: {0}\tOption chain: {1}\n'.format(
+                            fut,
+                            opt_chain
+                        ))
+                return []
 
             if self._direction == 1:
                 # the bullish broken wings are long the -5 put , long the future, short the  + 5 call and long the +9 call
