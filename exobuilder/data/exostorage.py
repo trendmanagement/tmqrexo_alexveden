@@ -107,7 +107,7 @@ class EXOStorage(object):
                     {'exo_name': re_pattern(instruments_list, prepend='^')},
                     {'exo_name': re_pattern(exo_list)},
                     {'direction': {'$in': direction}},
-                    {'alpha_name': re_pattern(alpha_list)}
+                    {'swarm_name': re_pattern(alpha_list)}
                 ]
             }
         )
