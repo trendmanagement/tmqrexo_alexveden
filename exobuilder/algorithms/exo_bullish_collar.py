@@ -9,6 +9,8 @@ from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.exostorage import EXOStorage
 from exobuilder.exo.exoenginebase import ExoEngineBase
 from exobuilder.exo.transaction import Transaction
+
+from exobuilder.algorithms.rollover_helper import RolloverHelper
 import time
 
 import logging
@@ -29,16 +31,11 @@ class EXOBullishCollar(ExoEngineBase):
 
     def is_rollover(self):
         if len(self.position) != 0:
-            fut = self.position.legs['fut']
-            if fut.to_expiration_days <= 2:
-                return True
-
-            opt = self.position.legs['opt_call']
-            if opt.to_expiration_days <= 2:
-                return True
-
+            for p in self.position.legs.values():
+                rh = RolloverHelper(p.instrument)
+                if rh.is_rollover(p):
+                    return True
         return False
-
 
 
     def process_rollover(self):
@@ -51,17 +48,18 @@ class EXOBullishCollar(ExoEngineBase):
         Main EXO's position management method
         :return: list of Transactions to process
         """
-        instr = self.datasource.get(self._symbol, self.date)
-
 
         if len(self.position) == 0:
-            fut = instr.futures[0]
-            if fut.to_expiration_days <= 2:
-                fut = instr.futures[1]
-
-            opt_chain = fut.options[0]
-            if opt_chain.to_expiration_days <= 2:
-                opt_chain = fut.options[1]
+            instr = self.datasource.get(self._symbol, self.date)
+            rh = RolloverHelper(instr)
+            fut, opt_chain = rh.get_active_chains()
+            if fut is None or opt_chain is None:
+                if self.debug_mode:
+                    self.logger.write('Futures contract or option chain not found.\n\tFuture: {0}\tOption chain: {1}\n'.format(
+                        fut,
+                        opt_chain
+                    ))
+                return []
 
             put = opt_chain[-5].P
             call = opt_chain[5].C
