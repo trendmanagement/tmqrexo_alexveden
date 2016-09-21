@@ -137,6 +137,35 @@ class CampaignTestCase(unittest.TestCase):
         self.assertEqual(20 * -4, pos['FUT2']['qty'])
         self.assertEqual(-20*3 + 20*-4, pos['OPT1']['qty'])
 
+    def test_campaign_add(self):
+        alpha_name = 'new_alpha'
+        alpha_leg = 'leg1'
+        campaign_qty = 2.0
+        self._cmp.alphas_add(alpha_name, campaign_qty, alpha_leg)
+        self.assertEqual(sorted(['alpha1', 'alpha2', 'alpha3', 'new_alpha']), sorted(list(self._cmp.alphas.keys())))
+
+    def test_campaign_has_legs(self):
+        alpha_name = 'new_alpha'
+        alpha_leg = 'leg1'
+        campaign_qty = 2.0
+        self._cmp.alphas_add(alpha_name, campaign_qty, alpha_leg)
+        self.assertEqual(True, 'leg1' in self._cmp._legs)
+        self.assertEqual(['leg1'], self._cmp.legs)
+
+    def test_campaign_has_alpha_list(self):
+        campaign_qty = 2.0
+        self._cmp.alphas_add("new_alpha1", campaign_qty, 'leg1')
+        self._cmp.alphas_add("new_alpha2", campaign_qty, 'leg2')
+        self._cmp.alphas_add("new_alpha3", campaign_qty)
+        self.assertEqual(['', 'leg1', 'leg2'], self._cmp.legs)
+
+        self.assertEqual(['alpha1', 'alpha2', 'alpha3', 'new_alpha1', 'new_alpha2', 'new_alpha3'], self._cmp.alphas_list())
+
+        self.assertEqual(['new_alpha1'], self._cmp.alphas_list(by_leg='leg1'))
+        self.assertEqual(['new_alpha2'], self._cmp.alphas_list(by_leg='leg2'))
+        self.assertEqual(['new_alpha3'], self._cmp.alphas_list(by_leg=''))
+        self.assertEqual(['new_alpha3'], self._cmp.alphas_list(by_leg=None))
+
 
 if __name__ == '__main__':
     unittest.main()

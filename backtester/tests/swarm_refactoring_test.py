@@ -661,6 +661,7 @@ class BacktesterTestCase(unittest.TestCase):
         self.assertEqual(s['last_date'], swm.last_date)
         self.assertEqual(s['instrument'], swm.instrument)
         self.assertEqual(s['exo_type'], swm.exo_type)
+        self.assertEqual(s['max_exposure'], swm.max_exposure)
 
 
         swm = Swarm.laststate_from_dict(s, STRATEGY_CONTEXT)
@@ -678,6 +679,7 @@ class BacktesterTestCase(unittest.TestCase):
         self.assertEqual(s['last_date'], swm.last_date)
         self.assertEqual(s['instrument'], swm.instrument)
         self.assertEqual(s['exo_type'], swm.exo_type)
+        self.assertEqual(s['max_exposure'], swm.max_exposure)
 
         eq = pickle.loads(s['picked_equity'])
 

@@ -6,6 +6,7 @@ class Campaign:
         self._dict = campaign_dict
         self._db = mongodb
         self._datasource = datasource
+        self._legs = {}
 
     @property
     def name(self):
@@ -20,8 +21,30 @@ class Campaign:
         return self._dict['_id']
 
     @property
+    def legs(self):
+        return sorted(list(self._legs.keys()))
+
+    @property
     def alphas(self):
         return self._dict['alphas']
+
+    def alphas_add(self, alpha_name, qty, leg_name=''):
+        self.alphas[alpha_name] = {
+            'qty': qty,
+            'leg_name': leg_name
+        }
+
+        legs = self._legs.setdefault(leg_name.lower(), [])
+        legs.append(alpha_name)
+        pass
+
+    def alphas_list(self, by_leg='*'):
+        if by_leg == "*":
+            return sorted(list(self.alphas.keys()))
+        elif by_leg == '' or by_leg == None:
+            return self._legs['']
+        else:
+            return self._legs[by_leg.lower()]
 
     @property
     def alphas_positions(self):

@@ -31,6 +31,7 @@ class Swarm:
         self._last_exposure = None
         self._last_members_list = None
         self._last_rebalance_date = None
+        self._max_exposure = None
 
         self._equity = None
 
@@ -111,6 +112,7 @@ class Swarm:
         if self._picked_exposure is None:
             raise ValueError("Run pick() method before access this property")
         return self._picked_exposure
+
 
     @property
     def picked_equity(self):
@@ -397,6 +399,7 @@ class Swarm:
             'last_exoquote': self.last_exoquote,
             'last_members_list': self.last_members_list,
             'last_rebalance_date': self.last_rebalance_date,
+            'max_exposure': self.max_exposure,
             'picked_equity': pickle.dumps(self.picked_equity),
             # General info
             'swarm_name': self.name,
@@ -426,9 +429,26 @@ class Swarm:
         swm._last_prev_exposure = state_dict['last_prev_exposure']
         swm._last_exoquote = state_dict['last_exoquote']
         swm._last_members_list = state_dict['last_members_list']
+        swm._max_exposure = state_dict['max_exposure']
         swm._equity = pickle.loads(state_dict['picked_equity'])
 
         return swm
+
+    @property
+    def max_exposure(self):
+        """
+        max(abs(picked_exposure)) of swarm
+        :return:
+        """
+        if self._max_exposure is not None:
+            # Return cached value if applicable
+            return self._max_exposure
+
+        if self._picked_exposure is None:
+            raise ValueError("Run pick() method before access this property")
+
+        self._max_exposure = self.picked_exposure.sum(axis=1).abs().max()
+        return self._max_exposure
 
 
     def laststate_update(self, exo_price, swarm_exposure, costs=None):
