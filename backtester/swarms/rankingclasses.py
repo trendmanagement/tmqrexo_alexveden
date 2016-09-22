@@ -16,6 +16,9 @@ class RankingClassBase():
     def rank(self, swarm_slice, nsystems):
         raise NotImplementedError("Every Ranking class must implement rank() method")
 
+    def __str__(self):
+        return 'RankingClassBase'
+
 
 class RankerHighestReturns(RankingClassBase):
     def __init__(self, return_period):
@@ -44,6 +47,9 @@ class RankerHighestReturns(RankingClassBase):
 
         return result, rank_info
 
+    def __str__(self):
+        return 'RankerHighestReturns(return_period={0})'.format(self.return_period)
+
 
 class RankerBestWithCorrel(RankingClassBase):
     def __init__(self, window_size=-1, correl_threshold=0.5):
@@ -60,6 +66,9 @@ class RankerBestWithCorrel(RankingClassBase):
 
     def clear(self):
         pass
+
+    def __str__(self):
+        return 'RankerBestWithCorrel(window_size={0}, correl_threshold={1})'.format(self.window_size, self.correl_threshold)
 
     def rank(self, swarm_slice, nsystems):
         # Filter all negative equities
