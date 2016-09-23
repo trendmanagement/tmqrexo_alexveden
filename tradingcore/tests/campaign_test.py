@@ -9,14 +9,17 @@ class ExoStorageTest1:
         return {
             'alpha1': {
                 'exposure': 1.0,
+                'prev_exposure': 0.0,
                 'exo_name': 'exo1'
             },
             'alpha2': {
                 'exposure': -2.0,
+                'prev_exposure': 2.0,
                 'exo_name': 'exo1'
             },
             'alpha3': {
                 'exposure': -2.0,
+                'prev_exposure': -2.0,
                 'exo_name': 'exo2'
             }
         }
@@ -75,13 +78,15 @@ class CampaignTestCase(unittest.TestCase):
             '_id': ObjectId("57b42aba82d9c39e0341fbc7"),
             'alphas': {
                 'alpha1': {
-                    'qty': -1.0
+                    'qty': -1.0,
+                    'leg_name': 'leg1',
                 },
                 'alpha2': {
-                    'qty': -2.0
+                    'qty': -2.0,
                 },
                 'alpha3': {
-                    'qty': 2.0
+                    'qty': 2.0,
+                    'leg_name': 'leg2',
                 },
             }
         }
@@ -90,12 +95,14 @@ class CampaignTestCase(unittest.TestCase):
         self._db = client['tmqr_testdb']
         self._datasource = DataSourceTest1()
 
-        self._cmp = Campaign(self._dict, self._db, self._datasource)
+        self._cmp = Campaign(self._dict, self._datasource)
+
 
     def test_campaign_init(self):
-        cmp = Campaign(self._dict, self._db, self._datasource)
+        cmp = Campaign(self._dict, self._datasource)
         self.assertEqual(self._dict, cmp._dict)
-        self.assertEqual(self._db, cmp._db)
+
+        self.assertEqual(['', 'leg1', 'leg2'], self._cmp.legs)
 
     def test_campaign_has_name(self):
         self.assertEqual('test_campaign', self._cmp.name)
@@ -148,6 +155,9 @@ class CampaignTestCase(unittest.TestCase):
         alpha_name = 'new_alpha'
         alpha_leg = 'leg1'
         campaign_qty = 2.0
+        # Clean alpha list
+        self._cmp._dict['alphas'] = {}
+        self._cmp._legs = {}
         self._cmp.alphas_add(alpha_name, campaign_qty, alpha_leg)
         self.assertEqual(True, 'leg1' in self._cmp._legs)
         self.assertEqual(['leg1'], self._cmp.legs)
@@ -161,10 +171,10 @@ class CampaignTestCase(unittest.TestCase):
 
         self.assertEqual(['alpha1', 'alpha2', 'alpha3', 'new_alpha1', 'new_alpha2', 'new_alpha3'], self._cmp.alphas_list())
 
-        self.assertEqual(['new_alpha1'], self._cmp.alphas_list(by_leg='leg1'))
-        self.assertEqual(['new_alpha2'], self._cmp.alphas_list(by_leg='leg2'))
-        self.assertEqual(['new_alpha3'], self._cmp.alphas_list(by_leg=''))
-        self.assertEqual(['new_alpha3'], self._cmp.alphas_list(by_leg=None))
+        self.assertEqual(['alpha1', 'new_alpha1'], self._cmp.alphas_list(by_leg='leg1'))
+        self.assertEqual(['alpha3', 'new_alpha2'], self._cmp.alphas_list(by_leg='leg2'))
+        self.assertEqual(['alpha2', 'new_alpha3'], self._cmp.alphas_list(by_leg=''))
+        self.assertEqual(['alpha2', 'new_alpha3'], self._cmp.alphas_list(by_leg=None))
 
 
 if __name__ == '__main__':

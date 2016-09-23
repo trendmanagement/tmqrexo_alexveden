@@ -2,11 +2,19 @@ from exobuilder.exo.position import Position
 
 
 class Campaign:
-    def __init__(self, campaign_dict, mongodb, datasource):
+    def __init__(self, campaign_dict, datasource):
         self._dict = campaign_dict
-        self._db = mongodb
         self._datasource = datasource
         self._legs = {}
+
+        if 'alphas' in self._dict:
+            for alpha_name, alpha_info in self._dict['alphas'].items():
+                if 'leg_name' in alpha_info:
+                    legs = self._legs.setdefault(alpha_info['leg_name'].lower(), [])
+                    legs.append(alpha_name)
+                else:
+                    legs = self._legs.setdefault('', [])
+                    legs.append(alpha_name)
 
     @property
     def name(self):
@@ -24,8 +32,13 @@ class Campaign:
     def legs(self):
         return sorted(list(self._legs.keys()))
 
+    def as_dict(self):
+        return self._dict
+
     @property
     def alphas(self):
+        if 'alphas' not in self._dict:
+            self._dict['alphas'] = {}
         return self._dict['alphas']
 
     def alphas_add(self, alpha_name, qty, leg_name=''):
@@ -36,7 +49,7 @@ class Campaign:
 
         legs = self._legs.setdefault(leg_name.lower(), [])
         legs.append(alpha_name)
-        pass
+
 
     def alphas_list(self, by_leg='*'):
         if by_leg == "*":
@@ -56,6 +69,7 @@ class Campaign:
         for swarm_name, info_dict in self._datasource.exostorage.swarms_positions(self.alphas.keys()).items():
             alpha_exposure[swarm_name] = {
                 'exposure': info_dict['exposure'] * self.alphas[swarm_name]['qty'],
+                'prev_exposure': info_dict['prev_exposure'] * self.alphas[swarm_name]['qty'],
                 'exo_name': info_dict['exo_name'],
                 }
         return alpha_exposure
