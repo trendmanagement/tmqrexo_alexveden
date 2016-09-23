@@ -2,29 +2,22 @@
 
 class Account:
     def __init__(self, acc_dict, campaign, mmclass):
-        self._dict = acc_dict
+        self.name = acc_dict['name']
+        self.client_name = acc_dict['client_name']
+        self.info = acc_dict['info']
         self.campaign = campaign
         self.mmclass = mmclass
-
-    @property
-    def name(self):
-        return self._dict['name']
-
-    @property
-    def client_name(self):
-        return self._dict['client_name']
-
-    @property
-    def dbid(self):
-        return self._dict['_id']
 
     @property
     def positions(self):
         return self.mmclass.get_positions(self.campaign.positions)
 
     def as_dict(self):
-        self._dict['campaign_name'] = self.campaign.name
-        self._dict['mmclass_name'] = self.mmclass.name()
-        return self._dict
-
+        result = {}
+        result['campaign_name'] = self.campaign.name
+        result['mmclass_name'] = self.mmclass.name()
+        result['name'] = self.name
+        result['client_name'] = self.client_name
+        result['info'] = self.info
+        return result
 

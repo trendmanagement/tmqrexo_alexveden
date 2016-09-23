@@ -9,7 +9,7 @@ class ExecutionManagerTestCase(unittest.TestCase):
 
     def setUp(self):
         mongo_connstr = 'mongodb://localhost:27017/'
-        mongo_db_name = 'tmldb_test'
+        mongo_db_name = 'tmldb'
         self.exmgr = ExecutionManager(mongo_connstr, datasource=DataSourceTest1(), dbname=mongo_db_name)
 
     def test_campaign_save(self):

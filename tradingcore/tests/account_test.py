@@ -46,8 +46,6 @@ class AccountTestCase(unittest.TestCase):
 
     def test_init(self):
         acc = Account(self._dict, self._cmp, self.mmclass)
-
-        self.assertEqual(self._dict, acc._dict)
         self.assertEqual(self._cmp, acc.campaign)
         self.assertEqual(self.mmclass, acc.mmclass)
 
@@ -56,9 +54,6 @@ class AccountTestCase(unittest.TestCase):
 
     def test_has_client_name(self):
         self.assertEqual('test_client', self._acc.client_name)
-
-    def test_has_dbid(self):
-        self.assertEqual(ObjectId("57b42aba82d9c39e0341fbc7"), self._acc.dbid)
 
 
 

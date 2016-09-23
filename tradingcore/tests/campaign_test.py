@@ -92,7 +92,7 @@ class CampaignTestCase(unittest.TestCase):
         }
 
         client = MongoClient('mongodb://localhost:27017/')
-        self._db = client['tmqr_testdb']
+        self._db = client['tmqr']
         self._datasource = DataSourceTest1()
 
         self._cmp = Campaign(self._dict, self._datasource)

@@ -128,8 +128,8 @@ class EXOStorage(object):
         :return: dict {'alpha_name: {'exposure':..., 'exo_name':..., 'prev_exposure':...}
         """
         result = {}
-        if alpha_list is None:
-            cursor = self.db['swarms'].find({'swarm_name': {'$in': alpha_list }})
+        if alpha_list is not None:
+            cursor = self.db['swarms'].find({'swarm_name': {'$in': list(alpha_list)}})
         else:
             cursor = self.db['swarms'].find()
 

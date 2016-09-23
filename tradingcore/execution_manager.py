@@ -65,6 +65,19 @@ class ExecutionManager:
         acc_dict = account_collection.find_one({'name': account_name})
         return self.account_process(acc_dict)
 
+    def account_load_all(self):
+        """
+        Load Account instance by name
+        :param account_name: account name in Mongo collection
+        :return:
+        """
+        result = {}
+        account_collection = self.db['accounts']
+        for acc_dict in account_collection.find({}):
+            acc = self.account_process(acc_dict)
+            result[acc.name] = acc
+        return result
+
     def account_process(self, acc_dict):
         """
         Process Account instance from Mongo account dict
@@ -84,9 +97,10 @@ class ExecutionManager:
         # Return new Account class instance
         return Account(acc_dict, acc_campaign, mmclass(acc_dict['info']))
 
-    def account_positions_process(self):
+    def account_positions_process(self, write_to_db=False):
         """
         Process all accounts positions from Mongo and save them into collection
+        :param write_to_db: if True - save all account positions to MongoDB
         :return:
         """
         account_collection = self.db['accounts']
@@ -114,7 +128,8 @@ class ExecutionManager:
             bulk.insert(result_dict)
             account_positions[acc.name] = result_dict
 
-        # Execute bulk insert into MongoDB
-        bulk.execute()
+        if write_to_db:
+            # Execute bulk insert into MongoDB
+            bulk.execute()
         return account_positions
 

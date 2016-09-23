@@ -105,7 +105,9 @@ class Campaign:
                 exo_pos = Position.get_info(exo_data['position'], self._datasource)
 
                 for assetname, pos_dict in exo_pos.items():
-                    position = net_positions.setdefault(assetname, {'asset': pos_dict['asset'], 'qty': 0.0, 'prev_qty': 0.0})
+                    # Escape special MongoDB keys chars in key names
+                    asset_name_safe = assetname.replace('.', '_').replace('$', '_')
+                    position = net_positions.setdefault(asset_name_safe, {'asset': pos_dict['asset'], 'qty': 0.0, 'prev_qty': 0.0})
 
                     # Multiply EXO position by campaign exposure
                     position['qty'] += pos_dict['qty'] * exo_exposure['exposure']
