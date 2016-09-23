@@ -21,6 +21,9 @@ class OptParam(object):
         self.max = max_value
         self.step = step
 
+    def __str__(self):
+        return "OptParam('{0}', min={1}, max={2}, step={3})".format(self.name, self.min, self.max, self.step)
+
 class OptParamArray(object):
     """
     Generic system optimization parameter, like Moving Avg period etc..
@@ -28,6 +31,9 @@ class OptParamArray(object):
     def __init__(self, name, array):
         self.name = name
         self.array = array
+
+    def __str__(self):
+        return "OptParamArray('{0}', {1})".format(self.name, self.array)
 
 
 class StrategyBase(object):

@@ -14,6 +14,9 @@ class CostsManagerBase(object):
         """
         return pd.Series(0, index=price.index)
 
+    def __str__(self):
+        return 'CostsManagerBase'
+
 
 class CostsManagerEXOFixed(CostsManagerBase):
     def calc_costs_per_side(self, options_costs, futures_costs):
@@ -56,6 +59,10 @@ class CostsManagerEXOFixed(CostsManagerBase):
             return pd.Series(costs_value, index=price.index)
         else:
             raise ValueError("'context' missing in costs settings")
+
+    def __str__(self):
+        return 'CostsManagerEXOFixed'
+
 
 
 
