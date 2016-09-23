@@ -13,7 +13,7 @@ class AccountTestCase(unittest.TestCase):
             'client_name': 'test_client',
             '_id': ObjectId("57b42aba82d9c39e0341fbc7"),
             'info': {
-                'qty': 1.0,
+                'size_factor': 1.0,
             }
 
         }

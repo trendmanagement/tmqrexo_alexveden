@@ -116,25 +116,35 @@ class CampaignTestCase(unittest.TestCase):
     def test_campaign_has_alphas(self):
         self.assertEqual(self._dict['alphas'], self._cmp.alphas)
 
+        # Create empty dict is 'alphas' don't exist
+        del self._dict['alphas']
+        self.assertEqual({}, self._cmp.alphas)
+
     def test_campaign_alpha_position(self):
         pos = self._cmp.alphas_positions
 
         self.assertEqual(3, len(pos))
         self.assertEqual(-1.0, pos['alpha1']['exposure'])
+        self.assertEqual(0.0, pos['alpha1']['prev_exposure'])
         self.assertEqual('exo1', pos['alpha1']['exo_name'])
 
         self.assertEqual(4.0, pos['alpha2']['exposure'])
+        self.assertEqual(-4.0, pos['alpha2']['prev_exposure'])
         self.assertEqual('exo1', pos['alpha2']['exo_name'])
 
         self.assertEqual(-4.0, pos['alpha3']['exposure'])
+        self.assertEqual(-4.0, pos['alpha3']['prev_exposure'])
         self.assertEqual('exo2', pos['alpha3']['exo_name'])
 
     def test_campaign_exo_positions(self):
         pos = self._cmp.exo_positions
 
         self.assertEqual(2, len(pos))
-        self.assertEqual(3.0, pos['exo1'])
-        self.assertEqual(-4.0, pos['exo2'])
+        self.assertEqual(3.0, pos['exo1']['exposure'])
+        self.assertEqual(-4.0, pos['exo2']['exposure'])
+
+        self.assertEqual(-4.0, pos['exo1']['prev_exposure'])
+        self.assertEqual(-4.0, pos['exo2']['prev_exposure'])
 
     def test_campaign_net_positions(self):
         pos = self._cmp.positions
@@ -143,6 +153,10 @@ class CampaignTestCase(unittest.TestCase):
         self.assertEqual(20 * 3, pos['FUT1']['qty'])
         self.assertEqual(20 * -4, pos['FUT2']['qty'])
         self.assertEqual(-20*3 + 20*-4, pos['OPT1']['qty'])
+
+        self.assertEqual(-80, pos['FUT1']['prev_qty'])
+        self.assertEqual(-80, pos['FUT2']['prev_qty'])
+        self.assertEqual(0, pos['OPT1']['prev_qty'])
 
     def test_campaign_add(self):
         alpha_name = 'new_alpha'

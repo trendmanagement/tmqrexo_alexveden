@@ -48,7 +48,3 @@ class ExecutionManager:
         mmclass = MM_CLASSES[acc_dict['mmclass_name']]
 
         return Account(acc_dict, acc_campaign, mmclass(acc_dict['info']))
-
-
-    def campaign_list(self):
-        pass

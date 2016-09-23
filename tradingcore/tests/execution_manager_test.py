@@ -47,7 +47,7 @@ class ExecutionManagerTestCase(unittest.TestCase):
             'name': 'test_account',
             'client_name': 'test_client',
             'info': {
-                'qty': 1.0
+                'size_factor': 1.0
             }
         }
 
@@ -55,6 +55,16 @@ class ExecutionManagerTestCase(unittest.TestCase):
         self.exmgr.account_save(acc)
 
     def test_account_load(self):
+        acc = self.exmgr.account_load('test_account')
+        self.assertEqual(type(acc), Account)
+        self.assertEqual(acc.name, 'test_account')
+        self.assertEqual(acc.campaign.name, 'test_campaign')
+        self.assertEqual(acc.mmclass.name(), 'plain')
+
+    def test_account_load_from_cache(self):
+        # exmgr.campaign_load_all fills the cache
+        cmp_dict = self.exmgr.campaign_load_all()
+
         acc = self.exmgr.account_load('test_account')
         self.assertEqual(type(acc), Account)
         self.assertEqual(acc.name, 'test_account')

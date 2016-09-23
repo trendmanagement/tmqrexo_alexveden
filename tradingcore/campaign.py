@@ -82,8 +82,9 @@ class Campaign:
         """
         exo_exposure = {}
         for k, v in self.alphas_positions.items():
-            exp = exo_exposure.setdefault(v['exo_name'], 0.0)
-            exo_exposure[v['exo_name']] = exp + v['exposure']
+            exp = exo_exposure.setdefault(v['exo_name'], {'exposure': 0.0, 'prev_exposure': 0.0})
+            exo_exposure[v['exo_name']]['exposure'] = exp['exposure'] + v['exposure']
+            exo_exposure[v['exo_name']]['prev_exposure'] = exp['prev_exposure'] + v['prev_exposure']
         return exo_exposure
 
 
@@ -104,9 +105,10 @@ class Campaign:
                 exo_pos = Position.get_info(exo_data['position'], self._datasource)
 
                 for assetname, pos_dict in exo_pos.items():
-                    position = net_positions.setdefault(assetname, {'asset': pos_dict['asset'], 'qty': 0.0})
+                    position = net_positions.setdefault(assetname, {'asset': pos_dict['asset'], 'qty': 0.0, 'prev_qty': 0.0})
 
                     # Multiply EXO position by campaign exposure
-                    position['qty'] += pos_dict['qty'] * exo_exposure
+                    position['qty'] += pos_dict['qty'] * exo_exposure['exposure']
+                    position['prev_qty'] += pos_dict['qty'] * exo_exposure['prev_exposure']
 
         return net_positions
