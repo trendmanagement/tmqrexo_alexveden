@@ -3,14 +3,14 @@ from tradingcore.execution_manager import ExecutionManager
 from tradingcore.campaign import Campaign
 from tradingcore.account import Account
 from tradingcore.moneymanagement import PlainMM
-
+from tradingcore.tests.campaign_test import DataSourceTest1
 
 class ExecutionManagerTestCase(unittest.TestCase):
 
     def setUp(self):
         mongo_connstr = 'mongodb://localhost:27017/'
         mongo_db_name = 'tmldb_test'
-        self.exmgr = ExecutionManager(mongo_connstr, datasource=None, dbname=mongo_db_name)
+        self.exmgr = ExecutionManager(mongo_connstr, datasource=DataSourceTest1(), dbname=mongo_db_name)
 
     def test_campaign_save(self):
        _dict = {
@@ -70,6 +70,10 @@ class ExecutionManagerTestCase(unittest.TestCase):
         self.assertEqual(acc.name, 'test_account')
         self.assertEqual(acc.campaign.name, 'test_campaign')
         self.assertEqual(acc.mmclass.name(), 'plain')
+
+    def test_account_positions_process(self):
+        # exmgr.campaign_load_all fills the cache
+        cmp_dict = self.exmgr.account_positions_process()
 
 
 

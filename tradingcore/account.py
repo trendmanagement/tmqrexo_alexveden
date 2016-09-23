@@ -18,6 +18,7 @@ class Account:
     def dbid(self):
         return self._dict['_id']
 
+    @property
     def positions(self):
         return self.mmclass.get_positions(self.campaign.positions)
 
