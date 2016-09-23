@@ -4,6 +4,7 @@ from tradingcore.campaign import Campaign
 from tradingcore.account import Account
 from tradingcore.moneymanagement import PlainMM
 
+
 class ExecutionManagerTestCase(unittest.TestCase):
 
     def setUp(self):
