@@ -23,7 +23,25 @@ def convert_dates(values):
 
 def get_sql_data(sql_conn, mongo_db, colname):
     logging.info("Processing: " + colname)
-    qry = 'SELECT * FROM cqgdb.tbl' + colname
+    lastid = -1
+    idname = ''
+    if colname == 'options':
+        idname = 'idoption'
+        last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
+        lastid = last_data[idname]
+        logging.info('Updating Options from ID:{0}'.format(lastid))
+    elif colname == 'contracts':
+        idname = 'idcontract'
+        last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
+        lastid = last_data[idname]
+        logging.info('Updating Futures from ID:{0}'.format(lastid))
+    elif colname == 'instruments':
+        idname = 'idinstrument'
+        last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
+        lastid = last_data[idname]
+        logging.info('Updating Instruments from ID:{0}'.format(lastid))
+
+    qry = 'SELECT * FROM cqgdb.tbl{0} WHERE {1} > {2}'.format(colname, idname, lastid)
     logging.debug(qry)
     c2 = sql_conn.cursor(as_dict=True)
     c2.execute(qry)
@@ -56,11 +74,15 @@ def main(args, loglevel):
 
     logging.info("Requesting information...")
 
+
+
     get_sql_data(sql_conn, mongo_db, 'instruments')
 
     get_sql_data(sql_conn, mongo_db, 'contracts')
 
     get_sql_data(sql_conn, mongo_db, 'options')
+
+
 
     sql_conn.close()
     client.close()
