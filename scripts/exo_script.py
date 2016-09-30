@@ -14,6 +14,7 @@ from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.datasource_sql import DataSourceSQL
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.exostorage import EXOStorage
+from exobuilder.data.datasource_hybrid import DataSourceHybrid
 
 try:
     from .settings import *
@@ -103,7 +104,14 @@ class EXOScript:
             options_limit = 10
 
             #datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
-            datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
+            #datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
+            #
+            # Test DB temporary credentials
+            #
+            tmp_mongo_connstr = 'mongodb://tml:tml@10.0.1.2/tmldb_test?authMechanism=SCRAM-SHA-1'
+            tmp_mongo_db = 'tmldb_test'
+            datasource = DataSourceHybrid(SQL_HOST, SQL_USER, SQL_PASS, assetindex, tmp_mongo_connstr, tmp_mongo_db,
+                                          futures_limit, options_limit, exostorage)
 
             # Run EXO calculation
             self.run_exo_calc(datasource, decision_time, symbol, isbackfill=False)
@@ -151,6 +159,7 @@ class EXOScript:
         options_limit = 10
         # datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
         datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
+
 
         exec_time, decision_time = AssetIndexMongo.get_exec_time(self.args.backfill, self.asset_info)
 
