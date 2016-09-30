@@ -17,6 +17,46 @@ class RolloverHelper:
             self.rollover_months = [1, 2, 3, 5, 7, 9, 12]
             self.days_before_expiration = 5
 
+        if self.instrument.name.upper() == "ZW":
+            """Option	Future
+            Jan	Mar
+            Feb	Mar
+            Mar	Mar
+            Apr	May
+            May	May
+            Jun	Jun
+            Jul	Jul
+            Aug	Sep
+            Sep	Sep
+            Oct	Dec
+            Nov	Dec
+            Dec	Dec
+            """
+            self.rollover_months = [3, 5, 6, 7, 9, 12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "ZS":
+            """
+            Soy
+
+            Option	Future
+
+            Jan	Jan
+            Feb	Mar
+            Mar	Mar
+            Apr	May
+            May	May
+            Jun	Jul
+            Jul	Jul
+            Aug	Aug
+            Sep	Sep
+            Oct	Nov
+            Nov	Nov
+            Dec	Jan
+            """
+            self.rollover_months = [1, 3, 5, 7, 8, 9, 11]
+            self.days_before_expiration = 5
+
         else:
             # Default
             # Roll every month
