@@ -28,6 +28,14 @@ class MsgStatus(MsgBase):
         self.status = status
         self.context = context
 
+class MsgQuoteNotification(MsgBase):
+    mtype = 'quote'
+
+    def __init__(self, instrument, date, context={}):
+        super().__init__()
+        self.instrument = instrument
+        self.date = date
+        self.context = context
 
 class MsgEXOQuote(MsgBase):
     mtype = 'exoquote'

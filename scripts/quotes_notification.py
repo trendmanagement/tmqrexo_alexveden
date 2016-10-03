@@ -1,0 +1,124 @@
+#!/usr/bin/env python
+#
+
+# import modules used here -- sys is a very standard one
+import sys, argparse, logging
+from datetime import datetime, timedelta, date
+import time
+import pymongo
+from pymongo import MongoClient
+from tradingcore.signalapp import SignalApp, APPCLASS_DATA
+from tradingcore.messages import *
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
+
+try:
+    from .settings import *
+except SystemError:
+    from scripts.settings import *
+
+try:
+    from .settings_local import *
+except SystemError:
+    try:
+        from scripts.settings_local import *
+    except ImportError:
+        pass
+    pass
+
+
+class QuotesNotifyScript:
+    def __init__(self, args, loglevel):
+        self.signalapp = None
+        self.asset_info = None
+        self.args = args
+        self.loglevel = loglevel
+        self.last_quote_date = date(2000, 1, 1)
+
+        logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
+
+
+    def main(self):
+        logging.info("Initiating EXO building engine")
+
+        # Initialize EXO engine SignalApp (report first status)
+        self.signalapp = SignalApp(self.args.instrument, APPCLASS_DATA, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
+        self.signalapp.send(MsgStatus('INIT', 'Initiating data notification script'))
+
+        # Get information about decision and execution time
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+        self.asset_info = assetindex.get_instrument_info(args.instrument)
+
+        exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
+
+        client = MongoClient(MONGO_CONNSTR)
+        # TODO: replace DB name after release
+        mongo_db_name = 'tmldb_test'
+        db = client[mongo_db_name]
+
+
+        while True:
+            # Getting last bar time from DB
+            last_bar_time = db['futurebarcol'].find({}).sort('$natural', pymongo.DESCENDING).limit(1).next()['bartime']
+
+            # Fire new quote notification if last_bar_time > decision_time
+            if self.last_quote_date != last_bar_time.date() and last_bar_time > decision_time:
+                # Reporting current status
+                self.signalapp.send(MsgStatus('RUN', 'Processing new bar {0}'.format(last_bar_time)))
+                logging.info('Running new bar. Bar time: {0}'.format(last_bar_time))
+
+                context = {
+                    'last_bar_time': last_bar_time,
+                    'now': datetime.now(),
+                    'last_run_date': self.last_quote_date,
+                    'decision_time': decision_time,
+                    'execution_time': exec_time,
+                    'instrument': self.args.instrument,
+                }
+                self.signalapp.send(MsgQuoteNotification(self.args.instrument, last_bar_time, context))
+                self.last_quote_date = last_bar_time.date()
+            else:
+                context = {
+                    'last_bar_time': last_bar_time,
+                    'now': datetime.now(),
+                    'last_run_date': self.last_quote_date,
+                    'decision_time': decision_time,
+                    'execution_time': exec_time,
+                    'instrument': self.args.instrument,
+                }
+                self.signalapp.send(MsgStatus('IDLE', 'Last bar time {0}'.format(last_bar_time), context))
+            time.sleep(15)
+
+
+
+
+
+# Standard boilerplate to call the main() function to begin
+# the program.
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="Simple quotes notification script",
+        epilog="Runs every 15 seconds and reads MongoDB collection for new quotes.",
+        fromfile_prefix_chars='@')
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="increase output verbosity",
+        action="store_true")
+
+
+    parser.add_argument('instrument', type=str,
+                        help='instrument name for EXO')
+
+
+
+    args = parser.parse_args()
+
+    # Setup logging
+    if args.verbose:
+        loglevel = logging.DEBUG
+    else:
+        loglevel = logging.INFO
+
+    script = QuotesNotifyScript(args, loglevel)
+    script.main()

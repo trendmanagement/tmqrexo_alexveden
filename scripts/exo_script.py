@@ -52,6 +52,12 @@ class EXOScript:
             if 'date' not in data:
                 logging.error("Bad message format")
                 return False
+            if 'mtype' not in data:
+                logging.error("Bad message format, no 'mtype'")
+                return False
+            else:
+                if data['mtype'] != 'quote':
+                    return False
 
         return True
 
@@ -92,7 +98,7 @@ class EXOScript:
         quote_date = data['date']
         symbol = appname
 
-        if quote_date >= decision_time:
+        if quote_date > decision_time:
             # TODO: Check to avoid dupe launch
             # Run first EXO calculation for this day
             logging.info("Run EXO calculation, at decision time")
