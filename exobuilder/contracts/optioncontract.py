@@ -48,6 +48,10 @@ class OptionContract(object):
         return self._data['idoption']
 
     @property
+    def month_int(self):
+        return self._data['optionmonthint']
+
+    @property
     def date(self):
         return self.instrument.date
 

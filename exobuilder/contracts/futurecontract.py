@@ -36,6 +36,10 @@ class FutureContract(object):
         return self._instrument
 
     @property
+    def month_int(self):
+        return self._data['monthint']
+
+    @property
     def dbid(self):
         return self._data['idcontract']
 
