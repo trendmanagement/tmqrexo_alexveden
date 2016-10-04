@@ -21,7 +21,7 @@ except SystemError:
     pass
 import importlib
 
-from tradingcore.swarmonlinemanager import SwarmOnlineManager
+from tradingcore.execution_manager import ExecutionManager
 from tradingcore.messages import *
 import pprint
 
@@ -29,27 +29,18 @@ class TradingOnlineScript:
     def __init__(self, args, loglevel):
         self.args = args
         self.loglevel = loglevel
+        logging.getLogger("pika").setLevel(logging.WARNING)
         logger = logging.getLogger('TradingOnlineScript')
         logger.setLevel(loglevel)
-        fh = None
-        if args.logfile != '':
-            # create file handler which logs even debug messages
-            fh = logging.FileHandler(args.logfile)
-            fh.setLevel(loglevel)
 
         # create console handler with a higher log level
-        ch = logging.StreamHandler()
+        ch = logging.StreamHandler(sys.stdout)
         ch.setLevel(loglevel)
 
         # create formatter and add it to the handlers
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         ch.setFormatter(formatter)
         logger.addHandler(ch)
-
-
-        if fh is not None:
-            fh.setFormatter(formatter)
-            logger.addHandler(fh)
 
         self.log = logger
 
@@ -69,6 +60,8 @@ class TradingOnlineScript:
         options_limit = 10
         self.datasource = DataSourceBase(assetindex, futures_limit, options_limit, exostorage)
 
+        self.exmgr = ExecutionManager(MONGO_CONNSTR, self.datasource, MONGO_EXO_DB)
+
 
 
     def on_alpha_state_callback(self, appclass, appname, data_object):
@@ -78,43 +71,17 @@ class TradingOnlineScript:
         # Make sure that is valid EXO quote message
         if msg.mtype == MsgAlphaState.mtype:
             self.log.info('Processing Alpha state of: {0} at {1}'.format(msg.swarm_name, msg.last_date))
-            # Load EXO structure
-            swarm_exposure = msg.exposure
-            swarm_prev_exposure = msg.prev_exposure
-            swarm_last_date = msg.last_date
 
-            self.log.debug('Swarm Exposure: {0} PrevExposure: {1} LastDate: {2}'.format(swarm_exposure,
-                                                                                        swarm_prev_exposure,
-                                                                                        swarm_last_date))
+            # Processing positions for each campaign/account
+            pos_list = self.exmgr.account_positions_process(write_to_db=True)
 
-            asset_info = self.datasource.assetindex.get_instrument_info(msg.instrument)
-            exec_time, decision_time = self.datasource.assetindex.get_exec_time(msg.date, asset_info)
+            pp = pprint.PrettyPrinter(indent=4)
 
-            pos_list = []
+            self.log.debug(pp.pformat(pos_list))
 
-            # Get positions composition
-            exo_data = self.datasource.exostorage.load_exo(msg.exo_name)
-            if exo_data is not None:
-                # Generate current swarm net position
-                position = Position.from_dict(exo_data['position'], self.datasource, decision_time)
-                for contact, pos_dict in position.netpositions.items():
-                    pos_list.append(
-                        {
-                            'ticker': contact.name,
-                            'dbid': contact.dbid,
-                            'qty': int(pos_dict['qty'] * swarm_exposure)
-                        }
-                    )
-                if self.loglevel == logging.DEBUG:
-                    pp = pprint.PrettyPrinter(indent=4)
-                    self.log.debug('Current position: \n {0}'.format(pp.pformat(pos_list)))
 
-                # Send position information to real-time software via RabbitMQ
-                self.signal_app.send(MsgAlphaSignal(msg, pos_list))
-
-            else:
-                self.log.warn("EXO {0} not found in datasource".format(msg.exo_name))
-
+            # Send position information to real-time software via RabbitMQ
+            self.signal_app.send(MsgAlphaSignal(msg, pos_list))
 
 
     def main(self):
@@ -138,15 +105,6 @@ if __name__ == '__main__':
         "--verbose",
         help="increase output verbosity",
         action="store_true")
-
-
-    parser.add_argument(
-        '-L',
-        '--logfile',
-        help="Path to logfile",
-        action="store",
-        default=''
-    )
 
 
     args = parser.parse_args()

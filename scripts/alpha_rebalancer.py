@@ -19,28 +19,25 @@ from backtester.swarms.swarm import Swarm
 from backtester.strategy import OptParamArray
 from exobuilder.data.exostorage import EXOStorage
 from tradingcore.swarmonlinemanager import SwarmOnlineManager
-import logging
+
+# import modules used here -- sys is a very standard one
+import sys, argparse, logging
 
 
 TMQRPATH = os.getenv("TMQRPATH", '')
 
-logger = logging.getLogger('AlphaRebalancerScript')
-loglevel = logging.DEBUG
-logger.setLevel(loglevel)
 
-# create file handler which logs even debug messages
-fh = logging.FileHandler(os.path.join(TMQRPATH, 'alpha_rebalancer.log'))
-fh.setLevel(loglevel)
+#
+# Handling unexpected exceptions
+#
+def handle_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
 
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(loglevel)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+    logging.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+sys.excepthook = handle_exception
 
 
 def get_exo_names():
@@ -68,17 +65,23 @@ def get_exo_names_mat():
 
 
 
-def main():
-    # Getting the list of all EXOs / instruments
-    #exo_names = get_exo_names_mat()
+def main(args, loglevel):
+    if args.logfile == '':
+        logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                            level=loglevel)
+    else:
+        logging.basicConfig(filename=args.logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                            level=loglevel)
 
-    logger.info("Starning alpha rebalancer script")
+    #exo_names = get_exo_names_mat()
+    logging.getLogger("pika").setLevel(logging.WARNING)
+    logging.info("Starting...")
 
     exo_storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
     exo_names = exo_storage.exo_list()
 
     for exo in exo_names:
-        logger.info("Processing EXO: " + exo)
+        logging.info("Processing EXO: " + exo)
         # Load alpha modules to process
         for module in os.listdir('alphas'):
             #
@@ -89,13 +92,13 @@ def main():
             if module == exo.lower() and os.path.isdir(os.path.join('alphas', module)):
                 for custom_file in os.listdir(os.path.join('alphas', module)):
                     if 'alpha_' in custom_file and '.py' in custom_file:
-                        logger.debug('Processing custom module: ' + os.path.join('alphas', module, custom_file))
+                        logging.debug('Processing custom module: ' + os.path.join('alphas', module, custom_file))
                         m = importlib.import_module('scripts.alphas.{0}.{1}'.format(module, custom_file.replace('.py', '')))
 
-                        logger.info('Running CUSTOM alpha: ' + m.STRATEGY_NAME)
+                        logging.info('Running CUSTOM alpha: ' + m.STRATEGY_NAME)
                         context = m.STRATEGY_CONTEXT
                         if 'exo_name' in context['strategy'] and context['strategy']['exo_name'] != exo:
-                            logger.error("Custom strategy context exo_name != current EXO name (folder mismatch?)")
+                            logging.error("Custom strategy context exo_name != current EXO name (folder mismatch?)")
                             raise ValueError("Custom strategy context exo_name != current EXO name (folder mismatch?)")
 
                         context['strategy']['exo_name'] = exo
@@ -114,14 +117,12 @@ def main():
                         swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
                         swmonline.save(swm)
 
-
-            # TODO: temporary commented
-            elif False: #'alpha_' in module and '.py' in module:
-                logger.debug('Processing generic module: ' + module)
+            elif 'alpha_' in module and '.py' in module:
+                logging.debug('Processing generic module: ' + module)
 
                 m = importlib.import_module('scripts.alphas.{0}'.format(module.replace('.py','')))
                 for direction in [-1, 1]:
-                    logger.info('Running alpha: ' + m.STRATEGY_NAME + ' Direction: {0}'.format(direction))
+                    logging.info('Running alpha: ' + m.STRATEGY_NAME + ' Direction: {0}'.format(direction))
                     context = m.STRATEGY_CONTEXT
                     context['strategy']['exo_name'] = exo
                     context['strategy']['opt_params'][0] = OptParamArray('Direction', [direction])
@@ -139,8 +140,33 @@ def main():
                     #
                     swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
                     swmonline.save(swm)
+    logging.info("Done.")
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="Bulk alpha strategy backtesting script",
+        epilog="As an alternative to the commandline, params can be placed in a file, one per line, and specified on the commandline like '%(prog)s @params.conf'.",
+        fromfile_prefix_chars='@')
 
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="increase output verbosity",
+        action="store_true")
 
-    main()
+    parser.add_argument(
+        "-L",
+        "--logfile",
+        help="Log file path",
+        action="store",
+        default='')
+
+    args = parser.parse_args()
+
+    # Setup logging
+    if args.verbose:
+        loglevel = logging.DEBUG
+    else:
+        loglevel = logging.INFO
+
+    main(args, loglevel)

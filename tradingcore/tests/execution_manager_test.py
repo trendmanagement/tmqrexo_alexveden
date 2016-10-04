@@ -74,6 +74,7 @@ class ExecutionManagerTestCase(unittest.TestCase):
     def test_account_positions_process(self):
         # exmgr.campaign_load_all fills the cache
         cmp_dict = self.exmgr.account_positions_process()
+        pass
 
 
 

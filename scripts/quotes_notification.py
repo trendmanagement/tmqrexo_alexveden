@@ -10,6 +10,7 @@ from pymongo import MongoClient
 from tradingcore.signalapp import SignalApp, APPCLASS_DATA
 from tradingcore.messages import *
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
+import pprint
 
 try:
     from .settings import *
@@ -33,8 +34,9 @@ class QuotesNotifyScript:
         self.args = args
         self.loglevel = loglevel
         self.last_quote_date = date(2000, 1, 1)
-
-        logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
+        self.last_minute = -1
+        logging.getLogger("pika").setLevel(logging.WARNING)
+        logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=loglevel)
 
 
     def main(self):
@@ -50,15 +52,19 @@ class QuotesNotifyScript:
 
         exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
 
-        client = MongoClient(MONGO_CONNSTR)
+
         # TODO: replace DB name after release
         mongo_db_name = 'tmldb_test'
+        tmp_mongo_connstr = 'mongodb://tml:tml@10.0.1.2/tmldb_test?authMechanism=SCRAM-SHA-1'
+        client = MongoClient(tmp_mongo_connstr)
         db = client[mongo_db_name]
-
+        pp = pprint.PrettyPrinter(indent=4)
 
         while True:
             # Getting last bar time from DB
             last_bar_time = db['futurebarcol'].find({}).sort('$natural', pymongo.DESCENDING).limit(1).next()['bartime']
+
+
 
             # Fire new quote notification if last_bar_time > decision_time
             if self.last_quote_date != last_bar_time.date() and last_bar_time > decision_time:
@@ -74,17 +80,27 @@ class QuotesNotifyScript:
                     'execution_time': exec_time,
                     'instrument': self.args.instrument,
                 }
+                logging.debug('Current context:\n {0}'.format(pp.pformat(context)))
                 self.signalapp.send(MsgQuoteNotification(self.args.instrument, last_bar_time, context))
                 self.last_quote_date = last_bar_time.date()
             else:
+                dtnow = datetime.now()
                 context = {
                     'last_bar_time': last_bar_time,
-                    'now': datetime.now(),
+                    'now': dtnow,
                     'last_run_date': self.last_quote_date,
                     'decision_time': decision_time,
                     'execution_time': exec_time,
                     'instrument': self.args.instrument,
                 }
+
+                # Log initial information:
+                if self.last_minute == -1:
+                    logging.debug('Current context:\n {0}'.format(pp.pformat(context)))
+                elif self.last_minute != dtnow.minute:
+                    logging.debug('Last bar time {0}'.format(last_bar_time))
+
+                self.last_minute = dtnow.minute
                 self.signalapp.send(MsgStatus('IDLE', 'Last bar time {0}'.format(last_bar_time), context))
             time.sleep(15)
 

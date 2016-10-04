@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-#
-
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
 import pymssql
@@ -9,6 +6,34 @@ import datetime
 from decimal import Decimal
 import pymongo
 from pymongo import MongoClient
+
+
+try:
+    from .settings import *
+except SystemError:
+    from scripts.settings import *
+
+try:
+    from .settings_local import *
+except SystemError:
+    try:
+        from scripts.settings_local import *
+    except ImportError:
+        pass
+    pass
+
+#
+# Handling unexpected exceptions
+#
+def handle_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    logging.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+sys.excepthook = handle_exception
+
 
 def convert_dates(values):
     k,v = values
@@ -62,15 +87,21 @@ def get_sql_data(sql_conn, mongo_db, colname):
 
 # Gather our code in a main() function
 def main(args, loglevel):
+    logging.getLogger("pika").setLevel(logging.WARNING)
 
-    logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
+    if args.logfile == '':
+        logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=loglevel)
+    else:
+        logging.basicConfig(filename=args.logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                            level=loglevel)
+    logging.info('Starting...')
 
-    logging.debug("Connecting to Mongo DB: " + args.mongodb)
-    client = MongoClient(args.mongodb)
-    mongo_db = client['tmldb']
+    logging.debug("Connecting to Mongo DB: " + MONGO_CONNSTR)
+    client = MongoClient(MONGO_CONNSTR)
+    mongo_db = client[MONGO_EXO_DB]
 
-    logging.info("Connecting to SQL Server DB {0}  {1}".format(args.sqlserver, args.sqldb))
-    sql_conn = pymssql.connect(args.sqlserver, args.sqluser + "@" + args.sqlserver, args.sqlpassword, args.sqldb)
+    logging.info("Connecting to SQL Server DB {0}  {1}".format(SQL_HOST, 'TMLDB'))
+    sql_conn = pymssql.connect(SQL_HOST, SQL_USER + "@" + SQL_HOST, SQL_PASS, 'TMLDB')
 
     logging.info("Requesting information...")
 
@@ -86,8 +117,7 @@ def main(args, loglevel):
 
     sql_conn.close()
     client.close()
-
-
+    logging.info('Done.')
 
 
 
@@ -105,40 +135,13 @@ if __name__ == '__main__':
         help="increase output verbosity",
         action="store_true")
 
-    parser.add_argument(
-        "-m",
-        "--mongodb",
-        help="Connection string for MongoDB default: %(default)s",
-        action="store",
-        default='mongodb://localhost:27017/')
 
     parser.add_argument(
-        "-S",
-        "--sqlserver",
-        help="SQL server address default: %(default)s",
+        "-L",
+        "--logfile",
+        help="Log file path",
         action="store",
-        default='h9ggwlagd1.database.windows.net')
-
-    parser.add_argument(
-        "-U",
-        "--sqluser",
-        help="SQL server user name default: %(default)s",
-        action="store",
-        default='modelread')
-
-    parser.add_argument(
-        "-P",
-        "--sqlpassword",
-        help="SQL server password default: %(default)s",
-        action="store",
-        default='4fSHRXwd4u')
-
-    parser.add_argument(
-        "-D",
-        "--sqldb",
-        help="SQL server database name default: %(default)s",
-        action="store",
-        default='TMLDB')
+        default='')
 
 
 

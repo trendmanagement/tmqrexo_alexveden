@@ -37,8 +37,8 @@ class EXOScript:
         self.asset_info = None
         self.args = args
         self.loglevel = loglevel
-
-        logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
+        logging.getLogger("pika").setLevel(logging.WARNING)
+        logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=loglevel)
 
     def check_quote_data(self, appname, appclass, data):
         if appclass != APPCLASS_DATA:
