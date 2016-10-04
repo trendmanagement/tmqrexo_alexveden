@@ -1,7 +1,7 @@
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
 from tradingcore.signalapp import SignalApp, APPCLASS_ALPHA, APPCLASS_EXO
-
+import os
 
 try:
     from .settings import *
@@ -27,11 +27,10 @@ class AlphaOnlineScript:
     def __init__(self, args, loglevel):
         self.args = args
         self.loglevel = loglevel
-        self.alpha_name = args.alphaname
+        self.custom_exo = args.exoname
         logging.getLogger("pika").setLevel(logging.WARNING)
-        logger = logging.getLogger('AlphaOnlineScript')
+        logger = logging.getLogger('AlphaCustomOnlineScript')
         logger.setLevel(loglevel)
-
 
         # create console handler with a higher log level
         ch = logging.StreamHandler(sys.stdout)
@@ -45,10 +44,10 @@ class AlphaOnlineScript:
 
         self.log = logger
 
-        self.log.info('Init AlphaOnlineScript Alpha: {0}'.format(self.alpha_name))
+        self.log.info('Init AlphaCustomOnlineScript CusomEXO: {0}'.format(self.custom_exo))
 
-        self.signal_app = SignalApp(self.alpha_name, APPCLASS_ALPHA, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
-        self.signal_app.send(MsgStatus("INIT", 'Initiating online alpha engine {0}'.format(self.alpha_name)))
+        self.signal_app = SignalApp('CustomAlpha_'+self.custom_exo, APPCLASS_ALPHA, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
+        self.signal_app.send(MsgStatus("INIT", 'Initiating online alpha custom engine {0}'.format(self.custom_exo)))
         self.exo_app = SignalApp('*', APPCLASS_EXO, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
 
 
@@ -71,16 +70,20 @@ class AlphaOnlineScript:
 
         # Make sure that is valid EXO quote message
         if msg.mtype == MsgEXOQuote.mtype:
-            self.log.info('Processing EXO quote: {0} at {1}'.format(msg.exo_name, msg.exo_date))
-            # Load strategy_context
-            m = importlib.import_module(
-                'scripts.alphas.alpha_{0}'.format(self.alpha_name.replace('alpha_', '').replace('.py', '')))
+            module = msg.exo_name.lower()
+            if os.path.isdir(os.path.join('alphas', module)):
+                self.log.info('Processing EXO quote: {0} at {1}'.format(msg.exo_name, msg.exo_date))
+                for custom_file in os.listdir(os.path.join('alphas', module)):
+                    if 'alpha_' in custom_file and '.py' in custom_file:
+                        # Load strategy_context
+                        m = importlib.import_module(
+                            'scripts.alphas.{0}.{1}'.format(module, custom_file.replace('.py', '')))
 
-            # Initiate swarm from Mongo DB
-            exo_name = msg.exo_name
-            swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
-            # Update and save swarm with new day data (and run callback)
-            swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
+                        # Initiate swarm from Mongo DB
+                        exo_name = msg.exo_name
+                        swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
+                        # Update and save swarm with new day data (and run callback)
+                        swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
 
     def main(self):
         """
@@ -108,8 +111,9 @@ if __name__ == '__main__':
 
 
 
-    parser.add_argument('alphaname', type=str,
-                        help='Alpha module name (see ./alphas/*.py files list)')
+
+    parser.add_argument('exoname', type=str,
+                        help='Custom EXO module name (see ./alphas/{CUSTOM_EXO}/*.py files list)')
 
 
 
