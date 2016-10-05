@@ -68,3 +68,4 @@ target/
 /notebooks/scripts/swarms/
 /scripts/supervisor_include/
 /scripts/settings_local.py
+/scripts/logs/

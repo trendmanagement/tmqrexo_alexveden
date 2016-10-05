@@ -154,6 +154,9 @@ class EXOScript:
                             # Sending signal to alphas that EXO price is ready
                             self.signalapp.send(MsgEXOQuote(exo_engine.exo_name, decision_time))
 
+
+
+
     def do_backfill(self):
         #
         logging.info("Run EXO backfill from {0}".format(self.args.backfill))
@@ -166,12 +169,20 @@ class EXOScript:
         # datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
         datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
 
+        exos = exostorage.exo_list(exo_filter=self.args.instrument+'_')
 
-        exec_time, decision_time = AssetIndexMongo.get_exec_time(self.args.backfill, self.asset_info)
+        if len(exos) > 0:
+            series = exostorage.load_series(exos[0])[0]
+            last_date = series.index[-1] + timedelta(days=1)
+            exec_time, decision_time = AssetIndexMongo.get_exec_time(last_date, self.asset_info)
+            logging.info('Updating existing EXO series from: {0}'.format(decision_time))
+        else:
+            logging.info('Updating new EXO series from: {0}'.format(self.args.backfill))
+            exec_time, decision_time = AssetIndexMongo.get_exec_time(self.args.backfill, self.asset_info)
 
         exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
-        # TODO: before calculation we need to do rollback of old transactions (to maintain EXO granularity)
 
+        # TODO: before calculation we need to do rollback of old transactions (to maintain EXO granularity)
         while decision_time <= decision_time_end:
             logging.info("Backfilling: {0}".format(decision_time))
 
@@ -182,7 +193,7 @@ class EXOScript:
 
 
     def main(self):
-        logging.info("Initiating EXO building engine")
+        logging.info("Initiating EXO building engine for {0}".format(self.args.instrument))
 
         # Initialize EXO engine SignalApp (report first status)
         self.signalapp = SignalApp(self.args.instrument, APPCLASS_EXO, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
