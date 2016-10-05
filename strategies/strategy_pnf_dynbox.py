@@ -19,14 +19,6 @@ class StrategyPointAndFigurePatterns_DynamicBoxSize(StrategyBase):
         # Initialize parent class
         super().__init__(strategy_context)
 
-        # Define system's name
-        self.name = 'PointAndFigurePatterns_DynamicBoxSize'
-
-        self.check_context()
-
-        # Define optimized params
-        self.opts = strategy_context['strategy']['opt_params']
-
     def check_context(self):
         #
         # Do strategy specific checks

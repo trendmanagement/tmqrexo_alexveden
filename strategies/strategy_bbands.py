@@ -19,19 +19,6 @@ class StrategyBolingerBands(StrategyBase):
         # Initialize parent class
         super().__init__(strategy_context)
 
-        # Define system's name
-        self.name = 'BolingerBands'
-
-        self.check_context()
-
-        # Define optimized params
-        self.opts = strategy_context['strategy']['opt_params']
-
-    def check_context(self):
-        #
-        # Do strategy specific checks
-        #
-        pass
 
     def calc_entry_rules(self, bb_period, bb_k, rules_index):
 

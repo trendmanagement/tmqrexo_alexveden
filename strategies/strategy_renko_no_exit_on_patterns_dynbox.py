@@ -15,19 +15,6 @@ class StrategyRenkoPatterns_no_exit_on_patterns_DynamicBoxSize(StrategyBase):
         # Initialize parent class
         super().__init__(strategy_context)
 
-        # Define system's name
-        self.name = 'RenkoPatterns_no_exit_on_patterns_DynamicBoxSize'
-
-        self.check_context()
-
-        # Define optimized params
-        self.opts = strategy_context['strategy']['opt_params']
-
-    def check_context(self):
-        #
-        # Do strategy specific checks
-        #
-        pass
 
     def calc_entry_rules(self, atr_period, move_count, rules_index):
 
