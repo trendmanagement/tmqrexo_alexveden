@@ -19,12 +19,6 @@ class StrategyPointAndFigurePatterns_DynamicBoxSize(StrategyBase):
         # Initialize parent class
         super().__init__(strategy_context)
 
-    def check_context(self):
-        #
-        # Do strategy specific checks
-        #
-        pass
-
     def calc_entry_rules(self, atr_period, reversal_multiplier, column_consec_move_count, window_percent, rules_index):
 
         df = pd.DataFrame()
