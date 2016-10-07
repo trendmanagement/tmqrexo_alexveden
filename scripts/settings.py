@@ -8,7 +8,7 @@ from exobuilder.algorithms.exo_continous_fut import EXOContinuousFut
 #
 # Instruments list
 #
-INSTRUMENTS_LIST = ['ES', 'CL', 'NG', 'ZN', 'ZS', 'ZW']
+INSTRUMENTS_LIST = ['ES', 'CL', 'NG', 'ZN', 'ZS', 'ZW','ZC']
 
 #
 # Settings part
