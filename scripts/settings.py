@@ -30,14 +30,7 @@ EXO_LIST = [
 ]
 
 # Alphas list (generic)
-ALPHAS_GENERIC = ['alpha_bollingerbands',
-                  'alpha_ichimoku',
-                  'alpha_macross',
-                  'alpha_pointnfigure',
-                  'alpha_renko_noexit',
-                  'alpha_swingpoint',
-                  'alpha_volcompression'
-                  ]
+ALPHAS_GENERIC = ['alpha_exo']
 
 # Custom alpha EXO list
 ALPHAS_CUSTOM = [

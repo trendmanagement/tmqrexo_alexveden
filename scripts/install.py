@@ -295,7 +295,7 @@ if __name__ == '__main__':
     # Setting up scripts
     install_exo_online()
     install_quotes_notifications()
-    #install_alphas_online()
+    install_alphas_online()
     install_alphas_custom()
     install_trading_script()
 

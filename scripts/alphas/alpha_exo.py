@@ -6,6 +6,8 @@ from strategies.strategy_exo import StrategyEXO
 
 STRATEGY_NAME = "EXO"
 
+STRATEGY_SUFFIX = ''
+
 STRATEGY_CONTEXT = {
     'strategy': {
         'class': StrategyEXO,
