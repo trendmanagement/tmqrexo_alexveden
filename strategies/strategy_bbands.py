@@ -14,7 +14,7 @@ import numpy as np
 import scipy
 
 
-class StrategyBolingerBands(StrategyBase):
+class StrategyBollingerBands(StrategyBase):
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)

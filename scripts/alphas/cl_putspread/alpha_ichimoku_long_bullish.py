@@ -19,7 +19,7 @@ STRATEGY_CONTEXT = {
                         OptParam('base_line_period', 26, 13, 13, 13),
                         OptParam('leading_spans_lookahead_period', 26, 26, 26, 13),
                         OptParam('leading_span_b_period', 52, 10, 10, 10),
-                        OptParamArray('RulesIndex', np.arange(17)),
+                        OptParamArray('RulesIndex', np.arange(14)),
                         OptParam('MedianPeriod', 5, 20, 30, 10)
             ],
     },
