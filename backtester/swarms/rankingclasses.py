@@ -6,7 +6,7 @@ import pyximport
 pyximport.install()
 from backtester.backtester_fast import backtest_equity
 
-class RankingClassBase():
+class RankingClassBase:
     def __init__(self):
         pass
 
@@ -18,6 +18,22 @@ class RankingClassBase():
 
     def __str__(self):
         return 'RankingClassBase'
+
+class RankingNoRanking(RankingClassBase):
+    def __init__(self):
+        """
+        Placeholder ranking class, used in single member alphas (like StrategyEXO)
+        """
+        super().__init__()
+
+    def clear(self):
+        pass
+
+    def rank(self, swarm_slice, nsystems):
+        return swarm_slice.columns, [{} for x in swarm_slice.columns]
+
+    def __str__(self):
+        return 'NoRanking(UseAll)'
 
 
 class RankerHighestReturns(RankingClassBase):
