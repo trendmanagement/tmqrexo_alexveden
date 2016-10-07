@@ -15,6 +15,8 @@ import scipy
 
 
 class StrategyPointAndFigurePatterns(StrategyBase):
+    name = 'PointAndFigure'
+
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)

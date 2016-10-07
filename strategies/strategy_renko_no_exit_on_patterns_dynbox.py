@@ -11,6 +11,8 @@ import scipy
 
 
 class StrategyRenkoPatterns_no_exit_on_patterns_DynamicBoxSize(StrategyBase):
+    name = 'RenkoPatternsNoExitsDynBox'
+
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)

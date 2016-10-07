@@ -15,6 +15,8 @@ import scipy
 
 
 class StrategyPointAndFigurePatterns_DynamicBoxSize(StrategyBase):
+    name = 'PointAndFigureDynBox'
+
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)

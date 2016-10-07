@@ -15,6 +15,9 @@ import scipy
 
 
 class StrategyIchimokuCloud(StrategyBase):
+    name = 'IchimokuCloud'
+
+
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
