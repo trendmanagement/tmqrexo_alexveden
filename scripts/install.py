@@ -22,6 +22,9 @@ def clean():
     print("Removing: /etc/cron.weekly/tmqr_*.py")
     os.system('rm /etc/cron.weekly/tmqr_*.py')
 
+    print("Removing logs directory")
+    os.system('rm -r {0}'.format(os.path.join(current_path, 'logs')))
+
 
 def start():
     os.system('service supervisor start')
@@ -289,7 +292,7 @@ if __name__ == '__main__':
     # Setting up scripts
     install_exo_online()
     install_quotes_notifications()
-    install_alphas_online()
+    #install_alphas_online()
     install_alphas_custom()
     install_trading_script()
 

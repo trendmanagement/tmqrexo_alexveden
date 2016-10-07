@@ -83,17 +83,16 @@ class EXOScript:
 
 
     def on_new_quote(self, appclass, appname, data):
+        # Check data integrity
+        if not self.check_quote_data(appname, appclass, data):
+            return
+
         exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
 
         start_time = time.time()
 
         print(data)
         print("decision_time: {0}".format(decision_time))
-
-        # Check data integrity
-        if not self.check_quote_data(appname, appclass, data):
-            return
-
 
         quote_date = data['date']
         symbol = appname

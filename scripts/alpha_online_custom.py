@@ -65,11 +65,11 @@ class AlphaOnlineScript:
         self.signal_app.send(MsgAlphaState(swm))
 
     def on_exo_quote_callback(self, appclass, appname, data_object):
-        self.log.debug('on_exo_quote_callback: {0}.{1} Data: {2}'.format(appname, appclass, data_object))
         msg = MsgBase(data_object)
 
         # Make sure that is valid EXO quote message
         if msg.mtype == MsgEXOQuote.mtype:
+            self.log.debug('on_exo_quote_callback: {0}.{1} Data: {2}'.format(appname, appclass, data_object))
             module = msg.exo_name.lower()
             if os.path.isdir(os.path.join('alphas', module)):
                 self.log.info('Processing EXO quote: {0} at {1}'.format(msg.exo_name, msg.exo_date))

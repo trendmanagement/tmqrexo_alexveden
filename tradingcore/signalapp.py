@@ -17,8 +17,11 @@ APPCLASS_SIGNALS = "Signals"
 
 class SignalApp(object):
     def __init__(self, appname, appclass, host='localhost', user='guest', password='guest'):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host=host, credentials=PlainCredentials(user, password)))
+        conn_params = pika.ConnectionParameters(
+                        host=host,
+                        credentials=PlainCredentials(user, password),
+                        heartbeat_interval=2*24*3600)
+        connection = pika.BlockingConnection(conn_params)
 
         self.appname = appname
         self.appclass = appclass
