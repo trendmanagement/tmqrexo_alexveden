@@ -149,6 +149,9 @@ environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
 
 
 def install_alphas_custom():
+    if not os.path.exists(os.path.join(current_path, 'logs', 'alphas')):
+        os.mkdir(os.path.join(current_path, 'logs', 'alphas'))
+
     if not os.path.exists(os.path.join(current_path, 'logs', 'alphas', 'custom')):
         os.mkdir(os.path.join(current_path, 'logs', 'alphas', 'custom'))
 
