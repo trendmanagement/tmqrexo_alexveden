@@ -6,12 +6,12 @@ from strategies.strategy_bbands import StrategyBollingerBands
 
 STRATEGY_NAME = StrategyBollingerBands.name
 
-STRATEGY_SUFFIX = 'bullish-'
+STRATEGY_SUFFIX = 'alt2-bearish-'
 
 STRATEGY_CONTEXT = {
     'strategy': {
         'class': StrategyBollingerBands,
-        'exo_name': 'CL_PutSpread',        # <---- Select and paste EXO name from cell above
+        'exo_name': 'NG_PutSpread',        # <---- Select and paste EXO name from cell above
         'opt_params': [
                         #OptParam(name, default_value, min_value, max_value, step)
                         OptParamArray('Direction', [1]),
@@ -19,7 +19,7 @@ STRATEGY_CONTEXT = {
                         OptParam('BB_K', 2, 8, 10, .5),
 
                         ### Trend 0:5
-                        #OptParamArray('RulesIndex', np.arange(26)[0:5]),
+                        OptParamArray('RulesIndex', np.arange(26)[0:5]),
 
                         ### Vola breakout 5:10
                         #OptParamArray('RulesIndex', np.arange(26)[5:10]),
@@ -28,7 +28,7 @@ STRATEGY_CONTEXT = {
                         #OptParamArray('RulesIndex', np.arange(26)[10:15]),
 
                         ### %B rules 15:26
-                        OptParamArray('RulesIndex', np.arange(26)[15:26]),
+                        #OptParamArray('RulesIndex', np.arange(26)[15:26]),
 
                         ### All rules
                         #OptParamArray('RulesIndex', np.arange(26)[:]),

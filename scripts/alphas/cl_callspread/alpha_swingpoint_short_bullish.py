@@ -4,7 +4,7 @@ from backtester.swarms.rankingclasses import *
 from backtester.swarms.rebalancing import SwarmRebalance
 from strategies.strategy_swingpoint import StrategySwingPoint
 
-STRATEGY_NAME = "SwingPoint"
+STRATEGY_NAME = StrategySwingPoint.name
 
 STRATEGY_SUFFIX = 'bullish-'
 

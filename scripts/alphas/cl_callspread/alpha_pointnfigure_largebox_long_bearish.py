@@ -4,7 +4,7 @@ from backtester.swarms.rankingclasses import *
 from backtester.swarms.rebalancing import SwarmRebalance
 from strategies.strategy_pnf import StrategyPointAndFigurePatterns
 
-STRATEGY_NAME = "PointAndFigure"
+STRATEGY_NAME = StrategyPointAndFigurePatterns.name
 
 STRATEGY_SUFFIX = 'largebox-bearish-'
 

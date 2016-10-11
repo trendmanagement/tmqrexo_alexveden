@@ -4,7 +4,7 @@ from backtester.swarms.rankingclasses import *
 from backtester.swarms.rebalancing import SwarmRebalance
 from strategies.strategy_renko_no_exit_on_patterns import StrategyRenkoPatterns_no_exit_on_patterns
 
-STRATEGY_NAME = "Renko"
+STRATEGY_NAME = StrategyRenkoPatterns_no_exit_on_patterns.name
 
 STRATEGY_SUFFIX = 'bullish-'
 

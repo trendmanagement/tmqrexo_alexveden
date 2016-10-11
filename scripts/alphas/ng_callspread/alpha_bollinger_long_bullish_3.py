@@ -6,12 +6,12 @@ from strategies.strategy_bbands import StrategyBollingerBands
 
 STRATEGY_NAME = StrategyBollingerBands.name
 
-STRATEGY_SUFFIX = 'bullish-'
+STRATEGY_SUFFIX = 'alt3-bullish-'
 
 STRATEGY_CONTEXT = {
     'strategy': {
         'class': StrategyBollingerBands,
-        'exo_name': 'CL_PutSpread',        # <---- Select and paste EXO name from cell above
+        'exo_name': 'NG_CallSpread',        # <---- Select and paste EXO name from cell above
         'opt_params': [
                         #OptParam(name, default_value, min_value, max_value, step)
                         OptParamArray('Direction', [1]),

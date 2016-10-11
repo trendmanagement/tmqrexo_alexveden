@@ -11,19 +11,19 @@ STRATEGY_SUFFIX = 'bearish-'
 STRATEGY_CONTEXT = {
     'strategy': {
         'class': StrategySwingPoint,
-        'exo_name': 'CL_CallSpread',  # <---- Select and paste EXO name from cell above
+        'exo_name': 'ES_PutSpread',        # <---- Select and paste EXO name from cell above
         'opt_params': [
-            # OptParam(name, default_value, min_value, max_value, step)
-            OptParamArray('Direction', [-1]),
-            OptParam('sphTreshold', 2, 2, 2, 2),
-            OptParam('splTreshold', 2, 2, 13, 2),
-            # bearish_breakout, bearish_failure, bullish_breakout, bullish_failure
-            OptParamArray('RulesIndex', [3]),
-            OptParam('MedianPeriod', 5, 30, 30, 5)
-        ],
+                        #OptParam(name, default_value, min_value, max_value, step)
+                        OptParamArray('Direction', [1]),
+                        OptParam('sphTreshold', 2, 2, 12, 2),
+                        OptParam('splTreshold', 2, 2, 12, 2),
+                        #bearish_breakout, bearish_failure, bullish_breakout, bullish_failure
+                        OptParamArray('RulesIndex', [0]),
+                        OptParam('MedianPeriod', 5, 1, 20, 2)
+            ],
     },
     'swarm': {
-        'members_count': 5,
+        'members_count': 2,
         'ranking_class': RankerBestWithCorrel(window_size=-1, correl_threshold=0.5),
         'rebalance_time_function': SwarmRebalance.every_friday,
     },
