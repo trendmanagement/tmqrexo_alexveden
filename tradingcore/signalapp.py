@@ -18,6 +18,13 @@ APPCLASS_SIGNALS = "Signals"
 import logging
 import pika
 
+from pika.connection import LOGGER as pika_logger
+
+class LoggerFilterNormalCloseIsFine (logging.Filter):
+    def filter(self, record):
+        return not record.getMessage().endswith('(200): Normal shutdown')
+pika_logger.addFilter(LoggerFilterNormalCloseIsFine())
+
 LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
               '-35s %(lineno) -5d: %(message)s')
 LOGGER = logging.getLogger(__name__)
