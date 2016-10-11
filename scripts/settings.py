@@ -8,7 +8,7 @@ from exobuilder.algorithms.exo_continous_fut import EXOContinuousFut
 #
 # Instruments list
 #
-INSTRUMENTS_LIST = ['ES', 'CL', 'NG', 'ZN', 'ZS', 'ZW']
+INSTRUMENTS_LIST = ['ES', 'CL', 'NG', 'ZN', 'ZS', 'ZW', 'ZC']
 
 #
 # Settings part
@@ -36,6 +36,13 @@ ALPHAS_GENERIC = ['alpha_exo']
 ALPHAS_CUSTOM = [
     'cl_callspread',
     'cl_putspread',
+    'cl_bearishcollarbw',
+    'es_callspread',
+    'es_putspread',
+    'ng_callspread',
+    'ng_putspread',
+    'zn_callspread',
+    'zn_putspread'
 ]
 
 # MongoDB credentials
