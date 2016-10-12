@@ -2,25 +2,24 @@ from backtester.costs import CostsManagerEXOFixed
 from backtester.strategy import OptParam, OptParamArray
 from backtester.swarms.rankingclasses import *
 from backtester.swarms.rebalancing import SwarmRebalance
-from strategies.strategy_ichimokucloud import StrategyIchimokuCloud
+from strategies.strategy_swingpoint import StrategySwingPoint
 
-STRATEGY_NAME = StrategyIchimokuCloud.name
+STRATEGY_NAME = StrategySwingPoint.name
 
 STRATEGY_SUFFIX = 'bullish-'
 
 STRATEGY_CONTEXT = {
     'strategy': {
-        'class': StrategyIchimokuCloud,
-        'exo_name': 'ZS_PutSpread',        # <---- Select and paste EXO name from cell above
+        'class': StrategySwingPoint,
+        'exo_name': 'ZW_CallSpread',        # <---- Select and paste EXO name from cell above
         'opt_params': [
                         #OptParam(name, default_value, min_value, max_value, step)
                         OptParamArray('Direction', [-1]),
-                        OptParam('conversion_line_period', 9, 13, 13, 1),
-                        OptParam('base_line_period', 26, 13, 13, 1),
-                        OptParam('leading_spans_lookahead_period', 26, 13, 13, 1),
-                        OptParam('leading_span_b_period', 52, 52, 52, 10),
-                        OptParamArray('RulesIndex', np.arange(14)),
-                        OptParam('MedianPeriod', 5,20, 20, 10)
+                        OptParam('sphTreshold', 2, 2, 2, 2),
+                        OptParam('splTreshold', 2, 2, 12, 2),
+            #bearish_breakout, bearish_failure, bullish_breakout, bullish_failure
+                        OptParamArray('RulesIndex', [0]),
+                        OptParam('MedianPeriod', 5, 40, 40, 10)
             ],
     },
     'swarm': {

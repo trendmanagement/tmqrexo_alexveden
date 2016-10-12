@@ -6,21 +6,23 @@ from strategies.strategy_ichimokucloud import StrategyIchimokuCloud
 
 STRATEGY_NAME = StrategyIchimokuCloud.name
 
-STRATEGY_SUFFIX = 'bullish-'
+STRATEGY_SUFFIX = 'alt2-bearish-'
 
 STRATEGY_CONTEXT = {
     'strategy': {
         'class': StrategyIchimokuCloud,
-        'exo_name': 'ZS_PutSpread',        # <---- Select and paste EXO name from cell above
+        'exo_name': 'ZW_CallSpread',        # <---- Select and paste EXO name from cell above
         'opt_params': [
                         #OptParam(name, default_value, min_value, max_value, step)
                         OptParamArray('Direction', [-1]),
-                        OptParam('conversion_line_period', 9, 13, 13, 1),
-                        OptParam('base_line_period', 26, 13, 13, 1),
+                        OptParam('conversion_line_period', 9, 5, 5, 5),
+                        OptParam('base_line_period', 26, 26, 26, 13),
                         OptParam('leading_spans_lookahead_period', 26, 13, 13, 1),
                         OptParam('leading_span_b_period', 52, 52, 52, 10),
                         OptParamArray('RulesIndex', np.arange(14)),
-                        OptParam('MedianPeriod', 5,20, 20, 10)
+                        #OptParamArray('RulesIndex', [4,5,7]),
+                        #OptParamArray('RulesIndex', [14,15,16]),
+                        OptParam('MedianPeriod', 5, 20, 40, 10)
             ],
     },
     'swarm': {
