@@ -69,21 +69,23 @@ class AlphaOnlineScript:
 
         # Make sure that is valid EXO quote message
         if msg.mtype == MsgEXOQuote.mtype:
-            self.log.debug('on_exo_quote_callback: {0}.{1} Data: {2}'.format(appname, appclass, data_object))
             module = msg.exo_name.lower()
-            if os.path.isdir(os.path.join('alphas', module)):
-                self.log.info('Processing EXO quote: {0} at {1}'.format(msg.exo_name, msg.exo_date))
-                for custom_file in os.listdir(os.path.join('alphas', module)):
-                    if 'alpha_' in custom_file and '.py' in custom_file:
-                        # Load strategy_context
-                        m = importlib.import_module(
-                            'scripts.alphas.{0}.{1}'.format(module, custom_file.replace('.py', '')))
+            if module == self.args.exoname.lower():
+                self.log.debug('on_exo_quote_callback: {0}.{1} Data: {2}'.format(appname, appclass, data_object))
+                if os.path.isdir(os.path.join('alphas', module)):
+                    self.log.info('Processing EXO quote: {0} at {1}'.format(msg.exo_name, msg.exo_date))
+                    for custom_file in os.listdir(os.path.join('alphas', module)):
+                        if 'alpha_' in custom_file and '.py' in custom_file:
+                            self.log.info('Running alpha strategy from: {0}'.format(os.path.join('alphas', module, custom_file)))
+                            # Load strategy_context
+                            m = importlib.import_module(
+                                'scripts.alphas.{0}.{1}'.format(module, custom_file.replace('.py', '')))
 
-                        # Initiate swarm from Mongo DB
-                        exo_name = msg.exo_name
-                        swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
-                        # Update and save swarm with new day data (and run callback)
-                        swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
+                            # Initiate swarm from Mongo DB
+                            exo_name = msg.exo_name
+                            swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
+                            # Update and save swarm with new day data (and run callback)
+                            swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
 
     def main(self):
         """

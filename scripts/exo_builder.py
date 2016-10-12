@@ -38,22 +38,33 @@ class EXOScript:
         self.args = args
         self.loglevel = loglevel
         logging.getLogger("pika").setLevel(logging.WARNING)
-        logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=loglevel)
+
+        self.logger = logging.getLogger('EXOBuilder')
+        self.logger.setLevel(loglevel)
+
+        # create console handler with a higher log level
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setLevel(loglevel)
+
+        # create formatter and add it to the handlers
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+        self.logger.addHandler(ch)
 
     def check_quote_data(self, appname, appclass, data):
         if appclass != APPCLASS_DATA:
-            logging.error("Unexpected APP class message: {0}".format(data))
+            self.logger.error("Unexpected APP class message: {0}".format(data))
             return False
 
         if data is None or len(data) == 0:
-            logging.error("Empty message")
+            self.logger.error("Empty message")
             return False
         else:
             if 'date' not in data:
-                logging.error("Bad message format")
+                self.logger.error("Bad message format")
                 return False
             if 'mtype' not in data:
-                logging.error("Bad message format, no 'mtype'")
+                self.logger.error("Bad message format, no 'mtype'")
                 return False
             else:
                 if data['mtype'] != 'quote':
@@ -65,7 +76,7 @@ class EXOScript:
         if args.exolist == "*":
             return EXO_LIST
         else:
-            print(args.exolist)
+            self.logger.debug("Processing list of EXOs: "+args.exolist)
             result = []
             list_set = {}
             for e in args.exolist.split(','):
@@ -88,11 +99,7 @@ class EXOScript:
             return
 
         exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
-
         start_time = time.time()
-
-        print(data)
-        print("decision_time: {0}".format(decision_time))
 
         quote_date = data['date']
         symbol = appname
@@ -100,7 +107,7 @@ class EXOScript:
         if quote_date > decision_time:
             # TODO: Check to avoid dupe launch
             # Run first EXO calculation for this day
-            logging.info("Run EXO calculation, at decision time")
+            self.logger.info("Run EXO calculation, at decision time: {0}".format(decision_time))
 
             assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
             exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
@@ -125,11 +132,8 @@ class EXOScript:
             # TODO: textlog status
             self.signalapp.send(MsgStatus('OK', 'EXO Processed', context={'instrument': symbol, 'date': quote_date, 'exec_time': end_time-start_time}))
 
-
-
-
         else:
-            logging.debug("Waiting next decision time")
+            self.logger.debug("Waiting next decision time")
 
 
 
@@ -137,7 +141,7 @@ class EXOScript:
         # Running all EXOs builder algos
         exos_list = self.get_exo_list(args)
         for exo in exos_list:
-            logging.info('Processing EXO: {0} at {1}'.format(exo['name'], decision_time))
+            self.logger.info('Processing EXO: {0} at {1}'.format(exo['name'], decision_time))
 
             ExoClass = exo['class']
 
@@ -145,7 +149,7 @@ class EXOScript:
             for direction in [1, -1]:
                 if ExoClass.direction_type() == 0 or ExoClass.direction_type() == direction:
                     with ExoClass(symbol, direction, decision_time, datasource, log_file_path=args.debug) as exo_engine:
-                        logging.debug("Running EXO instance: " + exo_engine.name)
+                        self.logger.debug("Running EXO instance: " + exo_engine.name)
                         # Load EXO information from mongo
                         exo_engine.load()
                         exo_engine.calculate()
@@ -158,7 +162,7 @@ class EXOScript:
 
     def do_backfill(self):
         #
-        logging.info("Run EXO backfill from {0}".format(self.args.backfill))
+        self.logger.info("Run EXO backfill from {0}".format(self.args.backfill))
 
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
@@ -174,16 +178,16 @@ class EXOScript:
             series = exostorage.load_series(exos[0])[0]
             last_date = series.index[-1] + timedelta(days=1)
             exec_time, decision_time = AssetIndexMongo.get_exec_time(last_date, self.asset_info)
-            logging.info('Updating existing EXO series from: {0}'.format(decision_time))
+            self.logger.info('Updating existing EXO series from: {0}'.format(decision_time))
         else:
-            logging.info('Updating new EXO series from: {0}'.format(self.args.backfill))
+            self.logger.info('Updating new EXO series from: {0}'.format(self.args.backfill))
             exec_time, decision_time = AssetIndexMongo.get_exec_time(self.args.backfill, self.asset_info)
 
         exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
 
         # TODO: before calculation we need to do rollback of old transactions (to maintain EXO granularity)
         while decision_time <= decision_time_end:
-            logging.info("Backfilling: {0}".format(decision_time))
+            self.logger.info("Backfilling: {0}".format(decision_time))
 
             self.run_exo_calc(datasource, decision_time, args.instrument, isbackfill=True)
 
@@ -192,7 +196,7 @@ class EXOScript:
 
 
     def main(self):
-        logging.info("Initiating EXO building engine for {0}".format(self.args.instrument))
+        self.logger.info("Initiating EXO building engine for {0}".format(self.args.instrument))
 
         # Initialize EXO engine SignalApp (report first status)
         self.signalapp = SignalApp(self.args.instrument, APPCLASS_EXO, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
@@ -210,7 +214,7 @@ class EXOScript:
             # Online mode
 
             # Subscribe to datafeed signal app
-            logging.debug('Subscribing datafeed for: ' + self.args.instrument)
+            self.logger.debug('Subscribing datafeed for: ' + self.args.instrument)
             datafeed = SignalApp(self.args.instrument, APPCLASS_DATA, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
             # Listening datafeed loop
             datafeed.listen(self.on_new_quote)

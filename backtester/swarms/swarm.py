@@ -7,6 +7,8 @@ import pyximport; pyximport.install()
 from backtester.backtester_fast import stats_exposure
 from copy import  deepcopy
 import inspect
+import pprint
+import warnings
 
 class Swarm:
     def __init__(self, context, laststate=False):
@@ -491,16 +493,18 @@ class Swarm:
             # Do sanity checks
             # Check that date index matches
             if _exo_price.index[i] != _swarm_exposure.index[i]:
-                raise ValueError("len(_exo_price) != len(_swarm_exposure)")
+                raise ValueError("_exo_price.index[i] != _swarm_exposure.index[i]")
 
             # Check that exo_quote is matching in history
             # To avoid calculation mistakes
             if _exo_price.index[i] == self.last_date:
                 if _exo_price.values[i] != self.last_exoquote:
-                    raise ValueError("New historical EXO price doesn't match the last_exoquote on same day! Is EXO recalculated?")
-
-                # Just ignore same date swarm updates
-            else: # Date of EXO price > self.last_date
+                    pp = pprint.PrettyPrinter(indent=4)
+                    #raise ValueError("New historical EXO price doesn't match the last_exoquote on same day! Is EXO recalculated?")
+                    warnings.warn("New historical EXO price doesn't match the last_exoquote on same day! Is EXO recalculated?\nLast state info:\n{0}\n\nExo Price series (last 5 days):\n {1}".format(
+                        pp.pformat(self.laststate_to_dict()),
+                        exo_price.iloc[-5:],
+                    ))
 
                 # We have new quote data
                 # Update equity series with (exo_price[i] - self.last_exoquote) * self.last_exposure

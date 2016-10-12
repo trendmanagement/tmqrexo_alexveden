@@ -50,11 +50,11 @@ class PlainMMTestCase(unittest.TestCase):
         }
         mmclass = PlainMM(acc_info)
 
-        self.assertEqual(mmclass.get_positions(campaign_pos)['asset1']['qty'], 2)
-        self.assertEqual(mmclass.get_positions(campaign_pos)['asset1']['prev_qty'], 0.0)
+        self.assertEqual(mmclass.get_positions(campaign_pos)[0]['qty'], 2)
+        self.assertEqual(mmclass.get_positions(campaign_pos)[0]['prev_qty'], 0.0)
 
-        self.assertEqual(mmclass.get_positions(campaign_pos)['asset2']['qty'], 0)
-        self.assertEqual(mmclass.get_positions(campaign_pos)['asset2']['prev_qty'], 4.0)
+        self.assertEqual(mmclass.get_positions(campaign_pos)[1]['qty'], 0)
+        self.assertEqual(mmclass.get_positions(campaign_pos)[1]['prev_qty'], 4.0)
 
     def test_get_positions_rounded(self):
         campaign_pos = {
@@ -80,11 +80,11 @@ class PlainMMTestCase(unittest.TestCase):
         }
         mmclass = PlainMM(acc_info)
 
-        self.assertEqual(mmclass.get_positions(campaign_pos)['asset1']['qty'], 2)
-        self.assertEqual(mmclass.get_positions(campaign_pos)['asset1']['prev_qty'], 7.0)
+        self.assertEqual(mmclass.get_positions(campaign_pos)[0]['qty'], 2)
+        self.assertEqual(mmclass.get_positions(campaign_pos)[0]['prev_qty'], 7.0)
 
-        self.assertEqual(mmclass.get_positions(campaign_pos)['asset2']['qty'], 0)
-        self.assertEqual(mmclass.get_positions(campaign_pos)['asset2']['prev_qty'], 4.0)
+        self.assertEqual(mmclass.get_positions(campaign_pos)[1]['qty'], 0)
+        self.assertEqual(mmclass.get_positions(campaign_pos)[1]['prev_qty'], 4.0)
 
 
 

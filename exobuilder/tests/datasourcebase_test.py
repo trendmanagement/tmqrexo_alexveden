@@ -22,9 +22,9 @@ class DatasourceMongoTestCase(unittest.TestCase):
         self.assertEqual(self.datasource.options_limit, 10)
 
     def test_get_item_as_instument(self):
-        instr = self.datasource.get('EP', self.date)
+        instr = self.datasource.get('ES', self.date)
         self.assertEqual(type(instr), Instrument)
-        self.assertEqual(instr.name, 'EP')
+        self.assertEqual(instr.name, 'ES')
         self.assertEqual(instr.date, self.date)
         self.assertEqual(instr.futures_limit, 3)
         self.assertEqual(instr.options_limit, 10)
@@ -35,9 +35,9 @@ class DatasourceMongoTestCase(unittest.TestCase):
         self.assertRaises(NotImplementedError, self.datasource.get_extra_data, None, None)
 
     def test_get_item_from_hash_future_contract(self):
-        instr = self.datasource.get('EP', self.date)
+        instr = self.datasource.get('ES', self.date)
         self.assertEqual(type(instr), Instrument)
-        self.assertEqual(instr.name, 'EP')
+        self.assertEqual(instr.name, 'ES')
         self.assertEqual(instr.date, self.date)
         self.assertEqual(instr.futures_limit, 3)
         self.assertEqual(instr.options_limit, 10)
@@ -63,9 +63,9 @@ class DatasourceMongoTestCase(unittest.TestCase):
         self.assertEqual(f2, fut_contract)
 
     def test_get_item_from_hash_option_contract(self):
-        instr = self.datasource.get('EP', self.date)
+        instr = self.datasource.get('ES', self.date)
         self.assertEqual(type(instr), Instrument)
-        self.assertEqual(instr.name, 'EP')
+        self.assertEqual(instr.name, 'ES')
         self.assertEqual(instr.date, self.date)
         self.assertEqual(instr.futures_limit, 3)
         self.assertEqual(instr.options_limit, 10)

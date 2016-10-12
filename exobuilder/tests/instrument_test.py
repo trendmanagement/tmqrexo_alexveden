@@ -9,7 +9,7 @@ class InstrumentCase(unittest.TestCase):
     def setUp(self):
         self.assetindex = AssetIndexDicts()
 
-        self.symbol = 'EP'
+        self.symbol = 'ES'
         self.date = datetime(2014, 1, 5, 0, 0, 0)
         self.futures_limit = 12
         self.instrument_dbid = 11
