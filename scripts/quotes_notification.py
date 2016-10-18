@@ -50,8 +50,6 @@ class QuotesNotifyScript:
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         self.asset_info = assetindex.get_instrument_info(args.instrument)
 
-        exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
-
 
         # TODO: replace DB name after release
         mongo_db_name = 'tmldb_test'
@@ -63,6 +61,7 @@ class QuotesNotifyScript:
         while True:
             # Getting last bar time from DB
             last_bar_time = db['futurebarcol'].find({}).sort('$natural', pymongo.DESCENDING).limit(1).next()['bartime']
+            exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
 
 
 
