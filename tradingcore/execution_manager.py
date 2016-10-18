@@ -2,6 +2,7 @@ from pymongo.mongo_client import MongoClient
 from tradingcore.campaign import Campaign
 from tradingcore.account import Account
 from tradingcore.moneymanagement import MM_CLASSES
+from datetime import datetime
 
 
 class ExecutionManager:
@@ -125,6 +126,7 @@ class ExecutionManager:
             # Add position dict to MongoDB bulk write operation
             result_dict = acc_dict
             result_dict['positions'] = acc_pos
+            result_dict['date_now'] = datetime.now()
             bulk.insert(result_dict)
             account_positions[acc.name] = result_dict
 
