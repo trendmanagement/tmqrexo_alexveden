@@ -22,6 +22,9 @@ def clean():
     print("Removing: /etc/cron.weekly/tmqr_*.py")
     os.system('rm /etc/cron.weekly/tmqr_*.py')
 
+    print("Removing: /etc/cron.daily/tmqr_*.py")
+    os.system('rm /etc/cron.daily/tmqr_*.py')
+
     print("Removing logs directory")
     os.system('rm -r {0}'.format(os.path.join(current_path, 'logs')))
 
@@ -272,6 +275,32 @@ python3.5 {current_path}/{script_file} -v --logfile={log_file}
     os.system('chmod +x {0}'.format(file_name))
 
 
+def install_cron_trading_positions_archive():
+    if not os.path.exists(os.path.join(current_path, 'logs', 'scheduled')):
+        os.mkdir(os.path.join(current_path, 'logs', 'scheduled'))
+
+    script_source = """#!/bin/sh
+export PYTHONPATH={pythonpath}
+export TMQRPATH={tmqrpath}
+cd {current_path}
+python3.5 {current_path}/{script_file} -v --logfile={log_file}
+"""
+
+    file_contents = script_source.format(**{
+        'script_file': 'trading_positions_archive.py',
+        'log_file': os.path.join(current_path, 'logs', 'scheduled', 'trading_positions_archive.log'),
+        'current_path': current_path,
+        'tmqrpath': TMQRPATH,
+        'pythonpath': PYTHONPATH,
+    })
+
+    file_name = '/etc/cron.daily/tmqr_trading_positions_archive.sh'
+    print('install_cron_trading_positions_archive(): Writing ' + file_name)
+    with open(file_name, 'w') as fh:
+        fh.write(file_contents)
+
+    os.system('chmod +x {0}'.format(file_name))
+
 
 
 if __name__ == '__main__':
@@ -302,6 +331,7 @@ if __name__ == '__main__':
     # Setting up CRON scripts
     install_cron_alpha_rebalancer()
     install_cron_assetindex_updater()
+    install_cron_trading_positions_archive()
 
     # Starting services
     start()
