@@ -33,6 +33,11 @@ class TradingPositionsArchiveScript:
         logger = logging.getLogger('TradingPositionsArchiveScript')
         logger.setLevel(loglevel)
 
+        fh = None
+        if args.logfile != '':
+            fh = logging.FileHandler(args.logfile)
+            fh.setLevel(loglevel)
+
         # create console handler with a higher log level
         ch = logging.StreamHandler(sys.stdout)
         ch.setLevel(loglevel)
@@ -40,7 +45,11 @@ class TradingPositionsArchiveScript:
         # create formatter and add it to the handlers
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         ch.setFormatter(formatter)
+
         logger.addHandler(ch)
+        if fh is not None:
+            fh.setFormatter(formatter)
+            logger.addHandler(fh)
 
         self.log = logger
 
@@ -97,6 +106,14 @@ if __name__ == '__main__':
         "--verbose",
         help="increase output verbosity",
         action="store_true")
+
+    parser.add_argument(
+        "-L",
+        "--logfile",
+        help="Log file path",
+        action="store",
+        default='')
+
 
 
     args = parser.parse_args()
