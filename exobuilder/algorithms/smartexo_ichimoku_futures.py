@@ -84,15 +84,15 @@ class SmartEXOichimokuFutures(ExoEngineBase):
         def get_regime(date):
 
             if rule_price_above_cloud_top[date]:
-                return 1,
+                return 1
             elif rule_price_below_cloud_bottom[date]:
                 return -1
             elif rule_price_in_cloud[date]:
                 return 0
             return None
 
-        regime = get_regime(self.date)
-        self.logger.write("Ichi regime at {0}: {1}".format(regime, regime))
+        regime = get_regime(self.date.date())
+        self.logger.write("Ichi regime at {0}: {1}\n".format(self.date, regime))
         return regime
 
 
@@ -105,9 +105,12 @@ class SmartEXOichimokuFutures(ExoEngineBase):
         # Get cont futures price for EXO
         exo_df, exo_info = self.datasource.exostorage.load_series("{0}_ContFut".format(self._symbol))
 
-        regime = self.ichimoku_regimes(exo_df['exo'], self.date)
+        regime = self.ichimoku_regimes(exo_df['exo'])
 
         trans_list = []
+
+        if regime is None and len(self.position) > 0:
+            return self.position.close_all_translist()
 
         if regime == 1 and 'bullish' not in self.position.legs:
             # Close all
@@ -175,7 +178,7 @@ if __name__ == "__main__":
     currdate = base_date
 
     instruments = ['CL', 'ES', 'NG', 'ZC', 'ZS', 'ZW', 'ZN']
-    directions = [1, -1]
+    directions = [1] #[1, -1]
 
     # for i in range(100):
     while currdate <= enddate:
@@ -188,7 +191,7 @@ if __name__ == "__main__":
             exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(date, asset_info)
 
             for dir in directions:
-                with SmartEXOichimokuFutures(ticker, dir, date, datasource,log_file_path=DEBUG) as exo_engine:
+                with SmartEXOichimokuFutures(ticker, dir, exec_time_end, datasource,log_file_path=DEBUG) as exo_engine:
                     # Load EXO information from mongo
                     exo_engine.load()
                     exo_engine.calculate()
