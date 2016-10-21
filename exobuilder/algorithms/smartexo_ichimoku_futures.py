@@ -82,6 +82,10 @@ class SmartEXOichimokuFutures(ExoEngineBase):
         rule_price_in_cloud = (price_df < cloud_top) & (price_df > cloud_bottom)
 
         def get_regime(date):
+            if date not in rule_price_above_cloud_top.index:
+                self.logger.write("Date not found at {0} for {1}\n".format(date, self._symbol))
+                return None
+
 
             if rule_price_above_cloud_top[date]:
                 return 1
