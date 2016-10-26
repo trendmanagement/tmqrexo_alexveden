@@ -129,7 +129,6 @@ class EXOScript:
             self.run_exo_calc(datasource, decision_time, symbol, isbackfill=False)
 
             end_time = time.time()
-            # TODO: textlog status
             self.signalapp.send(MsgStatus('OK', 'EXO Processed', context={'instrument': symbol, 'date': quote_date, 'exec_time': end_time-start_time}))
 
         else:
@@ -185,7 +184,6 @@ class EXOScript:
 
         exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
 
-        # TODO: before calculation we need to do rollback of old transactions (to maintain EXO granularity)
         while decision_time <= decision_time_end:
             self.logger.info("Backfilling: {0}".format(decision_time))
 

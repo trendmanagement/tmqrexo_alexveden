@@ -537,8 +537,7 @@ class Swarm:
             # Update equity and another last state values
             self.laststate_update(self.strategy.data['exo'], self.raw_exposure.sum(axis=1))
         else:
-            # TODO: decide if it is unexpected case when no systems picked in some reasons?
-            pass
+            raise NotImplementedError("if len(self.raw_exposure) <= 0: decide if it is unexpected case when no systems picked in some reasons?")
 
     @staticmethod
     def _parse_params(members_list):
