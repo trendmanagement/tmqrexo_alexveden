@@ -27,5 +27,21 @@ def blackscholes(callputflag, S, X, T, r, v):
             bsPrice = X * math.exp(-r * T) * cnd(-d2) - S * cnd(-d1)
         return bsPrice
     except:
-        #display( sprintf(' blackScholes error %s %f $f ', callPutFlag, S, X  ));
         return 0.0
+
+def blackscholes_greeks(callputflag, S, X, T, r, v):
+    try:
+        if T == 0:
+            T = 0.0001;
+        d1 = (math.log(S / X) + (r + v * v / 2) * T) / (v * math.sqrt(T))
+        d2 = d1 - v * math.sqrt(T)
+        if callputflag == 'C' or callputflag == 'c':
+            # Call greeks
+            call_delta = cnd(d1)
+            return (call_delta, )
+        else:
+            # put greeks
+            put_delta = -cnd(-d1)
+            return (put_delta, )
+    except:
+        return (0.0,)

@@ -53,6 +53,11 @@ class FutureContract(object):
         return self._price
 
     @property
+    def delta(self):
+        # For future contract delta is always = 1.0
+        return 1.0
+
+    @property
     def pointvalue(self):
         return self.instrument.point_value_futures
 

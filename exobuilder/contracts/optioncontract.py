@@ -1,4 +1,4 @@
-from exobuilder.algorithms.blackscholes import blackscholes
+from exobuilder.algorithms.blackscholes import blackscholes, blackscholes_greeks
 import numpy as np
 
 OPT_HASH_ROOT = 200000000
@@ -14,6 +14,7 @@ class OptionContract(object):
         self._future_contract = future_contract
         self._option_price_data = None
         self._option_price = float('nan')
+        self._options_greeks = None
 
     @property
     def name(self):
@@ -79,6 +80,13 @@ class OptionContract(object):
             self._option_price = blackscholes(self.callorput, self.underlying.price, self.strike, self.to_expiration_years, self.riskfreerate, self.iv)
 
         return self._option_price
+
+    @property
+    def delta(self):
+        if self._options_greeks is None:
+            self._options_greeks = blackscholes_greeks(self.callorput, self.underlying.price, self.strike, self.to_expiration_years, self.riskfreerate, self.iv)
+
+        return self._options_greeks[0]
 
     @property
     def pointvalue(self):
