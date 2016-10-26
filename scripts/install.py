@@ -241,7 +241,7 @@ python3.5 {current_path}/{script_file} -v --logfile={log_file}
         'pythonpath': PYTHONPATH,
     })
 
-    file_name = '/etc/cron.weekly/tmqr_alpha_rebalancer.sh'
+    file_name = '/etc/cron.weekly/tmqr_alpha_rebalancer'
     print('install_cron_alpha_rebalancer(): Writing ' + file_name)
     with open(file_name, 'w') as fh:
         fh.write(file_contents)
@@ -267,7 +267,7 @@ python3.5 {current_path}/{script_file} -v --logfile={log_file}
         'pythonpath': PYTHONPATH,
     })
 
-    file_name = '/etc/cron.weekly/tmqr_assetindex_updater.sh'
+    file_name = '/etc/cron.weekly/tmqr_assetindex_updater'
     print('install_cron_assetindex_updater(): Writing ' + file_name)
     with open(file_name, 'w') as fh:
         fh.write(file_contents)
@@ -294,7 +294,7 @@ python3.5 {current_path}/{script_file} -v --logfile={log_file}
         'pythonpath': PYTHONPATH,
     })
 
-    file_name = '/etc/cron.daily/tmqr_trading_positions_archive.sh'
+    file_name = '/etc/cron.daily/tmqr_trading_positions_archive'
     print('install_cron_trading_positions_archive(): Writing ' + file_name)
     with open(file_name, 'w') as fh:
         fh.write(file_contents)
