@@ -19,11 +19,15 @@ def clean():
     print("Removing: ./supervisor_include/*.conf")
     os.system('rm ./supervisor_include/*.conf')
 
-    print("Removing: /etc/cron.weekly/tmqr_*.py")
-    os.system('rm /etc/cron.weekly/tmqr_*.py')
+    print("Removing: /etc/cron.weekly/tmqr_*")
+    os.system('rm /etc/cron.weekly/tmqr_*')
 
-    print("Removing: /etc/cron.daily/tmqr_*.py")
-    os.system('rm /etc/cron.daily/tmqr_*.py')
+    print("Removing: /etc/cron.daily/tmqr_*")
+    os.system('rm /etc/cron.daily/tmqr_*')
+
+    print("Backuping logs directory")
+    os.system('rm {0}'.format(os.path.join(current_path, 'logs.old.tar.gz')))
+    os.system('tar -zcf {0} {1}'.format(os.path.join(current_path, 'logs.old.tar.gz'), os.path.join(current_path, 'logs')))
 
     print("Removing logs directory")
     os.system('rm -r {0}'.format(os.path.join(current_path, 'logs')))
