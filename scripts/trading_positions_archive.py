@@ -81,7 +81,7 @@ class TradingPositionsArchiveScript:
 
             # Add MongoDB bulk operation
             operations.append(ReplaceOne(
-                {'date_now': update_date},
+                {'date_now': update_date, 'name': acc_pos_dict['name']},
                 acc_pos_dict,
                 upsert=True,
             ))
