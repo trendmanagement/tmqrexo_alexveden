@@ -29,7 +29,7 @@ class Position(object):
                 instrument = asset.instrument
             else:
                 if instrument != asset.instrument:
-                    raise Exception("Position contains multiple instruments, delta value is not applicable")
+                    raise Exception("Position contains multiple instruments, delta value is not applicable.\n Old instrument: {0} New instrument: {1}".format(instrument, asset.instrument))
             delta += asset.delta * netposition['qty']
 
         return delta

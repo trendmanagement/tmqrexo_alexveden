@@ -55,3 +55,9 @@ class Instrument(object):
             self._futures_chain = FuturesChain(self)
 
         return self._futures_chain
+
+    def __eq__(self, other):
+        if isinstance(other, Instrument) and other.dbid == self.dbid and other.name == self.name:
+            return True
+
+        return False
