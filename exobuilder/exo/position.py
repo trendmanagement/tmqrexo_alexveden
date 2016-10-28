@@ -16,6 +16,26 @@ class Position(object):
         return self._positions
 
     @property
+    def delta(self):
+        """
+        Return position delta
+        Note: is position contains different instrument it will rise Excetion
+        :return: position delta value
+        """
+        instrument = None
+        delta = 0.0
+        for asset, netposition in self.netpositions.items():
+            if instrument is None:
+                instrument = asset.instrument
+            else:
+                if instrument != asset.instrument:
+                    raise Exception("Position contains multiple instruments, delta value is not applicable")
+            delta += asset.delta * netposition['qty']
+
+        return delta
+
+
+    @property
     def legs(self):
         return self._legs
 
