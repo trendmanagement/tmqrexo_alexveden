@@ -1,13 +1,17 @@
 
 
 class Transaction(object):
-    def __init__(self, asset, date, qty, price, leg_name=''):
+    def __init__(self, asset, date, qty, price=None, leg_name=''):
         self._asset = asset
         self._date = date
         self._qty = qty
-        self._price = price
         self._usdvalue = 0
         self._leg_name = leg_name
+
+        if price is None:
+            self._price = self._asset.price
+        else:
+            self._price = price
 
     @property
     def leg_name(self):
