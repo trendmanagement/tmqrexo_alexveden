@@ -30,6 +30,10 @@ class Transaction(object):
         return self._price
 
     @property
+    def delta(self):
+        return self.asset.delta * self.qty
+
+    @property
     def usdvalue(self):
         if self._usdvalue == 0:
             self._usdvalue = self._price * self._qty * self._asset.pointvalue
@@ -53,4 +57,4 @@ class Transaction(object):
         return False
 
     def __str__(self):
-        return "Leg: {0} / {1} x {2} Price: {3}".format(self.leg_name, self.asset.name, self.qty, self.price)
+        return "Leg: {0} / {1} x {2} Price: {3} Delta: {4}".format(self.leg_name, self.asset.name, self.qty, self.price, self.delta)
