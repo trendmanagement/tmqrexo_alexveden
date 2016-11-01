@@ -53,6 +53,13 @@ class FutureContract(object):
         return self._price
 
     @property
+    def price_quote_date(self):
+        if self._price_data is None:
+            # Implicitly set _price_date by calling self.price
+            x = self.price
+        return self._price_data['bartime']
+
+    @property
     def delta(self):
         # For future contract delta is always = 1.0
         return 1.0

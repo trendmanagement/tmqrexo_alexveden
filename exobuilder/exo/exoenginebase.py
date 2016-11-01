@@ -70,7 +70,7 @@ class ExoEngineBase(object):
         """
         raise NotImplementedError("This method must be overridden by child class of EXO engine")
 
-    def calculate(self):
+    def calculate(self, custom_exo_values={}):
         """
         Main internal method to manage EXO data
         :return:
@@ -121,11 +121,26 @@ class ExoEngineBase(object):
         self._transactions += trans_list
 
         pnl = self.position.pnl
+
+        if self.is_eod:
+            dt = datetime.datetime.combine(self.date.date(), datetime.time(0, 00))
+        else:
+            dt = self.date
+        self.series.at[dt, 'exo'] = pnl
+
         if self.is_eod:
             dt = datetime.datetime.combine(self.date.date(), datetime.time(0, 00))
             self.series.at[dt, 'exo'] = pnl
         else:
             self.series.at[self.date, 'exo'] = pnl
+
+        for k,v in custom_exo_values.items():
+            if not isinstance(k, str):
+                raise ValueError("Key of custom_exo_values must be string")
+            if not isinstance(v, (int, float,)):
+                raise ValueError("Value of custom_exo_values must be int or float")
+
+            self.series[dt, k] = v
 
         # Save EXO state to DB
         self.save()

@@ -15,6 +15,6 @@ class DataSourceHybrid(DataSourceSQL):
 
     def get_fut_data(self, dbid, date):
         try:
-            return self.db['futurebarcol'].find({'bartime': {'$lte': date}, 'idcontract': dbid}).sort('bartime', pymongo.DESCENDING).next()
+            return self.db['futurebarcol'].find({'bartime': {'$lte': date}, 'idcontract': dbid, 'errorbar': False}).sort('bartime', pymongo.DESCENDING).next()
         except:
             raise KeyError('Futures data not found contract id: {0} date: {1}'.format(dbid, date))
