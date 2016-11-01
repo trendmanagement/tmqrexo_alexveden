@@ -176,6 +176,8 @@ class ExoEngineBase(object):
 
         result['series'] = pickle.dumps(self.series)
 
+        result['calc_date'] = datetime.datetime.now()
+
         return result
 
     def load(self):

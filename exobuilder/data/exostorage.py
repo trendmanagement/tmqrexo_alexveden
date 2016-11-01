@@ -19,7 +19,7 @@ class EXOStorage(object):
             data = self.db.exo_data.find({'name': exo_name}).next()
 
             # Loading metadata for EXO
-            exo_dic = {'pcf': [], 'pcfqty': [], 'margin': 0, 'underlying': '', 'name': exo_name}
+            exo_dic = {'pcf': [], 'pcfqty': [], 'margin': 0, 'underlying': '', 'name': exo_name, 'dbdata': data}
 
             series_df = pickle.loads(data['series'])
             series_df.index = pd.to_datetime(series_df.index)
@@ -49,16 +49,20 @@ class EXOStorage(object):
         exo_name = exo_dict['name']
         return self.db.exo_data.replace_one({'name': exo_name}, exo_dict, upsert=True)
 
-    def exo_list(self, exo_filter='*'):
+    def exo_list(self, exo_filter='*', return_names=True):
         """
         Return EXO list stored in MongoDB
         :param exo_filter: '*' - include all, wildcard is allowed (like, 'ES_Bullish*')
+        :param return_names: if True returns names list of EXO, otherwize returns MongoDB data collection list
         :return: list of EXO names
         """
         re_val = exo_filter.replace('*','.*')
 
         data = self.db.exo_data.find({'name': re.compile(re_val, re.IGNORECASE)})
-        return [exo['name'] for exo in data]
+        if return_names:
+            return [exo['name'] for exo in data]
+        else:
+            return list(data)
 
     def swarms_info(self):
         """
