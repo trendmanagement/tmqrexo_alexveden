@@ -147,7 +147,7 @@ class ExoEngineBase(object):
             if not isinstance(v, (int, float,)):
                 raise ValueError("Value of custom_exo_values must be int or float")
 
-            self.series[dt, k] = v
+            self.series.at[dt, k] = v
 
         # Save EXO state to DB
         self.save()
