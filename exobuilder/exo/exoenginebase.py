@@ -70,7 +70,14 @@ class ExoEngineBase(object):
         """
         raise NotImplementedError("This method must be overridden by child class of EXO engine")
 
-    def calculate(self, custom_exo_values={}):
+    def get_custom_values(self):
+        """
+        Method that return custom EXO data frame values, to store inside EXO Dataframe in the DB
+        :return: dictionary {'string_key': (int or float) value}
+        """
+        return {}
+
+    def calculate(self):
         """
         Main internal method to manage EXO data
         :return:
@@ -134,7 +141,7 @@ class ExoEngineBase(object):
         else:
             self.series.at[self.date, 'exo'] = pnl
 
-        for k,v in custom_exo_values.items():
+        for k,v in self.get_custom_values().items():
             if not isinstance(k, str):
                 raise ValueError("Key of custom_exo_values must be string")
             if not isinstance(v, (int, float,)):
