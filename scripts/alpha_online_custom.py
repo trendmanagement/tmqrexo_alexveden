@@ -83,7 +83,11 @@ class AlphaOnlineScript:
 
                             # Initiate swarm from Mongo DB
                             exo_name = msg.exo_name
-                            swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
+
+                            context = m.STRATEGY_CONTEXT
+                            context['strategy']['suffix'] = m.STRATEGY_SUFFIX + 'custom'
+
+                            swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, context)
                             # Update and save swarm with new day data (and run callback)
                             swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
 

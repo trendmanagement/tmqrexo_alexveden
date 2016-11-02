@@ -15,7 +15,7 @@ import scipy
 
 
 class StrategyBollingerBands(StrategyBase):
-    name = 'BolllingerBands'
+    name = 'BollingerBands'
 
     def __init__(self, strategy_context):
         # Initialize parent class
