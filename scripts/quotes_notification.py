@@ -38,6 +38,9 @@ class QuotesNotifyScript:
         logging.getLogger("pika").setLevel(logging.WARNING)
         logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=loglevel)
 
+    def get_last_bar_time(self, db):
+        last_bar_time = db['futurebarcol'].find({'errorbar': False}).sort('bartime', pymongo.DESCENDING).limit(1).next()['bartime']
+        return last_bar_time
 
     def main(self):
         logging.info("Initiating EXO building engine")
@@ -58,9 +61,14 @@ class QuotesNotifyScript:
         db = client[mongo_db_name]
         pp = pprint.PrettyPrinter(indent=4)
 
+        #
+        # Creating index for 'bartime'
+        #
+        db['futurebarcol'].create_index([('bartime', pymongo.DESCENDING)], background=True)
+
         while True:
             # Getting last bar time from DB
-            last_bar_time = db['futurebarcol'].find({}).sort('$natural', pymongo.DESCENDING).limit(1).next()['bartime']
+            last_bar_time = self.get_last_bar_time(db)
             exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
 
 
@@ -102,7 +110,6 @@ class QuotesNotifyScript:
                 self.last_minute = dtnow.minute
                 self.signalapp.send(MsgStatus('IDLE', 'Last bar time {0}'.format(last_bar_time), context))
             time.sleep(15)
-
 
 
 

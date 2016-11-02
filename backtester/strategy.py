@@ -6,7 +6,8 @@ from multiprocessing import Pool
 from backtester import matlab
 from backtester.exoinfo import EXOInfo
 
-import pyximport; pyximport.install()
+import pyximport;
+pyximport.install(setup_args={"include_dirs": np.get_include()})
 from backtester import backtester
 from backtester.backtester_fast import backtest, stats_exposure
 

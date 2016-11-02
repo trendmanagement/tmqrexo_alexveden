@@ -63,6 +63,24 @@ def get_exo_names_mat():
 
     return exo_names_list
 
+def get_alpha_modules(base_dir, exo_names):
+    results = {}
+    os.chdir(base_dir)
+    for exo in exo_names:
+        alphas_list = results.setdefault(exo, {})
+        for module in os.listdir('alphas'):
+            if module == exo.lower() and os.path.isdir(os.path.join('alphas', module)):
+                for custom_file in os.listdir(os.path.join('alphas', module)):
+                    if 'alpha_' in custom_file and '.py' in custom_file:
+                        module_name = 'scripts.alphas.{0}.{1}'.format(module, custom_file.replace('.py', ''))
+                        alphas_list[module_name] = {'custom': True}
+            elif 'alpha_' in module and '.py' in module:
+                module_name = 'scripts.alphas.{0}'.format(module.replace('.py',''))
+                alphas_list[module_name] = {'custom': False}
+
+    return results
+
+
 
 
 def main(args, loglevel):
@@ -109,12 +127,14 @@ def main(args, loglevel):
                         swm.run_swarm()
                         swm.pick()
                         # Saving results to swarms directory
-                        swm.save(os.path.join(TMQRPATH, "swarms"))
+                        # TODO: To be deleted...
+                        #swm.save(os.path.join(TMQRPATH, "swarms"))
 
                         #
                         # Saving last EXO state to online DB
                         #
                         swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
+                        logging.debug('Saving: {0}'.format(swm.name))
                         swmonline.save(swm)
 
             elif 'alpha_' in module and '.py' in module:
@@ -139,6 +159,7 @@ def main(args, loglevel):
                     # Saving last EXO state to online DB
                     #
                     swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
+                    logging.debug('Saving: {0}'.format(swm.name))
                     swmonline.save(swm)
     logging.info("Done.")
 

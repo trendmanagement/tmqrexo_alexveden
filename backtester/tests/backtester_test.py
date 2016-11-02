@@ -1,7 +1,8 @@
 import unittest
 import pandas as pd
 import numpy as np
-import pyximport; pyximport.install()
+import pyximport;
+pyximport.install(setup_args={"include_dirs": np.get_include()})
 from backtester.backtester_fast import backtest, stats, stats_exposure
 
 class BacktesterTestCase(unittest.TestCase):

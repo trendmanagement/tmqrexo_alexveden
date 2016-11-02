@@ -3,7 +3,7 @@ import pandas as pd
 from scipy.stats.stats import pearsonr
 
 import pyximport
-pyximport.install()
+pyximport.install(setup_args={"include_dirs": np.get_include()})
 from backtester.backtester_fast import backtest_equity
 
 class RankingClassBase:

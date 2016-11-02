@@ -3,12 +3,16 @@ import pandas as pd
 import pickle
 import os
 from ast import literal_eval
-import pyximport; pyximport.install()
+import pyximport
+pyximport.install(setup_args={"include_dirs": np.get_include()})
+
 from backtester.backtester_fast import stats_exposure
 from copy import  deepcopy
 import inspect
 import pprint
 import warnings
+from datetime import datetime
+
 
 class Swarm:
     def __init__(self, context, laststate=False):
@@ -424,6 +428,7 @@ class Swarm:
             'direction': self.direction[0],
             'instrument': self.instrument,
             'exo_type': self.exo_type,
+            'calc_date': datetime.now(),
             # Context info
             'context_info': self.context_to_jsondict(self.context)
         }
