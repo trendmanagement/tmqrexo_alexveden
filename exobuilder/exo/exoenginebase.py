@@ -133,13 +133,10 @@ class ExoEngineBase(object):
             dt = datetime.datetime.combine(self.date.date(), datetime.time(0, 00))
         else:
             dt = self.date
-        self.series.at[dt, 'exo'] = pnl
 
-        if self.is_eod:
-            dt = datetime.datetime.combine(self.date.date(), datetime.time(0, 00))
-            self.series.at[dt, 'exo'] = pnl
-        else:
-            self.series.at[self.date, 'exo'] = pnl
+        # Setting EXO data and delta to EXO dataframe
+        self.series.at[dt, 'exo'] = pnl
+        self.series.at[dt, 'delta'] = self.position.delta
 
         for k,v in self.get_custom_values().items():
             if not isinstance(k, str):

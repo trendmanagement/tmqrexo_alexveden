@@ -90,10 +90,24 @@ class EXOContinuousFut(ExoEngineBase):
 
 
 if __name__ == "__main__":
-    mongo_connstr = 'mongodb://exowriter:qmWSy4K3@10.0.1.2/tmldb?authMechanism=SCRAM-SHA-1'
+    try:
+        from .settings import *
+    except SystemError:
+        from scripts.settings import *
+
+    try:
+        from .settings_local import *
+    except SystemError:
+        try:
+            from scripts.settings_local import *
+        except ImportError:
+            pass
+        pass
+
+
     mongo_db_name = 'tmldb'
-    assetindex = AssetIndexMongo(mongo_connstr, mongo_db_name)
-    exostorage = EXOStorage(mongo_connstr, mongo_db_name)
+    assetindex = AssetIndexMongo(MONGO_CONNSTR, mongo_db_name)
+    exostorage = EXOStorage(MONGO_CONNSTR, mongo_db_name)
 
     base_date = datetime(2011, 3, 1, 10, 15, 0)
 
@@ -102,7 +116,7 @@ if __name__ == "__main__":
 
     DEBUG = '.'
 
-    datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
+    datasource = DataSourceMongo(MONGO_CONNSTR, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
 
     server = 'h9ggwlagd1.database.windows.net'
     user = 'modelread'

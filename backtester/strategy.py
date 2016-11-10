@@ -182,7 +182,7 @@ class StrategyBase(object):
         exposure = inposition.astype(np.uint8) * float(direction) * self.positionsize
 
         # Do quick backtest (equity line only without stats)
-        equity, stats_dict = stats_exposure(self.data['exo'], exposure, self.costs, extendedstats=False)
+        equity, stats_dict = stats_exposure(self.data, exposure, self.costs, extendedstats=False)
 
         return (swarm_name, equity, exposure, inposition)
 
