@@ -1,11 +1,6 @@
 # coding: utf-8
 
-# In[2]:
 
-import sys, os
-
-sys.path.append('..')
-from backtester import matlab, backtester
 from backtester.analysis import *
 from backtester.strategy import StrategyBase, OptParam
 
@@ -104,13 +99,3 @@ class StrategyVolatilityCompression(StrategyBase):
 
         return swarm_member_name, entry_rule, exit_rule, calc_info
 
-if __name__ == "__main__":
-    #
-    #   Run this code only from direct shell execution
-    #
-    #strategy = StrategyVolatilityCompression()
-    #equity, stats = strategy.calculate()
-
-    # Do some work
-    data, info = matlab.loaddata('../mat/strategy_270225.mat')
-    data.plot()

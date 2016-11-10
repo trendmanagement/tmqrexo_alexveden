@@ -4,6 +4,8 @@ import numpy as np
 OPT_HASH_ROOT = 200000000
 
 class OptionContract(object):
+    contract_type = 'opt'
+
     def __init__(self, contract_dic, future_contract):
         """
         Option contract class

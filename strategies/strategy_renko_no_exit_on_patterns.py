@@ -1,13 +1,7 @@
-import sys, os
-
-sys.path.append('..')
-from backtester import matlab, backtester
 from backtester.analysis import *
-from backtester.strategy import StrategyBase, OptParam
-
+from backtester.strategy import StrategyBase
 import pandas as pd
 import numpy as np
-import scipy
 
 
 class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):

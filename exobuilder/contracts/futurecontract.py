@@ -3,6 +3,8 @@ from exobuilder.contracts.optionexpirationchain import OptionExpirationChain
 FUT_HASH_ROOT = 100000000
 
 class FutureContract(object):
+    contract_type = 'fut'
+
     def __init__(self, contract_dic, instrument):
         """
         Futures contract class

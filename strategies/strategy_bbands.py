@@ -1,17 +1,9 @@
 # coding: utf-8
 
-# In[2]:
-
-import sys, os
-
-sys.path.append('..')
-from backtester import matlab, backtester
 from backtester.analysis import *
-from backtester.strategy import StrategyBase, OptParam
+from backtester.strategy import StrategyBase
 
 import pandas as pd
-import numpy as np
-import scipy
 
 
 class StrategyBollingerBands(StrategyBase):
@@ -257,16 +249,4 @@ class StrategyBollingerBands(StrategyBase):
             calc_info = {'trailing_stop': trailing_stop}
 
         return swarm_member_name, entry_rule, exit_rule, calc_info
-
-
-if __name__ == "__main__":
-    #
-    #   Run this code only from direct shell execution
-    #
-    # strategy = StrategyMACrossTrail()
-    # equity, stats = strategy.calculate()
-
-    # Do some work
-    data, info = matlab.loaddata('../mat/strategy_270225.mat')
-    #data.plot()
 

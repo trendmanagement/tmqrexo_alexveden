@@ -4,14 +4,8 @@
 
 import sys, os
 
-sys.path.append('..')
-from backtester import matlab, backtester
-from backtester.analysis import *
 from backtester.strategy import StrategyBase, OptParam
-
 import pandas as pd
-import numpy as np
-import scipy
 
 
 class StrategyEXO(StrategyBase):

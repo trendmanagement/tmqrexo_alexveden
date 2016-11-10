@@ -246,7 +246,8 @@ class Swarm:
         # Do backtest based on exposure stats
         for i in range(nSystems):
             _stats_dict = None
-            picked_swarm_equity[:, i], _stats_dict = stats_exposure(self.strategy.data, picked_swarm_exposure[:, i], self.strategy.costs, extendedstats=False)
+            series_df, _stats_dict = stats_exposure(self.strategy.data, picked_swarm_exposure[:, i], self.strategy.costs, extendedstats=False)
+            picked_swarm_equity[:, i] = series_df['equity']
 
         self._picked_swarm = pd.DataFrame(picked_swarm_equity, self._swarm.index)
         self._picked_inposition = pd.DataFrame(picked_swarm_inposition, self._swarm.index)

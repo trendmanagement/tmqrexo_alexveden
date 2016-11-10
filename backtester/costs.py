@@ -6,45 +6,23 @@ class CostsManagerBase(object):
         self.exo_info = exo_info
         self.context = costs_context
 
-    def get_costs(self, price):
+    def get_costs(self, exo_df):
         """
         Returns transactions costs vector for EXO
-        :param price:
+        :param exo_df:
         :return:
         """
-        return pd.Series(0, index=price.index)
+        raise NotImplementedError('You must override get_costs() method')
 
     def __str__(self):
         return 'CostsManagerBase'
 
 
 class CostsManagerEXOFixed(CostsManagerBase):
-    def calc_costs_per_side(self, options_costs, futures_costs):
-        """
-        Calculates costs per one EXO unit
-        """
-        pcf = self.exo_info['pcf']
-        pcfqty = self.exo_info['pcfqty']
-
-        costs = 0.0
-
-        for i, c in enumerate(pcf):
-            if c == 2:  # Futures contract
-                costs += abs(pcfqty[i] * futures_costs)
-            elif c == 0:  # Call contract
-                costs += abs(pcfqty[i] * options_costs)
-            elif c == 1:  # Put contract
-                costs += abs(pcfqty[i] * options_costs)
-            else:
-                # Unexpected error
-                raise ValueError("Unexpected contact type: {0}".format(c))
-
-        return costs
-
-    def get_costs(self, price):
+    def get_costs(self, exo_df):
         """
         Returns transactions costs vector for EXO
-        :param price:
+        :param exo_df:
         :return:
         """
         cost_context = self.context['costs']
@@ -55,8 +33,16 @@ class CostsManagerEXOFixed(CostsManagerBase):
             if 'costs_futures' not in cost_context['context']:
                 raise ValueError("'costs_futures' missing in costs settings['context']")
 
-            costs_value = self.calc_costs_per_side(cost_context['context']['costs_options'], cost_context['context']['costs_futures'])
-            return pd.Series(costs_value, index=price.index)
+            costs_per_option = cost_context['context']['costs_options']
+            costs_per_future = cost_context['context']['costs_futures']
+
+            if 'nfutures_executed' not in exo_df:
+                raise ValueError("You are using old version of EXO data array, rebuild EXO series to calculate costs properly")
+
+            rollover_costs = exo_df['nfutures_executed'].abs() * abs(costs_per_future) +  exo_df['noptions_executed'].abs() * abs(costs_per_option)
+            transaction_costs = exo_df['nfutures_opened'].abs() * abs(costs_per_future) + exo_df['noptions_opened'].abs() * abs(costs_per_option)
+
+            return pd.DataFrame({'rollover_costs': rollover_costs, 'transaction_costs': transaction_costs}, index=exo_df.index)
         else:
             raise ValueError("'context' missing in costs settings")
 

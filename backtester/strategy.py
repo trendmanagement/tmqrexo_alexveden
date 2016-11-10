@@ -8,7 +8,6 @@ from backtester.exoinfo import EXOInfo
 
 import pyximport;
 pyximport.install(setup_args={"include_dirs": np.get_include()})
-from backtester import backtester
 from backtester.backtester_fast import backtest, stats_exposure
 
 class OptParam(object):
@@ -69,7 +68,7 @@ class StrategyBase(object):
 
     def init_costs(self):
         cost_manager = self.context['costs']['manager'](self.exo_dict, self.context)
-        self.costs = cost_manager.get_costs(self.data.exo)
+        self.costs = cost_manager.get_costs(self.data)
 
     def load_exodata(self):
         if 'exo_storage' in self.context['strategy']:
@@ -182,9 +181,9 @@ class StrategyBase(object):
         exposure = inposition.astype(np.uint8) * float(direction) * self.positionsize
 
         # Do quick backtest (equity line only without stats)
-        equity, stats_dict = stats_exposure(self.data, exposure, self.costs, extendedstats=False)
+        series_df, stats_dict = stats_exposure(self.data, exposure, self.costs, extendedstats=False)
 
-        return (swarm_name, equity, exposure, inposition)
+        return (swarm_name, series_df['equity'], exposure, inposition)
 
 
     def run_swarm_backtest(self, filtered_swarm=None, filtered_swarm_equity=None):

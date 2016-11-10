@@ -1,13 +1,16 @@
 from exobuilder.data.assetindex import AssetIndexBase
 import pickle
 import gzip
-from exobuilder.contracts.instrument import Instrument
-from exobuilder.contracts.futurecontract import FutureContract
-from exobuilder.contracts.optioncontract import OptionContract
+import os
+
 
 class AssetIndexDicts(AssetIndexBase):
     def __init__(self):
         self.instr_name = 'EP'
+
+        proj_path = os.getenv('TMQRPATH', '/home/ubertrader/Dropbox/tmqrexo/tmqrv/')
+
+        os.chdir(os.path.join(proj_path, 'exobuilder', 'tests'))
 
         with gzip.GzipFile(self.instr_name + '_instrument.pgz', 'r') as f:
             self.instrument_dict = pickle.load(f)
