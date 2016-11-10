@@ -149,6 +149,8 @@ def stats_exposure(exo_dataframe, exposure, costs=None, extendedstats=False):
     if extendedstats:
         # Calculate extended stats
         results_series_dict['costs'] = result_costs
+        results_series_dict['exposure'] = _exposure
+
         if 'delta' not in exo_dataframe:
             # Old exo data array (need to rebuild EXO data)
             warnings.warn("EXO data frame doesn't contain 'delta' series, you should rebuild EXO data to get delta information")
