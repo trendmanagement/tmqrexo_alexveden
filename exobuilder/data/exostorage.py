@@ -119,16 +119,14 @@ class EXOStorage(object):
         swarm_data = []
 
         for swm in cursor:
-            if 'picked_delta' in swm:
-                swm['picked_delta'] = pickle.loads(swm['picked_delta'])
-            if 'picked_equity' in swm:
-                swm['picked_equity'] = pickle.loads(swm['picked_equity'])
+            if 'swarm_series' in swm:
+                swm['swarm_series'] = pickle.loads(swm['swarm_series'])
             swarm_data.append(swm)
 
         series_dict = {}
 
         for s in swarm_data:
-            series_dict[s['swarm_name']] = s['picked_equity']
+            series_dict[s['swarm_name']] = s['swarm_series']['equity']
 
         return pd.DataFrame(series_dict), swarm_data
 
