@@ -102,15 +102,24 @@ class Campaign:
 
             if exo_data is not None:
                 # Get EXO's assets positions
-                exo_pos = Position.get_info(exo_data['position'], self._datasource)
+                exo_pos = Position.get_position_qty(exo_data)
 
-                for assetname, pos_dict in exo_pos.items():
-                    # Escape special MongoDB keys chars in key names
-                    asset_name_safe = assetname.replace('.', '_').replace('$', '_')
-                    position = net_positions.setdefault(asset_name_safe, {'asset': pos_dict['asset'], 'qty': 0.0, 'prev_qty': 0.0})
-
+                for asset_hash, pos_dict in exo_pos.items():
+                    position = net_positions.setdefault(asset_hash, {'asset_hash': asset_hash, 'qty': 0.0, 'prev_qty': 0.0})
                     # Multiply EXO position by campaign exposure
                     position['qty'] += pos_dict['qty'] * exo_exposure['exposure']
                     position['prev_qty'] += pos_dict['qty'] * exo_exposure['prev_exposure']
 
-        return net_positions
+        result = {}
+        # Converting Asset_hashes to human readable asset codes
+        for asset_hash, val in net_positions.items():
+            # Load asset info from DB
+            asset_info = self._datasource.get_info(asset_hash)
+
+            # Escape special MongoDB keys chars in key names
+            asset_name_safe = asset_info['name'].replace('.', '_').replace('$', '_')
+
+            # Store the result
+            val['asset'] = asset_info
+            result[asset_name_safe] = val
+        return result

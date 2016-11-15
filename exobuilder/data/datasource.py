@@ -88,6 +88,7 @@ class DataSourceBase(object):
                 fut_contract_dic = self.assetindex.get_future_contract(item - FUT_HASH_ROOT)
                 fut_contract_dic['name'] = fut_contract_dic['contractname']
                 fut_contract_dic['_type'] = 'fut'
+                fut_contract_dic['_hash'] = item
                 return fut_contract_dic
             elif item < OPT_HASH_ROOT + HASH_ROOT_STEP:
                 # Get option contract
@@ -95,6 +96,7 @@ class DataSourceBase(object):
                 opt_contract_dic = self.assetindex.get_option_contract(item - OPT_HASH_ROOT)
                 opt_contract_dic['name'] = opt_contract_dic['optionname']
                 opt_contract_dic['_type'] = 'opt'
+                opt_contract_dic['_hash'] = item
                 return opt_contract_dic
             else:
                 raise NotImplementedError("Unknown asset hash")

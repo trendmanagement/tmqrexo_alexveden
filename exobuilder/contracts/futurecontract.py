@@ -54,6 +54,29 @@ class FutureContract(object):
 
         return self._price
 
+    def price_whatif(self, underlying_price=None, iv_change=0.0, days_to_expiration=None, riskfreerate=None):
+        """
+        What if analysis pricing depending on various conditions changes
+        :param underlying_price: Price option with custom underlying price (if None, use current option price)
+        :param iv_change: Price option with custom IV change (in percent points 0.01 - mean that IV rises OptionIV+1%, -0.05 - mean that IV drops OptionIV - 5%)
+        :param days_to_expiration: Price option in different days_to_expiration values (0 - mean expired option payoff)
+        :param riskfreerate: Set the risk free rate (if None - use the current RFR)
+        :return: option price and greeks for set of conditions
+        """
+        ulprice = self.underlying.price if underlying_price is None else underlying_price
+        days_to_expiration = self.to_expiration_days if days_to_expiration is None else days_to_expiration
+        riskfreerate = self.riskfreerate if riskfreerate is None else riskfreerate
+
+        return {
+            'asset': self.name,
+            'price': underlying_price,
+            'delta': 1.0,
+            'ulprice': ulprice,
+            'days_to_expiration': days_to_expiration,
+            'riskfreerate': riskfreerate,
+            'iv': float('nan')
+        }
+
     @property
     def price_quote_date(self):
         if self._price_data is None:

@@ -66,6 +66,9 @@ class OptionContract(object):
     def to_expiration_days(self):
         return (self.expiration.date() - self.date.date()).days
 
+    def to_expiration_years_from_days(self, days_to_expiration):
+        return (days_to_expiration * 24.0 * 60 * 60) / 31536000.0
+
     @property
     def riskfreerate(self):
         return self.instrument.datasource.get_extra_data('riskfreerate', self.date)
@@ -82,6 +85,37 @@ class OptionContract(object):
             self._option_price = blackscholes(self.callorput, self.underlying.price, self.strike, self.to_expiration_years, self.riskfreerate, self.iv)
 
         return self._option_price
+
+    def price_whatif(self, underlying_price=None, iv_change=0.0, days_to_expiration=None, riskfreerate=None):
+        """
+        What if analysis pricing depending on various conditions changes
+        :param underlying_price: Price option with custom underlying price (if None, use current option price)
+        :param iv_change: Price option with custom IV change (in percent points 0.01 - mean that IV rises OptionIV+1%, -0.05 - mean that IV drops OptionIV - 5%)
+        :param days_to_expiration: Price option in different days_to_expiration values (0 - mean expired option payoff)
+        :param riskfreerate: Set the risk free rate (if None - use the current RFR)
+        :return: option price and greeks for set of conditions
+        """
+        ulprice = self.underlying.price if underlying_price is None else underlying_price
+        days_to_expiration = self.to_expiration_days if days_to_expiration is None else days_to_expiration
+        riskfreerate = self.riskfreerate if riskfreerate is None else riskfreerate
+        iv = self.iv + iv_change
+
+        option_price = blackscholes(self.callorput, ulprice, self.strike, self.to_expiration_years_from_days(days_to_expiration),
+                                    riskfreerate, iv)
+
+        options_greeks = blackscholes_greeks(self.callorput, ulprice, self.strike, self.to_expiration_years_from_days(days_to_expiration),
+                                             riskfreerate, iv)
+
+        return {
+            'asset': self.name,
+            'price': option_price,
+            'delta': options_greeks[0],
+            'ulprice': ulprice,
+            'days_to_expiration': days_to_expiration,
+            'riskfreerate': riskfreerate,
+            'iv': self.iv + iv_change
+        }
+
 
     @property
     def delta(self):

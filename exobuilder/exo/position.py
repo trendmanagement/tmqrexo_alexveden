@@ -7,6 +7,8 @@ class Position(object):
         self._realized_pnl = 0.0
         self._legs = {}
 
+        self.transaction_mode = None
+
     @property
     def netpositions(self):
         """
@@ -59,9 +61,68 @@ class Position(object):
 
         return transactions
 
+    def add_transaction_dict(self, trans_dict):
+        """
+        Add transaction as dictionary to speed up position construction (avoid DB calls)
+        Used to construct position from MongoDB cached transactions
+        :param trans_dict: transaction record dict as stored in Mongo
+        :return: None (changes the position)
+        """
+
+        # Raise error if Transaction.add() method already called
+        # It's not allowed to mix add_transaction_dict() and add() calls in single instance!
+        if self.transaction_mode == 'T':
+            raise Exception(
+                "It's not allowed to mix add_transaction_dict() and add() calls in single Position instance!"
+            )
+        else:
+            # Set Position instance to cached dictionary mode (works with Mongo result dicts)
+            self.transaction_mode = "D"
+
+
+        asset_hash = int(trans_dict['asset']['hash'])
+        transaction_qty = trans_dict['qty']
+        transation_usdvalue = trans_dict['usdvalue']
+
+        if asset_hash not in self._positions:
+            self._positions[asset_hash] = {'qty': transaction_qty, 'value': transation_usdvalue}
+        else:
+            pdic = self._positions[asset_hash]
+            pqty = pdic['qty']
+            pval = pdic['value']
+
+            if (pqty > 0 and transaction_qty < 0) or (pqty < 0 and transaction_qty > 0):
+                # Closing or shrinking existing position
+                # Calculate weighted usd value of opened position
+                wavg_value = pval / pqty
+
+                # Calculating realized PnL
+                self._realized_pnl += wavg_value * transaction_qty - transation_usdvalue
+
+                pdic['qty'] += transaction_qty
+                pdic['value'] += wavg_value * transaction_qty
+            else:
+                pdic['qty'] += transaction_qty
+                pdic['value'] += transation_usdvalue
+
+            if pdic['qty'] == 0:
+                # Delete closed positions
+                del self._positions[asset_hash]
+
 
     def add(self, transaction):
         """Add new transaction to position"""
+
+        # Raise error if Transaction.add_transaction_dict() method already called
+        # It's not allowed to mix add_transaction_dict() and add() calls in single instance!
+        if self.transaction_mode == 'D':
+            raise Exception(
+                "It's not allowed to mix add_transaction_dict() and add() calls in single Position instance!"
+            )
+        else:
+            # Set Position instance to Transaction mode (works with Transaction class instances)
+            self.transaction_mode = "T"
+
         if transaction.asset not in self._positions:
             self._positions[transaction.asset] = {'qty': transaction.qty, 'value': transaction.usdvalue, 'leg_name': transaction.leg_name}
             if transaction.leg_name != '':
@@ -95,6 +156,30 @@ class Position(object):
                 if pdic['leg_name'] != '' and pdic['leg_name'] in self._legs:
                     del self.legs[pdic['leg_name']]
 
+    def convert(self, datasource, date):
+        """
+        Converts restored position from transactions to normal position class
+        Load asset instances from datasource and allow to analyse restored position as usual
+        :param datasource: DataSource instance
+        :param date: date of position analysis
+        :return: None (converts internal position structure)
+        """
+        if self.transaction_mode != 'D':
+            raise Exception(
+                "Conversion is now allowed, current position instance must be initiated using add_transaction_dict()"
+            )
+        new_positions = {}
+        for asset_hash, pos_dict in self.netpositions.items():
+            asset_instance = datasource.get(int(asset_hash), date)
+            new_positions[asset_instance] = pos_dict
+
+        self._positions = new_positions
+
+        # Set transaction mode to normal state
+        # this will deny to call add_transaction_dict(), and allow us to use position pricing and add()
+        self.transaction_mode = 'T'
+
+
     def as_dict(self):
         """
         Serialize Position to dictionary
@@ -121,15 +206,21 @@ class Position(object):
         """
         p = Position()
 
+        # Set transaction mode to normal state
+        # this will deny to call add_transaction_dict(), and allow us to use position pricing and add()
+        p.transaction_mode = 'T'
+
         positions = {}
         for asset_hash, pos_data in position_dict['positions'].items():
             asset_instance = datasource.get(int(asset_hash), date)
-
             positions[asset_instance] = pos_data
 
         # Filling position with data
         p._positions = positions
-        p._realized_pnl = position_dict['_realized_pnl']
+        if '_realized_pnl' in position_dict:
+            p._realized_pnl = position_dict['_realized_pnl']
+        else:
+            p._realized_pnl = 0.0
 
         p._legs.clear()
         for asset, posdic in positions.items():
@@ -138,19 +229,86 @@ class Position(object):
         return p
 
     @staticmethod
-    def get_info(position_dict, datasource):
+    def get_position_qty(exo_data, date=None):
         """
         Returns information about current EXO position structure, holdings names and qty
-        :param position_dict: MongoDB collection dict
-        :param datasource: Datasource to fetch all contracts inforamation
+        :param exo_data: MongoDB collection dict
+        :param date: DateTime of position
         :return:
         """
         positions = {}
-        for asset_hash, pos_data in position_dict['positions'].items():
-            asset_info = datasource.get_info(int(asset_hash))
-            positions[asset_info['name']] = {'qty': pos_data['qty'], 'asset': asset_info}
+        positions_dict = exo_data['position']
+        for asset_hash, pos_data in positions_dict['positions'].items():
+            positions[asset_hash] = {'qty': pos_data['qty'], 'usdvalue': pos_data['value']}
 
+        if date is not None:
+            for trans in reversed(exo_data['transactions']):
+                if trans['date'] > date.date():
+                    # Roll-back all transaction > date
+                    _hash = trans['asset']['hash']
+                    _pos = positions.setdefault(_hash, {'qty': 0.0, 'usdvalue': 0.0})
+                    _pos['qty'] += -trans['qty']
+                    _pos['usdvalue'] += -trans['usdvalue']
+
+                    if _pos['qty'] == 0:
+                        # Remove zero positions
+                        del positions[_hash]
+                else:
+                    break
         return positions
+
+    def usdvalue(self):
+        """
+        Calculates USD Value of opened position
+        Used for PnL calculations in different price_whatif() scenarios
+        :return:
+        """
+        usd_value = 0.0
+        for asset, pos_data in self.netpositions.items():
+            usd_value += pos_data['value']
+        return usd_value
+
+    def price_whatif(self, underlying_price=None, iv_change=0.0, days_to_expiration=None, riskfreerate=None):
+        """
+        What if analysis pricing depending on various conditions changes
+        :param underlying_price: Price position with custom underlying price (if None, use current option price)
+        :param iv_change: Price position with custom IV change (in percent points 0.01 - mean that IV rises OptionIV+1%, -0.05 - mean that IV drops OptionIV - 5%)
+        :param days_to_expiration: Price position in different days_to_expiration values (0 - mean expired option payoff)
+        :param riskfreerate: Set the risk free rate (if None - use the current RFR)
+        :return: net position USD value and greeks on particular conditions
+        """
+
+        if self.transaction_mode == 'D':
+            raise Exception(
+                "You must call Position.convert() method before WhatIf pricing"
+            )
+
+        # Make sure that the position contains only single Product
+        # Multi-product pricing is not supported by default
+        instrument = None
+
+        position_result = {'usdvalue': 0.0, 'delta': 0.0, 'whatif_positions': []}
+
+        for asset, pos_dict in self.netpositions.items():
+            if instrument is not None:
+                if asset.instrument != instrument:
+                    raise Exception("Make sure that the position contains only single product. Multi-product pricing is not supported by default.")
+            else:
+                instrument = asset.instrument
+
+            whatif_data = asset.price_whatif(underlying_price=underlying_price,
+                                             iv_change=iv_change,
+                                             days_to_expiration=days_to_expiration,
+                                             riskfreerate=riskfreerate)
+
+            # Store information for every contract in position (what if priced info)
+            position_result['whatif_positions'].append(whatif_data)
+
+            # Calculate net position dollar value
+            position_result['usdvalue'] += whatif_data['price'] * pos_dict['qty'] * asset.pointvalue
+            position_result['delta'] += whatif_data['delta'] * pos_dict['qty']
+
+        return position_result
 
 
     def __len__(self):

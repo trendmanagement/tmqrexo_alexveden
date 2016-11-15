@@ -6,6 +6,8 @@ from exobuilder.exo.transaction import Transaction
 from exobuilder.exo.position import Position
 from .assetindexdict import AssetIndexDicts
 from .datasourcefortest import DataSourceForTest
+from .exo_position_dict import EXO_POS_DICT_TEST
+import pandas as pd
 
 class PositionTestCase(unittest.TestCase):
     def setUp(self):
@@ -414,6 +416,82 @@ class PositionTestCase(unittest.TestCase):
         self.assertEqual(fut_contract2, pos.legs['fut2'])
         self.assertEqual(self.fut_contract, pos.legs['fut1'])
 
+    def test_add_2transactions_and_do_reverse_add(self):
+        pos = Position()
+        trans = Transaction(self.fut_contract, datetime(2014, 1, 5, 0, 0, 0), 4.0, 12.3)
+        pos.add(trans)
+
+        contract_dict = {'_id': '577a4fa34b01f47f84cab23c',
+                         'contractname': 'F.EPZ16',
+                         'cqgsymbol': 'F.EPZ16',
+                         'expirationdate': datetime(2016, 12, 16, 0, 0),
+                         'idcontract': 650,
+                         'idinstrument': 11,
+                         'month': 'Z',
+                         'monthint': 12,
+                         'year': 2016}
+
+        fut_contract2 = FutureContract(contract_dict, self.instrument)
+
+        trans2 = Transaction(fut_contract2, datetime(2014, 1, 6, 0, 0, 0), 2.0, 15.3)
+        pos.add(trans2)
+
+        # Do offset trade to close previous transaction
+        trans3 = Transaction(fut_contract2, datetime(2014, 1, 7, 0, 0, 0), -2.0, 15.3)
+        pos.add(trans3)
+
+        positions = pos.netpositions
+        self.assertEqual(1, len(positions))
+        self.assertEqual(True, self.fut_contract in positions)
+        p = positions[self.fut_contract]
+
+        self.assertEqual(p['qty'], 4.0)
+        self.assertEqual(0, pos._realized_pnl)
+
+    def test_get_position_qty_current_position(self):
+        pos = Position()
+
+        #
+        # Do sanity checks
+        #
+        self.assertEqual(EXO_POS_DICT_TEST['transactions'][-1]['date'], pd.Timestamp("2016-09-14T12:45:00"))
+        self.assertEqual(EXO_POS_DICT_TEST['transactions'][0]['date'], pd.Timestamp("2011-06-01T12:45:00"))
+
+        p = pos.get_position_qty(EXO_POS_DICT_TEST, None)
+
+
+        self.assertEqual(p["100006570"]['qty'], 1.0)
+        self.assertEqual(p["100006570"]['value'], 105925.0)
+
+        self.assertEqual(p["203147944"]['qty'], 1.0)
+        self.assertEqual(p["203147944"]['value'], 2067.81315840769)
+
+        self.assertEqual(p["203147442"]['qty'], -1.0)
+        self.assertEqual(p["203147442"]['value'], -2611.56510629721)
+
+        self.assertEqual(p["203148813"]['qty'], 1.0)
+        self.assertEqual(p["203148813"]['value'], 3013.95208628632)
+
+    def test_add_transaction_dict(self):
+        pos = Position()
+
+        #
+        # Do sanity checks
+        #
+        self.assertEqual(EXO_POS_DICT_TEST['transactions'][-1]['date'], pd.Timestamp("2016-09-14T12:45:00"))
+        self.assertEqual(EXO_POS_DICT_TEST['transactions'][0]['date'], pd.Timestamp("2011-06-01T12:45:00"))
+
+        # Reconstruct position from initial transactions
+        for trans_dict in EXO_POS_DICT_TEST['transactions']:
+            pos.add_transaction_dict(trans_dict)
+
+
+        self.assertEqual(len(EXO_POS_DICT_TEST['position']['positions']), len(pos.netpositions))
+
+
+        for asset_hash, pos_dict in EXO_POS_DICT_TEST['position']['positions'].items():
+            self.assertEqual(pos_dict['qty'], pos.netpositions[int(asset_hash)]['qty'])
+            self.assertEqual(pos_dict['value'], pos.netpositions[int(asset_hash)]['value'])
 
 
 
