@@ -46,6 +46,13 @@ class Instrument(object):
         return 1.0 / self._datadic['optionticksize'] * self._datadic['optiontickvalue']
 
     @property
+    def optionstrikeincrement(self):
+        return self._datadic['optionstrikeincrement']
+
+    def get_atm_strike(self, price):
+        return round(price / self.optionstrikeincrement) * self.optionstrikeincrement
+
+    @property
     def futures(self):
         """
         Futures chains accessor

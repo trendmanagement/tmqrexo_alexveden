@@ -63,17 +63,16 @@ class FutureContract(object):
         :param riskfreerate: Set the risk free rate (if None - use the current RFR)
         :return: option price and greeks for set of conditions
         """
-        ulprice = self.underlying.price if underlying_price is None else underlying_price
+        ulprice = self.price if underlying_price is None else underlying_price
         days_to_expiration = self.to_expiration_days if days_to_expiration is None else days_to_expiration
-        riskfreerate = self.riskfreerate if riskfreerate is None else riskfreerate
 
         return {
             'asset': self.name,
-            'price': underlying_price,
+            'price': ulprice,
             'delta': 1.0,
             'ulprice': ulprice,
             'days_to_expiration': days_to_expiration,
-            'riskfreerate': riskfreerate,
+            'riskfreerate': float('nan'),
             'iv': float('nan')
         }
 

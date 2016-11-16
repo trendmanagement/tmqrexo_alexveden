@@ -257,6 +257,7 @@ class Position(object):
                     break
         return positions
 
+    @property
     def usdvalue(self):
         """
         Calculates USD Value of opened position
@@ -267,6 +268,43 @@ class Position(object):
         for asset, pos_data in self.netpositions.items():
             usd_value += pos_data['value']
         return usd_value
+
+
+    @property
+    def underlying(self):
+        """
+        Return instrument for single product position
+        :return: Instrument instance
+        """
+        if self.transaction_mode == 'D':
+            raise Exception(
+                "You should call convert() for position restored from MongoDB dictionaries"
+            )
+
+        instrument = None
+        for asset, pos_dict in self.netpositions.items():
+            if instrument is not None:
+                if asset.instrument != instrument:
+                    raise Exception(
+                        "Make sure that the position contains only single product. Multi-product pricing is not supported by default.")
+            else:
+                instrument = asset.instrument
+
+        return instrument
+
+    @property
+    def underlying_price(self):
+        """
+        Return underlying price from position
+        :return:
+        """
+        for asset, pos_dict in self.netpositions.items():
+            if asset.contract_type == 'opt':
+                return asset.underlying.price
+            elif asset.contract_type == 'fut':
+                return asset.price
+
+        return 0.0
 
     def price_whatif(self, underlying_price=None, iv_change=0.0, days_to_expiration=None, riskfreerate=None):
         """
@@ -300,6 +338,13 @@ class Position(object):
                                              iv_change=iv_change,
                                              days_to_expiration=days_to_expiration,
                                              riskfreerate=riskfreerate)
+            #
+            # Add open price and qty information to asset position information
+            #
+            whatif_data['qty'] = pos_dict['qty']
+            whatif_data['open_price'] = pos_dict['value'] / pos_dict['qty'] / asset.pointvalue
+            whatif_data['pnl'] = whatif_data['price'] * pos_dict['qty'] * asset.pointvalue - pos_dict['value']
+
 
             # Store information for every contract in position (what if priced info)
             position_result['whatif_positions'].append(whatif_data)
@@ -307,6 +352,23 @@ class Position(object):
             # Calculate net position dollar value
             position_result['usdvalue'] += whatif_data['price'] * pos_dict['qty'] * asset.pointvalue
             position_result['delta'] += whatif_data['delta'] * pos_dict['qty']
+
+        def sort_assets(a):
+            asset = a['asset']
+
+            if asset.startswith('F.'):
+                return "0."+asset
+
+            if asset.startswith('C.'):
+                return "1." + asset
+
+            if asset.startswith('P.'):
+                return "2." + asset
+
+            return asset
+
+        # Sorting positions in next order: Fut -> Call -> Put
+        position_result['whatif_positions'] = sorted(position_result['whatif_positions'], key=sort_assets)
 
         return position_result
 
