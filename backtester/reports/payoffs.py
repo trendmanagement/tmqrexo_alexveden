@@ -4,6 +4,7 @@ import warnings
 import pandas as pd
 import matplotlib.pyplot as plt
 from IPython.display import display, HTML
+import numpy as np
 
 class PayoffAnalyzer:
     def __init__(self, datasource):
@@ -35,6 +36,17 @@ class PayoffAnalyzer:
             if trans['date'] <= pos_date:
                 self.position.add_transaction_dict(trans)
 
+        if len(self.position.netpositions) == 0:
+            if len(exo_data['transactions']) == 0:
+                warnings.warn("EXO doesn't contain any transactions")
+                return
+            else:
+                # Can't find any transactions on specific date
+                warnings.warn(
+                    "Can't find any transactions on specific date. First EXO transaction occured on {0}".format(
+                        exo_data['transactions'][0]['date']))
+                return
+
         # Convert position to normal state
         # We will load all assets information from DB
         # And this will allow us to use position pricing as well
@@ -62,9 +74,12 @@ class PayoffAnalyzer:
         self.position_name = campaign_name
         pass
 
-    def calc_payoff(self, strikes_to_analyze=10):
+    def calc_payoff(self, strikes_to_analyze=10, iv_change=0.0, days_to_expiration=None):
         """
         Calculates options positions payoff data for graphs (incl. PnL on expiration, current PnL, greeks)
+        :param strikes_to_analyze: number of strikes to show on Payoff graph
+        :param iv_change: IV change in WhatIF scenario
+        :param days_to_expiration: Days to expiration in WhatIF scenario
         :return:
         """
         if self.position is None:
@@ -72,9 +87,6 @@ class PayoffAnalyzer:
 
         # Get actual price for underlying future contract
         current_price = self.position.underlying_price
-        if current_price == 0.0:
-            warnings.warn("Can't calculate payoff diagram for empty position")
-            return None
 
         # Calculate ATM strike for current price
         instrument = self.position.underlying
@@ -96,6 +108,12 @@ class PayoffAnalyzer:
             # Calculate options position value at expiration
             whatif_data_exp = self.position.price_whatif(underlying_price=price_to_analyze, days_to_expiration=0)
 
+            # Calculate options position with WhatIF scenario included
+            whatif_data_scenario = self.position.price_whatif(underlying_price=price_to_analyze,
+                                                              iv_change=iv_change,
+                                                              days_to_expiration=days_to_expiration)
+
+
             # Calculate payoff
             strike_payoff = {
                 'strike': price_to_analyze,
@@ -104,6 +122,9 @@ class PayoffAnalyzer:
 
                 'expiration_payoff': whatif_data_exp['usdvalue'] - pos_value,
                 'expiration_delta': whatif_data_exp['delta'],
+
+                'scenario_payoff': whatif_data_scenario['usdvalue'] - pos_value,
+                'scenario_delta':  whatif_data_scenario['delta'],
             }
             payoffs.append(strike_payoff)
 
@@ -111,41 +132,66 @@ class PayoffAnalyzer:
         dfresult = dfresult.set_index('strike')
         return dfresult
 
-    def position_info(self):
+    def position_info(self, iv_change=0.0, days_to_expiration=None):
         """
         Returns net positions values (Qty, Greeks, Prices)
+        :param iv_change: IV change in WhatIF scenario
+        :param days_to_expiration: Days to expiration in WhatIF scenario
         :return:
         """
         if self.position is None:
             raise Exception("You should run load_exo() or load_campaign() first")
 
-        pos_info = self.position.price_whatif()
+        pos_info = self.position.price_whatif(iv_change=iv_change, days_to_expiration=days_to_expiration)
         pos_info['opened_value'] = self.position.usdvalue
         pos_info['current_pnl'] = pos_info['usdvalue'] - self.position.usdvalue
         pos_info['current_ulprice'] = self.position.underlying_price
         return pos_info
 
-    def plot(self, strikes_on_graph):
+    def plot(self, strikes_on_graph, iv_change, days_to_expiration):
+        """
+        Plot payoff diagram with WhatIF scenario
+        :param strikes_to_analyze: number of strikes to show on Payoff graph
+        :param iv_change: IV change in WhatIF scenario
+        :param days_to_expiration: Days to expiration in WhatIF scenario
+        :return:
+        """
+        if len(self.position.netpositions) == 0:
+            warnings.warn("Can't calculate payoff diagram for empty position")
+            return
 
-        dfpayoff = self.calc_payoff(strikes_to_analyze=strikes_on_graph)
+        dfpayoff = self.calc_payoff(strikes_to_analyze=strikes_on_graph,
+                                    iv_change=iv_change,
+                                    days_to_expiration=days_to_expiration)
         pos_info = self.position_info()
 
         f, (ax1, ax2) = plt.subplots(2, gridspec_kw={'height_ratios': [3, 1]});
 
         ax1.set_title('{0}: {1}'.format(self.position_type, self.position_name));
-        dfpayoff['expiration_payoff'].plot(ax=ax1, label='At expiration');
-        dfpayoff['current_payoff'].plot(ax=ax1, label='Current');
+        dfpayoff['expiration_payoff'].plot(ax=ax1, label='At expiration', lw=2, c='blue');
+        dfpayoff['current_payoff'].plot(ax=ax1, label='Current', c='green');
+        dfpayoff['scenario_payoff'].plot(ax=ax1, label='WhatIf', style='--', c='red');
         ax1.axvline(pos_info['current_ulprice'], linestyle='--', c='grey', label='Current price');
 
         ax1.axhline(0, c='grey');
         ax1.legend()
 
         ax2.axvline(pos_info['current_ulprice'], linestyle='--', c='grey');
-        dfpayoff['current_delta'].plot(ax=ax2, label='Delta');
+        dfpayoff['expiration_delta'].plot(ax=ax2, c='blue', lw=2);
+        dfpayoff['current_delta'].plot(ax=ax2, c='green');
+        dfpayoff['scenario_delta'].plot(ax=ax2, style='--', c='red');
         ax2.set_title('Delta');
         ax2.axhline(0, c='grey');
 
-    def show_report(self):
+        delta = dfpayoff['expiration_delta']
+
+        ax2.set_ylim(delta.min() - 0.2, delta.max() + 0.2)
+
+    def show_report(self, iv_change, days_to_expiration):
+        if len(self.position.netpositions) == 0:
+            warnings.warn("Can't calculate position report for empty position")
+            return
+
         pos_info = self.position_info()
 
         print('Position analysis for {0}: {1}\n'.format(self.position_type, self.position_name))
@@ -154,22 +200,173 @@ class PayoffAnalyzer:
         print("Delta: {0:>10}".format(pos_info['delta']))
 
         df = pd.DataFrame(pos_info['whatif_positions'])
-        df = df.set_index('asset')
-        df = df[['ulprice', 'open_price', 'price', 'qty', 'pnl', 'iv', 'delta', 'days_to_expiration', 'riskfreerate']]
 
-        readable_col_names = {'ulprice': 'ULPrice',
-                              'open_price': 'OpenPrice',
-                              'price': 'CurrentPrice',
-                              'qty': 'Qty',
-                              'pnl': 'PnL',
-                              'iv': 'IV',
-                              'delta': 'Delta',
-                              'days_to_expiration': 'To expiration',
-                              'riskfreerate': 'RFR',
-                              }
+        display(HTML(self._format_position_table(df)))
 
-        df.rename(columns=readable_col_names, inplace=True)
-        display(df)
+        whatif_pos_info = self.position_info(iv_change=iv_change, days_to_expiration=days_to_expiration)
+        whatifdf = pd.DataFrame(whatif_pos_info['whatif_positions'])
+
+        display(HTML(self._format_whatif_position_table(whatifdf, iv_change, days_to_expiration)))
+
+
+    def _format_position_table(self, posdf):
+
+        rows = ""
+
+        table_template = """
+        <div style="font-family:'Courier New', Courier, monospace;">
+        <h4>Positions at {1}</h4>
+        <table border="0" cellpadding="10" width="100%">
+        <thead>
+        <tr>
+            <th style="text-align: center;">Asset</th>
+            <th style="text-align: center;">OpenPrice</th>
+            <th style="text-align: center;">CurrentPrice</th>
+            <th style="text-align: center;">Qty</th>
+            <th style="text-align: center;">PnL</th>
+            <th style="text-align: center;">IV</th>
+            <th style="text-align: center;">Delta</th>
+            <th style="text-align: center;">ToExpiration</th>
+            <th style="text-align: center;">RFR</th>
+        </tr>
+        </thead>
+        {0}
+        </table>
+        </div>
+        """
+
+        row_template = '''
+        <tr>
+            <td>{asset}</td>
+            <td style="text-align: right;">{open_price}</td>
+            <td style="text-align: right;">{price}</td>
+            <td style="text-align: right;">{qty}</td>
+            <td style="text-align: right; {pnl_style}">${pnl:0.0f}</td>
+            <td style="text-align: right;">{iv}</td>
+            <td style="text-align: right;">{delta:0.2f}</td>
+            <td style="text-align: right;">{days_to_expiration} days</td>
+            <td style="text-align: right;">{riskfreerate}</td>
+        </tr>
+        '''
+        def pnl_color(pnl):
+            if pnl < 0:
+                return 'color: #CC3327;'
+            if pnl > 0:
+                return 'color: #28CC52;'
+            return ''
+
+        instrument = self.position.underlying
+        def format_price(asset, instrument, price):
+            if asset.startswith('F.'):
+                return round(price, len(str(instrument.ticksize)) - 2)
+            elif asset.startswith('C.') or asset.startswith('P.'):
+                return round(price, len(str(instrument.optionticksize)) - 2)
+            return price
+
+        def format_iv(iv):
+            if np.isnan(iv):
+                return ''
+            return '{0:0.2f}%'.format(iv*100)
+
+
+        for k, v in posdf.iterrows():
+            values_dict = v.to_dict()
+            values_dict['open_price'] = format_price(v['asset'], instrument, v['open_price'])
+            values_dict['price'] = format_price(v['asset'], instrument, v['price'])
+            values_dict['pnl_style'] = pnl_color(v['pnl'])
+            values_dict['iv'] = format_iv(v['iv'])
+            values_dict['riskfreerate'] = format_iv(v['riskfreerate'])
+
+
+            rows += row_template.format(**values_dict)
+
+        return table_template.format(rows, self.analysis_date)
+
+    def _format_whatif_position_table(self, posdf, iv_change, days_to_expiration):
+
+        rows = ""
+
+        table_template = """
+            <div style="font-family:'Courier New', Courier, monospace;">
+            <h4>WhatIf scenario</h4>
+            <p>
+            IV change: {iv_change}
+            </p>
+            <p>
+            Days to expiration: {days_to_expiration}
+            </p>
+            <table border="0" cellpadding="10" width="100%">
+            <thead>
+            <tr>
+                <th style="text-align: center;">Asset</th>
+                <th style="text-align: center;">OpenPrice</th>
+                <th style="text-align: center;">CurrentPrice</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: center;">PnL</th>
+                <th style="text-align: center;">IV</th>
+                <th style="text-align: center;">Delta</th>
+                <th style="text-align: center;">ToExpiration</th>
+                <th style="text-align: center;">RFR</th>
+            </tr>
+            </thead>
+            {rows}
+            </table>
+            </div>
+            """
+
+        row_template = '''
+            <tr>
+                <td>{asset}</td>
+                <td style="text-align: right;">{open_price}</td>
+                <td style="text-align: right;">{price}</td>
+                <td style="text-align: right;">{qty}</td>
+                <td style="text-align: right; {pnl_style}">${pnl:0.0f}</td>
+                <td style="text-align: right;">{iv}</td>
+                <td style="text-align: right;">{delta:0.2f}</td>
+                <td style="text-align: right;">{days_to_expiration} days</td>
+                <td style="text-align: right;">{riskfreerate}</td>
+            </tr>
+            '''
+
+        def pnl_color(pnl):
+            if pnl < 0:
+                return 'color: #CC3327;'
+            if pnl > 0:
+                return 'color: #28CC52;'
+            return ''
+
+        instrument = self.position.underlying
+
+        def format_price(asset, instrument, price):
+            if asset.startswith('F.'):
+                return round(price, len(str(instrument.ticksize)) - 2)
+            elif asset.startswith('C.') or asset.startswith('P.'):
+                return round(price, len(str(instrument.optionticksize)) - 2)
+            return price
+
+        def format_iv(iv):
+            if np.isnan(iv):
+                return ''
+            return '{0:0.2f}%'.format(iv * 100)
+
+        for k, v in posdf.iterrows():
+            values_dict = v.to_dict()
+            values_dict['open_price'] = format_price(v['asset'], instrument, v['open_price'])
+            values_dict['price'] = format_price(v['asset'], instrument, v['price'])
+            values_dict['pnl_style'] = pnl_color(v['pnl'])
+            values_dict['iv'] = format_iv(v['iv'])
+            values_dict['riskfreerate'] = format_iv(v['riskfreerate'])
+
+            rows += row_template.format(**values_dict)
+
+        table_context = {
+            'rows': rows,
+            'iv_change': iv_change,
+            'days_to_expiration': days_to_expiration,
+        }
+
+        return table_template.format(**table_context)
+
 
 
 

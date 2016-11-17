@@ -1,5 +1,6 @@
 from exobuilder.algorithms.blackscholes import blackscholes, blackscholes_greeks
 import numpy as np
+import warnings
 
 OPT_HASH_ROOT = 200000000
 
@@ -99,6 +100,11 @@ class OptionContract(object):
         days_to_expiration = self.to_expiration_days if days_to_expiration is None else days_to_expiration
         riskfreerate = self.riskfreerate if riskfreerate is None else riskfreerate
         iv = self.iv + iv_change
+
+        if days_to_expiration is not None:
+            if days_to_expiration > self.to_expiration_days:
+                warnings.warn("{0}: WhatIF days to expiration greater than current!".format(self.name), stacklevel=0)
+
 
         option_price = blackscholes(self.callorput, ulprice, self.strike, self.to_expiration_years_from_days(days_to_expiration),
                                     riskfreerate, iv)

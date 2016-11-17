@@ -18,7 +18,7 @@ def cnd(d):
 
 def blackscholes(callputflag, ulprice, strike, toexpiry, riskfreerate, iv):
     try:
-        if toexpiry == 0:
+        if toexpiry <= 0:
             # Calculate payoff at expiration
             if callputflag == 'C' or callputflag == 'c':
                 return max(0.0, ulprice - strike)
@@ -38,7 +38,7 @@ def blackscholes(callputflag, ulprice, strike, toexpiry, riskfreerate, iv):
 
 def blackscholes_greeks(callputflag, ulprice, strike, toexpiry, riskfreerate, iv):
     try:
-        if toexpiry == 0:
+        if toexpiry <= 0:
             # Calculate greeks at expiration
             if callputflag == 'C' or callputflag == 'c':
                 delta = 1.0 if ulprice > strike else 0.0

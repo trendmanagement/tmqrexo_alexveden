@@ -342,8 +342,12 @@ class Position(object):
             # Add open price and qty information to asset position information
             #
             whatif_data['qty'] = pos_dict['qty']
-            whatif_data['open_price'] = pos_dict['value'] / pos_dict['qty'] / asset.pointvalue
-            whatif_data['pnl'] = whatif_data['price'] * pos_dict['qty'] * asset.pointvalue - pos_dict['value']
+            if pos_dict['qty'] == 0:
+                whatif_data['open_price'] = 0.0
+                whatif_data['pnl'] = 0.0
+            else:
+                whatif_data['open_price'] = pos_dict['value'] / pos_dict['qty'] / asset.pointvalue
+                whatif_data['pnl'] = whatif_data['price'] * pos_dict['qty'] * asset.pointvalue - pos_dict['value']
 
 
             # Store information for every contract in position (what if priced info)
