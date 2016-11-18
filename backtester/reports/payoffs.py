@@ -52,7 +52,6 @@ class PayoffAnalyzer:
         # And this will allow us to use position pricing as well
         self.position.convert(self.datasource, pos_date)
 
-
         self.position_type = 'EXO'
         self.position_name = exo_name
         self.analysis_date = pos_date

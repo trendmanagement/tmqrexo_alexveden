@@ -229,32 +229,19 @@ class Position(object):
         return p
 
     @staticmethod
-    def get_position_qty(exo_data, date=None):
+    def get_position_qty(exo_data, datasource):
         """
         Returns information about current EXO position structure, holdings names and qty
         :param exo_data: MongoDB collection dict
-        :param date: DateTime of position
+        :param datasource: datasource engine instance
         :return:
         """
         positions = {}
-        positions_dict = exo_data['position']
-        for asset_hash, pos_data in positions_dict['positions'].items():
-            positions[asset_hash] = {'qty': pos_data['qty'], 'usdvalue': pos_data['value']}
+        position_dict = exo_data['position']
+        for asset_hash, pos_data in position_dict['positions'].items():
+            asset_info = datasource.get_info(int(asset_hash))
+            positions[asset_info['name']] = {'qty': pos_data['qty'], 'asset': asset_info}
 
-        if date is not None:
-            for trans in reversed(exo_data['transactions']):
-                if trans['date'] > date.date():
-                    # Roll-back all transaction > date
-                    _hash = trans['asset']['hash']
-                    _pos = positions.setdefault(_hash, {'qty': 0.0, 'usdvalue': 0.0})
-                    _pos['qty'] += -trans['qty']
-                    _pos['usdvalue'] += -trans['usdvalue']
-
-                    if _pos['qty'] == 0:
-                        # Remove zero positions
-                        del positions[_hash]
-                else:
-                    break
         return positions
 
     @property
