@@ -146,3 +146,31 @@ class EXOStorage(object):
             result[c['swarm_name']] = {'exposure': c['last_exposure'], 'exo_name': c['exo_name'], 'prev_exposure': c['last_prev_exposure']}
 
         return result
+
+    def swarms_data(self, alpha_list=None):
+        """
+        Returns swarm positions with alpha_filter
+        :param alpha_list: if None - select all, otherwize use list of alpha names ex. ['alpha1', 'alpha2']
+        :return: dict {'alpha_name: swarm_series dataframe}
+        """
+        result = {}
+        if alpha_list is not None:
+            cursor = self.db['swarms'].find({'swarm_name': {'$in': list(alpha_list)}})
+        else:
+            cursor = self.db['swarms'].find()
+
+        for c in cursor:
+            c['swarm_series'] = pickle.loads(c['swarm_series'])
+            result[c['swarm_name']] = c
+
+        return result
+
+    def campaign_load(self, campaign_name=None):
+        try:
+            campaign_collection = self.db['campaigns']
+            if campaign_name is None:
+                return campaign_collection.find()
+            else:
+                return campaign_collection.find_one({'name': campaign_name})
+        except:
+            return None

@@ -1,4 +1,5 @@
 from exobuilder.exo.position import Position
+from tradingcore.campaign import Campaign
 from datetime import datetime
 import warnings
 import pandas as pd
@@ -35,6 +36,9 @@ class PayoffAnalyzer:
         for trans in exo_data['transactions']:
             if trans['date'] <= pos_date:
                 self.position.add_transaction_dict(trans)
+            else:
+                break
+
 
         if len(self.position.netpositions) == 0:
             if len(exo_data['transactions']) == 0:
@@ -57,7 +61,7 @@ class PayoffAnalyzer:
         self.analysis_date = pos_date
 
 
-    def load_campaign(self, campaign_name, date):
+    def load_campaign(self, campaign_name, date=None):
         """
         Load campaign net positions for further analysis
         :param campaign_name:
@@ -65,13 +69,53 @@ class PayoffAnalyzer:
         :return:
         """
         # Load campaign positions
+        campaign_dict = self.datasource.exostorage.campaign_load(campaign_name)
+        if campaign_dict is None:
+            warnings.warn("Campaign not found: " + campaign_name)
+            return
 
-        # Calculate NET position on particular date
+        cmp = Campaign(campaign_dict, self.datasource)
+        # Calculate campaign's net exo position on particular date
+        pos_date = datetime.now() if date is None else date
+        exo_exposure = cmp.exo_positions(date)
+
+        transactions = []
+        for exo_name, exp_dict in exo_exposure.items():
+            print("Loading: {0} Exposure: {1}".format(exo_name, exp_dict['exposure']))
+            # Skip zero-positions
+            if exp_dict['exposure'] == 0:
+                continue
+
+            # Calculate position based on EXO transactions
+            exo_data = self.datasource.exostorage.load_exo(exo_name)
+            if exo_data is None:
+                raise NameError("EXO data for {0} not found.".format(exo_name))
+
+            for trans in exo_data['transactions']:
+                if trans['date'] <= pos_date:
+                    trans['qty'] *= exp_dict['exposure']
+                    trans['usdvalue'] *= exp_dict['exposure']
+                    transactions.append(trans)
+                else:
+                    break
+
+        # Sort transactions by date
+        transactions = sorted(transactions, key=lambda k: k['date'])
+
+        # Construct position
+        self.position = Position()
+        for t in transactions:
+            self.position.add_transaction_dict(t)
+
+        # Convert position to normal state
+        # We will load all assets information from DB
+        # And this will allow us to use position pricing as well
+        self.position.convert(self.datasource, pos_date)
 
         # Store positions values for analysis
         self.position_type = 'Campaign'
         self.position_name = campaign_name
-        pass
+        self.analysis_date = pos_date
 
     def calc_payoff(self, strikes_to_analyze=10, iv_change=0.0, days_to_expiration=None):
         """

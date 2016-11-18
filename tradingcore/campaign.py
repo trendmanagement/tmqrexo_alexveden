@@ -59,44 +59,65 @@ class Campaign:
         else:
             return self._legs[by_leg.lower()]
 
-    @property
-    def alphas_positions(self):
+    def alphas_positions(self, date):
         """
         Returns list of alpha's exposures regarding campaign's qty
+        :param date: if None - return current/last exposure, otherwize return exposure on particular date
         :return:
         """
         alpha_exposure = {}
-        swarm_positions = self._datasource.exostorage.swarms_positions(self.alphas.keys())
-        for swarm_name, info_dict in swarm_positions.items():
-            alpha_exposure[swarm_name] = {
-                'exposure': info_dict['exposure'] * self.alphas[swarm_name]['qty'],
-                'prev_exposure': info_dict['prev_exposure'] * self.alphas[swarm_name]['qty'],
-                'exo_name': info_dict['exo_name'],
+        swarm_positions = self._datasource.exostorage.swarms_data(self.alphas.keys())
+        if date is None:
+            # If date is not defined return actual swarm exposures
+            # Old behavior (for compatibility)
+            for swarm_name, info_dict in swarm_positions.items():
+                alpha_exposure[swarm_name] = {
+                    'exposure': info_dict['last_exposure'] * self.alphas[swarm_name]['qty'],
+                    'exo_name': info_dict['exo_name'],
+                    }
+        else:
+            for swarm_name, info_dict in swarm_positions.items():
+                seriesdf = info_dict['swarm_series']
+
+                # Handle swarm indexing as Date and DateTime
+                if date.date() in seriesdf.index:
+                    # If index values represent EOD
+                    exposure = seriesdf['exposure'].ix[date.date()]
+                elif date in seriesdf.index:
+                    # If index values are intraday timestamps
+                    exposure = seriesdf['exposure'][date]
+                else:
+                    # Date is not found in swarm_series dataframe
+                    exposure = 0.0
+                    warnings.warn("Date ({0}) is not found in swarms series for {1}".format(date, swarm_name))
+
+                alpha_exposure[swarm_name] = {
+                    'exposure': exposure * self.alphas[swarm_name]['qty'],
+                    'exo_name': info_dict['exo_name'],
                 }
+
         return alpha_exposure
 
-    @property
-    def exo_positions(self):
+    def exo_positions(self, date):
         """
         Returns per EXO exposure of campaign
         :return:
         """
         exo_exposure = {}
-        for k, v in self.alphas_positions.items():
-            exp = exo_exposure.setdefault(v['exo_name'], {'exposure': 0.0, 'prev_exposure': 0.0})
+        for k, v in self.alphas_positions(date).items():
+            exp = exo_exposure.setdefault(v['exo_name'], {'exposure': 0.0})
             exo_exposure[v['exo_name']]['exposure'] = exp['exposure'] + v['exposure']
-            exo_exposure[v['exo_name']]['prev_exposure'] = exp['prev_exposure'] + v['prev_exposure']
         return exo_exposure
 
     @property
     def positions(self):
         """
-        Returns net positions of campaign
+        Returns net positions of campaign on last date
         :return:
         """
         net_positions = {}
 
-        for exo_name, exo_exposure in self.exo_positions.items():
+        for exo_name, exo_exposure in self.exo_positions(date=None).items():
             # Load information about EXO positions
             exo_data = self._datasource.exostorage.load_exo(exo_name)
 
@@ -111,6 +132,8 @@ class Campaign:
 
                     # Multiply EXO position by campaign exposure
                     position['qty'] += pos_dict['qty'] * exo_exposure['exposure']
-                    position['prev_qty'] += pos_dict['qty'] * exo_exposure['prev_exposure']
+                    position['prev_qty'] += float('nan')
+            else:
+                warnings.warn("EXO data not found for " + exo_name)
 
         return net_positions

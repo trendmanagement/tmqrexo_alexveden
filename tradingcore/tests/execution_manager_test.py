@@ -89,7 +89,7 @@ class ExecutionManagerTestCase(unittest.TestCase):
         pass
 
     def test_real_world_debug(self):
-
+        return
 
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
