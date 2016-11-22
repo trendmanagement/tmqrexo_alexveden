@@ -1,3 +1,6 @@
+"""
+TODO: brief description of rankingclasses.py
+"""
 import numpy as np
 import pandas as pd
 from scipy.stats.stats import pearsonr

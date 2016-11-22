@@ -1,3 +1,7 @@
+"""
+TODO: brief description of filters.py
+"""
+
 import numpy as np
 import pandas as pd
 from backtester.common_algos import swingpoints

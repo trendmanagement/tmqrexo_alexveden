@@ -1,3 +1,7 @@
+"""
+TODO: brief description of swarm.py
+"""
+
 import numpy as np
 import pandas as pd
 import pickle

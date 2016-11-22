@@ -15,7 +15,6 @@ from exobuilder.data.datasource_sql import DataSourceSQL
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.exostorage import EXOStorage
 from exobuilder.data.datasource_hybrid import DataSourceHybrid
-
 try:
     from .settings import *
 except SystemError:

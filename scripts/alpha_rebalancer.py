@@ -107,7 +107,8 @@ def main(args, loglevel):
             #
             swm = None
             context = None
-            if module == exo.lower() and os.path.isdir(os.path.join('alphas', module)):
+
+            if module.lower() == exo.lower() and os.path.isdir(os.path.join('alphas', module)):
                 for custom_file in os.listdir(os.path.join('alphas', module)):
                     if 'alpha_' in custom_file and '.py' in custom_file:
                         logging.debug('Processing custom module: ' + os.path.join('alphas', module, custom_file))

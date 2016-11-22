@@ -26,7 +26,6 @@ EXO_LIST = [
         'name': 'ContFut',
         'class': EXOContinuousFut,
     },
-
 ]
 
 # Alphas list (generic)
@@ -42,7 +41,13 @@ ALPHAS_CUSTOM = [
     'ng_callspread',
     'ng_putspread',
     'zn_callspread',
-    'zn_putspread'
+    'zn_putspread',
+    'zc_callspread',
+    'zc_putspread',
+    'zs_callspread',
+    'zs_putspread',
+    'zw_callspread',
+    'zw_putspread',
 ]
 
 # MongoDB credentials

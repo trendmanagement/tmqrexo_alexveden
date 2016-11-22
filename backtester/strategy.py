@@ -1,3 +1,6 @@
+"""
+TODO: brief description of module
+"""
 import os
 import itertools
 import numpy as np

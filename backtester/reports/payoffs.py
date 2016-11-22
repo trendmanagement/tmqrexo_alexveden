@@ -1,3 +1,6 @@
+"""
+TODO: brief description of payoffs
+"""
 from exobuilder.exo.position import Position
 from tradingcore.campaign import Campaign
 from datetime import datetime
