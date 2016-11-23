@@ -1,3 +1,14 @@
+"""
+Scheduled asset index updater
+
+Loads information about assets metadata from SQL server and save it to MongoDB.
+
+Loads information about recently added:
+
+* Instruments
+* Futures
+* Options
+"""
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
 import pymssql

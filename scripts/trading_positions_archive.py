@@ -1,3 +1,8 @@
+"""
+Scheduled script for account positions archiving
+
+
+"""
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
 from tradingcore.signalapp import SignalApp, APPCLASS_MISC

@@ -1,5 +1,12 @@
 #!/usr/bin/env python
-#
+"""
+Quotes notification script
+
+Used in online trading setup, checks if last bar time of the last quote for particular instrument > decision time fires
+``new_quote`` event to RabbitMQ and launches full execution chain NewQuote -> ExoCalculation -> NewEXOQuote -> AlphaCalcultation -> PositionQtyUpdate
+
+Poll interval: 15 secs
+"""
 
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging

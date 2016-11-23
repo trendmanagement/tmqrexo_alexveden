@@ -1,4 +1,52 @@
 #!/usr/bin/env python
+"""
+``scripts/exo_builder.py`` is a main script for EXO historical backfill and online management, using command line arguments you can use this script in 2 modes:
+    * **backfill mode** - used for EXO historical price building and backfilling
+    * **online mode** - used for online EXO data processing on current date
+
+One ``exo_builder.py`` instance run for each product required
+
+Script usage:
+
+.. code-block:: none
+
+    usage: exo_builder.py [-h] [-v] [-E EXOLIST] [-D DEBUG] [-B BACKFILL]
+                      instrument
+
+    EXO generation batch script
+
+    positional arguments:
+      instrument            instrument name for EXO
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -v, --verbose         increase output verbosity
+      -E EXOLIST, --exolist EXOLIST
+                            List of EXO products to calculate default: *
+      -D DEBUG, --debug DEBUG
+                            Debug log files folder path if set
+      -B BACKFILL, --backfill BACKFILL
+                            Backfill EXO data from date YYYY-MM-DD
+
+    As an alternative to the commandline, params can be placed in a file, one per
+    line, and specified on the commandline like 'exo_builder.py @params.conf'.
+
+
+By default ``exo_builder.py`` uses EXO list stored in constant ``EXO_LIST`` in ``scripts/settings.py``
+
+Brief algorithm of work (in ``backfill`` mode):
+
+1. Load information about defined product (i.e. ``instrument`` positional argument)
+2. Load EXO settings from ``scripts/settings.py``
+3. For each day in period between starting date (i.e. --backfill YYYY-MM-DD argument) and Date.Now
+    * Load and initiate EXO class instance
+    * Calculate EXO position
+    * Store EXO values for particular date
+    * Loop to next date
+
+In **online mode** ``exo_builder.py`` is calculated only for current date and sends signal to RabbitMQ about EXO calculation finished.
+"""
+
 #
 
 # import modules used here -- sys is a very standard one

@@ -36,7 +36,9 @@ Online trading management
 -------------------------
 The section about managing trading core of the framework.
 
+* :ref:`trading-scripts-info`
 * :ref:`trading-custom-alphas`
+* :ref:`trading-exo-management`
 
 
 

@@ -1,4 +1,10 @@
+"""
+Standalone bulk EXO quotes updater
 
+Can be used to backfill EXO quotes or populate new EXOs with data
+
+EXO start date: 2011-06-01
+"""
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
 import os

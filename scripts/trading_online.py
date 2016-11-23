@@ -1,3 +1,6 @@
+"""
+Calculates account positions after some of alphas is calculated
+"""
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
 from tradingcore.signalapp import SignalApp, APPCLASS_ALPHA, APPCLASS_SIGNALS

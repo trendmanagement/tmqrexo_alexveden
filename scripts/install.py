@@ -1,5 +1,20 @@
-import os, sys
+"""
+TMQR EXO online installation script
 
+Used for new EXO, Alphas and products deployment
+
+How it works:
+
+1. Clean old settings
+2. Install online EXO scripts
+3. Install online Quotes notifications
+4. Install alphas scripts
+5. Install scheduled scripts (to CRON folder)
+6. Restart **supervisor** daemon
+
+"""
+import os, sys
+import time
 try:
     from .settings import *
 except SystemError:
@@ -338,6 +353,7 @@ if __name__ == '__main__':
     install_cron_trading_positions_archive()
 
     # Starting services
+    time.sleep(3)
     start()
 
 
