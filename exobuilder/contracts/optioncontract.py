@@ -149,6 +149,9 @@ class OptionContract(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __str__(self):
+        return '{0} [IV:{1:0.3f} Delta:{2:0.2f}]'.format(self.name, self.iv, self.delta)
+
 
 
 

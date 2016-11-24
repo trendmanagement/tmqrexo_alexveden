@@ -11,6 +11,11 @@ from collections import OrderedDict
 import numpy as np
 from .datasourcefortest import DataSourceForTest
 
+from exobuilder.data.datasource_mongo import DataSourceMongo
+from exobuilder.data.datasource_sql import DataSourceSQL
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
+from scripts.settings import *
+from exobuilder.algorithms.rollover_helper import RolloverHelper
 
 class OptionChainTestCase(unittest.TestCase):
     def setUp(self):
@@ -162,3 +167,93 @@ class OptionChainTestCase(unittest.TestCase):
             opt_str += "{0}: {1}\n".format(i - atmi, self.opt_chain[strike])
 
         self.assertEqual(self.opt_chain.__repr__(), opt_str)
+
+    def test_max_min_offset(self):
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+
+        base_date = datetime(2015, 6, 13, 12, 45, 0)
+
+        futures_limit = 3
+        options_limit = 20
+
+        datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit)
+
+        instr = datasource.get("ES", base_date)
+        rh = RolloverHelper(instr)
+        fut, opt_chain = rh.get_active_chains()
+
+        offset = opt_chain.maxoffset
+        self.assertEqual(20, offset)
+
+        offset = opt_chain.minoffset
+        self.assertEqual(-20, offset)
+
+
+    def test_chain_get_by_delta(self):
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+
+        base_date = datetime(2015, 6, 13, 12, 45, 0)
+
+        futures_limit = 3
+        options_limit = 20
+
+        datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit)
+
+        instr = datasource.get("ES", base_date)
+        rh = RolloverHelper(instr)
+        fut, opt_chain = rh.get_active_chains()
+
+        atm_strike = opt_chain.atmstrike
+
+        opt = opt_chain.get_by_delta(0.5)
+        self.assertEqual(opt.strike, atm_strike)
+        self.assertEqual(opt.putorcall, 'C')
+
+        opt = opt_chain.get_by_delta(-0.5)
+        self.assertEqual(opt.strike, atm_strike)
+        self.assertEqual(opt.putorcall, 'P')
+
+        self.assertRaises(ValueError, opt_chain.get_by_delta, 0)
+        self.assertRaises(ValueError, opt_chain.get_by_delta, float('nan'))
+        self.assertRaises(ValueError, opt_chain.get_by_delta, 1)
+        self.assertRaises(ValueError, opt_chain.get_by_delta, 2)
+        self.assertRaises(ValueError, opt_chain.get_by_delta, -2)
+        self.assertRaises(ValueError, opt_chain.get_by_delta, -1)
+
+        # ITM Put
+        opt = opt_chain.get_by_delta(-0.7)
+        self.assertEqual(opt.strike, 2115)
+        self.assertEqual(opt.putorcall, 'P')
+        self.assertAlmostEqual(opt.delta, -0.75, 2)
+
+        opt = opt_chain.get_by_delta(-0.999999)
+        self.assertEqual(opt.strike, 2195.0)
+        self.assertEqual(opt.putorcall, 'P')
+        self.assertAlmostEqual(opt.delta, -0.989, 3)
+
+        # OTM Put
+        opt = opt_chain.get_by_delta(-0.3)
+        self.assertEqual(opt.strike, 2070)
+        self.assertEqual(opt.putorcall, 'P')
+        self.assertAlmostEqual(opt.delta, -0.27, 2)
+
+        opt = opt_chain.get_by_delta(-0.00001)
+        self.assertEqual(opt, opt_chain[-20].P)
+
+        # ITM Call
+        opt = opt_chain.get_by_delta(0.7)
+        self.assertEqual(opt.strike, 2070)
+        self.assertEqual(opt.putorcall, 'C')
+        self.assertAlmostEqual(opt.delta, 0.73, 2)
+
+        opt = opt_chain.get_by_delta(0.9999999)
+        self.assertEqual(opt, opt_chain[-20].C)
+
+        # OTM Call
+        opt = opt_chain.get_by_delta(0.3)
+        self.assertEqual(opt.strike, 2115)
+        self.assertEqual(opt.putorcall, 'C')
+        self.assertAlmostEqual(opt.delta, 0.24, 2)
+
+        opt = opt_chain.get_by_delta(0.000001)
+        self.assertEqual(opt, opt_chain[20].C)
