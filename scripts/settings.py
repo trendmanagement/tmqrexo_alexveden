@@ -1,23 +1,8 @@
-"""
-Main settings scripts for EXO and alpha management
-
-List of settings:
-
-1. ``INSTRUMENTS_LIST`` - list of products, used by online trading scripts
-2. ``EXO_LIST`` - list of EXOs to build for every product in ``INSTRUMENTS_LIST``
-3. ``ALPHAS_GENERIC`` - list of alphas to apply to every EXO in the system, represent module name (without .py extension) stored in ``scripts/alphas`` folder.
-4. ``ALPHAS_CUSTOM`` - list of custom alpha folder with custom alphas modules, each record is an EXO name
-5. ``MONGO_CONNSTR`` / ``MONGO_EXO_DB`` - global MongoDB credentials
-6. ``SQL_HOST`` / ``SQL_USER`` / ``SQL_PASS`` - global TML SQL database credentials
-7. ``RABBIT_HOST`` / ``RABBIT_USER`` / ``RABBIT_PASW`` - global RabbitMQ credentials for online notifications
-
-"""
-
 # Importing EXO code
 from exobuilder.algorithms.exo_brokenwing import EXOBrokenwingCollar
 from exobuilder.algorithms.exo_vertical_spread import EXOVerticalSpread
 from exobuilder.algorithms.exo_continous_fut import EXOContinuousFut
-
+from exobuilder.algorithms.smartexo_ichimoku_bear_straddle_150delta import SmartexoIchimokuBearStraddle150Delta
 
 
 #
@@ -41,6 +26,11 @@ EXO_LIST = [
         'name': 'ContFut',
         'class': EXOContinuousFut,
     },
+    {
+        'name': 'SmartexoIchimokuBearStraddle150Delta',
+        'class': SmartexoIchimokuBearStraddle150Delta,
+    },
+
 ]
 
 # Alphas list (generic)
