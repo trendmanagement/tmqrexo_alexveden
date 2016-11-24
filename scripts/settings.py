@@ -2,7 +2,7 @@
 from exobuilder.algorithms.exo_brokenwing import EXOBrokenwingCollar
 from exobuilder.algorithms.exo_vertical_spread import EXOVerticalSpread
 from exobuilder.algorithms.exo_continous_fut import EXOContinuousFut
-
+from exobuilder.algorithms.smartexo_ichimoku_bear_straddle_150delta import SmartexoIchimokuBearStraddle150Delta
 
 
 #
@@ -25,6 +25,10 @@ EXO_LIST = [
     {
         'name': 'ContFut',
         'class': EXOContinuousFut,
+    },
+    {
+        'name': 'SmartexoIchimokuBearStraddle150Delta',
+        'class': SmartexoIchimokuBearStraddle150Delta,
     },
 
 ]
