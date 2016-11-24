@@ -61,6 +61,7 @@ To add new EXO (incl. SmartEXO)
 3. Run the ``python3.5 scripts/settings.py`` for syntax errors checks (empty output means - **no** syntax errors)
 4. Commit and push changes to GitHub and log in to the server
 5. Run deployment process as described at :ref:`server-code-deployment`, don't forget to run ``service supervisor restart`` to refresh changes
+6. Run EXO batch backfill ``python3.5 ./exo_batch_update.py``
 
 
 Indices and tables
