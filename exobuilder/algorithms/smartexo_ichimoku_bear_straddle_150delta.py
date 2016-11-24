@@ -11,130 +11,12 @@ from exobuilder.exo.exoenginebase import ExoEngineBase
 from exobuilder.exo.transaction import Transaction
 import time
 from exobuilder.algorithms.rollover_helper import RolloverHelper
+import logging
+from scripts.settings import *
 
-class SmartexoIchimokuBearStraddle150Delta(ExoEngineBase):
-    def __init__(self, symbol, direction, date, datasource, log_file_path=''):
-        self._symbol = symbol
-        super().__init__(symbol, direction, date, datasource, log_file_path=log_file_path)
-
-    @staticmethod
-    def direction_type():
-        return 0
-
-    @staticmethod
-    def names_list(symbol):
-        return ['{0}_{1}'.format(self._symbol, EXO_NAME)]
-
-    @property
-    def exo_name(self):
-        return '{0}_{1}'.format(self._symbol, EXO_NAME)
-
-    def is_rollover(self):
-        if len(self.position) != 0:
-            for p in self.position.legs.values():
-                rh = RolloverHelper(p.instrument)
-                if rh.is_rollover(p):
-                    return True
-        return False
-
-    def process_rollover(self):
-        trans_list = self.position.close_all_translist()
-        logging.info('Rollover occured, new series used')
-        return trans_list
-
-    def process_day(self):
-        """
-        Main EXO's position management method
-        :return: list of Transactions to process
-        """
-
-        # Get cont futures price for EXO
-        exo_df, exo_info = self.datasource.exostorage.load_series("{0}_ContFut".format(self._symbol))
-
-        regime = ichimoku_regimes(self.date, exo_df['exo'])
-
-        trans_list = []
-
-        if regime is None and len(self.position) > 0:
-            return self.position.close_all_translist()
-
-        instr = self.datasource.get(self._symbol, self.date)
-        rh = RolloverHelper(instr)
-        fut, opt_chain = rh.get_active_chains()
-
-        if regime == 1 and 'bullish' not in self.position.legs:
-            # Close all
-            trans_list += self.position.close_all_translist()
-            trans_list += new_position_bullish_zone(self.date, fut, opt_chain)
-
-            return trans_list
-        if regime == -1 and 'bearish' not in self.position.legs:
-            # Close all
-            trans_list += self.position.close_all_translist()
-            trans_list += new_position_bearish_zone(self.date, fut, opt_chain)
-            return trans_list
-
-        if regime == 0 and 'neutral' not in self.position.legs:
-            # Close all
-            trans_list += self.position.close_all_translist()
-            trans_list += new_position_neutral_zone(self.date, fut, opt_chain)
-            return trans_list
-
-        #
-        # Manage opened position
-        #
-        return manage_opened_position(self.date, fut, opt_chain, regime, self.position)
+EXO_NAME = 'SmartEXO_Ichi_Bearish_Straddle_150Delta'
 
 
-
-
-if __name__ == "__main__":
-    mongo_connstr = 'mongodb://exowriter:qmWSy4K3@10.0.1.2/tmldb?authMechanism=SCRAM-SHA-1'
-    mongo_db_name = 'tmldb'
-    assetindex = AssetIndexMongo(mongo_connstr, mongo_db_name)
-    exostorage = EXOStorage(mongo_connstr, mongo_db_name)
-
-    base_date = datetime(2011, 6, 13, 12, 45, 0)
-    futures_limit = 3
-    options_limit = 10
-
-    DEBUG = '.'
-
-    datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
-
-    server = 'h9ggwlagd1.database.windows.net'
-    user = 'modelread'
-    password = '4fSHRXwd4u'
-    datasource = DataSourceSQL(server, user, password, assetindex, futures_limit, options_limit, exostorage)
-
-    enddate = datetime.combine(datetime.now().date(), dttime(12, 45, 0))
-    currdate = base_date
-
-    instruments = ['CL', 'ES', 'NG', 'ZC', 'ZS', 'ZW', 'ZN']
-    directions = [1] #[1, -1]
-
-    # for i in range(100):
-    while currdate <= enddate:
-        start_time = time.time()
-        # date = base_date + timedelta(days=i)
-        date = currdate
-
-        for ticker in instruments:
-            asset_info = assetindex.get_instrument_info(ticker)
-            exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(date, asset_info)
-
-            for dir in directions:
-                with SmartEXOichimokuFutures(ticker, dir, exec_time_end, datasource,log_file_path=DEBUG) as exo_engine:
-                    # Load EXO information from mongo
-                    exo_engine.load()
-                    exo_engine.calculate()
-
-
-        end_time = time.time()
-
-        currdate += timedelta(days=1)
-        print("{0} Elasped: {1}".format(date, end_time-start_time))
-    print('Done')
 
 '''
 Define Bull/Bear/Neutral areas rules
@@ -203,6 +85,7 @@ def ichimoku_regimes(date, price_series):
     regime = get_regime(date.date())
     logging.debug("Ichi regime at {0}: {1}".format(date, regime))
     return regime
+
 
 # Toolbox
 def transactions_delta(trans_list):
@@ -306,3 +189,124 @@ def manage_opened_position(date, fut, opt_chain, regime, opened_position):
 
     # By default: do nothing
     return []
+
+
+class SmartexoIchimokuBearStraddle150Delta(ExoEngineBase):
+    def __init__(self, symbol, direction, date, datasource, log_file_path=''):
+        self._symbol = symbol
+        super().__init__(symbol, direction, date, datasource, log_file_path=log_file_path)
+
+    @staticmethod
+    def direction_type():
+        return 0
+
+    @staticmethod
+    def names_list(symbol):
+        return ['{0}_{1}'.format(symbol, EXO_NAME)]
+
+    @property
+    def exo_name(self):
+        return '{0}_{1}'.format(self._symbol, EXO_NAME)
+
+    def is_rollover(self):
+        if len(self.position) != 0:
+            for p in self.position.legs.values():
+                rh = RolloverHelper(p.instrument)
+                if rh.is_rollover(p):
+                    return True
+        return False
+
+    def process_rollover(self):
+        trans_list = self.position.close_all_translist()
+        logging.info('Rollover occured, new series used')
+        return trans_list
+
+    def process_day(self):
+        """
+        Main EXO's position management method
+        :return: list of Transactions to process
+        """
+
+        # Get cont futures price for EXO
+        exo_df, exo_info = self.datasource.exostorage.load_series("{0}_ContFut".format(self._symbol))
+
+        regime = ichimoku_regimes(self.date, exo_df['exo'])
+
+        trans_list = []
+
+        if regime is None and len(self.position) > 0:
+            return self.position.close_all_translist()
+
+        instr = self.datasource.get(self._symbol, self.date)
+        rh = RolloverHelper(instr)
+        fut, opt_chain = rh.get_active_chains()
+
+        if regime == 1 and 'bullish' not in self.position.legs:
+            # Close all
+            trans_list += self.position.close_all_translist()
+            trans_list += new_position_bullish_zone(self.date, fut, opt_chain)
+
+            return trans_list
+        if regime == -1 and 'bearish' not in self.position.legs:
+            # Close all
+            trans_list += self.position.close_all_translist()
+            trans_list += new_position_bearish_zone(self.date, fut, opt_chain)
+            return trans_list
+
+        if regime == 0 and 'neutral' not in self.position.legs:
+            # Close all
+            trans_list += self.position.close_all_translist()
+            trans_list += new_position_neutral_zone(self.date, fut, opt_chain)
+            return trans_list
+
+        #
+        # Manage opened position
+        #
+        return manage_opened_position(self.date, fut, opt_chain, regime, self.position)
+
+
+
+
+if __name__ == "__main__":
+    assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+    exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+
+    base_date = datetime(2011, 6, 13, 12, 45, 0)
+    futures_limit = 3
+    options_limit = 10
+
+    DEBUG = '.'
+
+    datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, exostorage)
+
+    datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
+
+    enddate = datetime.combine(datetime.now().date(), dttime(12, 45, 0))
+    currdate = base_date
+
+    instruments = ['CL'] #, 'ES', 'NG', 'ZC', 'ZS', 'ZW', 'ZN']
+    directions = [1] #[1, -1]
+
+    # for i in range(100):
+    while currdate <= enddate:
+        start_time = time.time()
+        # date = base_date + timedelta(days=i)
+        date = currdate
+
+        for ticker in instruments:
+            asset_info = assetindex.get_instrument_info(ticker)
+            exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(date, asset_info)
+
+            for dir in directions:
+                with SmartexoIchimokuBearStraddle150Delta(ticker, dir, exec_time_end, datasource,log_file_path=DEBUG) as exo_engine:
+                    # Load EXO information from mongo
+                    exo_engine.load()
+                    exo_engine.calculate()
+
+
+        end_time = time.time()
+
+        currdate += timedelta(days=1)
+        print("{0} Elasped: {1}".format(date, end_time-start_time))
+    print('Done')
+
