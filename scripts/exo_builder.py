@@ -173,7 +173,7 @@ class EXOScript:
                                           futures_limit, options_limit, exostorage)
 
             # Run EXO calculation
-            self.run_exo_calc(datasource, decision_time, symbol, isbackfill=False)
+            self.run_exo_calc(datasource, decision_time, symbol, backfill_dict=None)
 
             end_time = time.time()
             self.signalapp.send(MsgStatus('OK', 'EXO Processed', context={'instrument': symbol, 'date': quote_date, 'exec_time': end_time-start_time}))
@@ -183,23 +183,38 @@ class EXOScript:
 
 
 
-    def run_exo_calc(self, datasource, decision_time, symbol, isbackfill):
+    def run_exo_calc(self, datasource, decision_time, symbol, backfill_dict):
         # Running all EXOs builder algos
         exos_list = self.get_exo_list(args)
+
         for exo in exos_list:
             self.logger.info('Processing EXO: {0} at {1}'.format(exo['name'], decision_time))
 
             ExoClass = exo['class']
 
+
             # Processing Long/Short and bidirectional EXOs
             for direction in [1, -1]:
                 if ExoClass.direction_type() == 0 or ExoClass.direction_type() == direction:
                     with ExoClass(symbol, direction, decision_time, datasource, log_file_path=args.debug) as exo_engine:
+                        if backfill_dict is not None:
+                            #
+                            # Check if last EXO quote is < decision_time
+                            #   if True - skip the calculation until actual date come
+                            #
+                            # Note: this is fix for situations when we added new EXO, and we need it to be calculated
+                            #  from the beginning of the history
+                            if exo_engine.exo_name in backfill_dict:
+                                exo_start_date = backfill_dict[exo_engine.exo_name]
+                                if decision_time < exo_start_date:
+                                    break
+
+
                         self.logger.debug("Running EXO instance: " + exo_engine.name)
                         # Load EXO information from mongo
                         exo_engine.load()
                         exo_engine.calculate()
-                        if not isbackfill:
+                        if backfill_dict is None:
                             # Sending signal to alphas that EXO price is ready
                             self.signalapp.send(MsgEXOQuote(exo_engine.exo_name, decision_time))
 
@@ -214,29 +229,38 @@ class EXOScript:
         exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
         futures_limit = 3
-        options_limit = 10
+        options_limit = 20
         # datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
         datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
 
-        exos = exostorage.exo_list(exo_filter=self.args.instrument+'_')
+        exos = exostorage.exo_list(exo_filter=self.args.instrument+'_', return_names=True)
+
+        exo_start_dates = {}
+        exec_time, decision_time = AssetIndexMongo.get_exec_time(self.args.backfill, self.asset_info)
+
+        current_time = decision_time
 
         if len(exos) > 0:
-            series = exostorage.load_series(exos[0])[0]
-            last_date = series.index[-1] + timedelta(days=1)
-            exec_time, decision_time = AssetIndexMongo.get_exec_time(last_date, self.asset_info)
-            self.logger.info('Updating existing EXO series from: {0}'.format(decision_time))
+            for exo_name in exos:
+                series = exostorage.load_series(exo_name)[0]
+                if series is not None:
+                    last_date = series.index[-1] + timedelta(days=1)
+                    exec_time, decision_time = AssetIndexMongo.get_exec_time(last_date, self.asset_info)
+                    self.logger.info('Updating existing {0} series from: {1}'.format(exo_name, decision_time))
+                    exo_start_dates[exo_name] = decision_time
+
         else:
             self.logger.info('Updating new EXO series from: {0}'.format(self.args.backfill))
             exec_time, decision_time = AssetIndexMongo.get_exec_time(self.args.backfill, self.asset_info)
 
         exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
 
-        while decision_time <= decision_time_end:
-            self.logger.info("Backfilling: {0}".format(decision_time))
+        while current_time <= decision_time_end:
+            self.logger.info("Backfilling: {0}".format(current_time))
 
-            self.run_exo_calc(datasource, decision_time, args.instrument, isbackfill=True)
+            self.run_exo_calc(datasource, current_time, args.instrument, backfill_dict=exo_start_dates)
 
-            decision_time += timedelta(days=1)
+            current_time += timedelta(days=1)
             exec_time += timedelta(days=1)
 
 
