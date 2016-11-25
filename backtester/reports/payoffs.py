@@ -18,6 +18,20 @@ class PayoffAnalyzer:
         self.position_name = None
         self.analysis_date = None
 
+    def load_transactions(self, transactions_list, analysis_date, position_name = ''):
+        """
+        Create payoff diagram analysis from transactions list
+        :param transactions_list:
+        :return:
+        """
+        self.position = Position()
+        for trans in transactions_list:
+            self.position.add(trans)
+
+        self.position_type = 'TransList'
+        self.position_name = position_name
+        self.analysis_date = analysis_date
+
     def load_exo(self, exo_name, date=None):
         """
         Load EXO positions for further analysis
