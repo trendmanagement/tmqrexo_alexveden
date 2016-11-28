@@ -53,6 +53,7 @@ ALPHAS_CUSTOM = [
     'zs_putspread',
     'zw_callspread',
     'zw_putspread',
+    'cl_smartexo_ichi_bearish_straddle_150delta',
 ]
 
 # MongoDB credentials
