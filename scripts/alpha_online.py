@@ -1,3 +1,8 @@
+"""
+Online alpha execution script for generic alphas (calculated for each EXO)
+
+"""
+
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
 from tradingcore.signalapp import SignalApp, APPCLASS_ALPHA, APPCLASS_EXO
@@ -58,7 +63,7 @@ class AlphaOnlineScript:
         if self.loglevel == logging.DEBUG:
             self.log.debug('swarm_updated_callback: Swarm processed: {0}'.format(swm.name))
             last_state = swm.laststate_to_dict()
-            del last_state['picked_equity']
+            del last_state['swarm_series']
             pp = pprint.PrettyPrinter(indent=4)
 
             self.log.debug('Swarm last state: \n {0}'.format(pp.pformat(last_state)))

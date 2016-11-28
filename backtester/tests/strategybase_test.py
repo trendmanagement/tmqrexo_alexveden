@@ -1,22 +1,7 @@
 import unittest
-
-import unittest
-from backtester.swarms.manager import SwarmManager
-import pandas as pd
-import numpy as np
-from backtester import matlab, backtester
-from backtester.analysis import *
 from backtester.strategy import StrategyBase, OptParam, OptParamArray
-from backtester.swarms.manager import SwarmManager
-from backtester.swarms.ranking import SwarmRanker
-from backtester.swarms.rebalancing import SwarmRebalance
-from backtester.swarms.filters import SwarmFilter
 from backtester.costs import CostsManagerEXOFixed
-import numpy as np
 from copy import deepcopy
-
-from backtester.strategy import StrategyBase
-
 
 
 class StrategyBaseTestCase(unittest.TestCase):
@@ -99,7 +84,7 @@ class StrategyBaseTestCase(unittest.TestCase):
 
 
     def test_slice_opts_default(self):
-        ctx = deepcopy(self.context_withcosts)
+        ctx = deepcopy(self.context_nocosts)
         ctx['strategy']['opt_params'] =  [
                     # OptParam(name, default_value, min_value, max_value, step)
                     OptParamArray('Direction', [1, -1]),
@@ -115,7 +100,7 @@ class StrategyBaseTestCase(unittest.TestCase):
                 self.assertEqual(i, j)
 
     def test_slice_opts_preset(self):
-        ctx = deepcopy(self.context_withcosts)
+        ctx = deepcopy(self.context_nocosts)
         ctx['strategy']['opt_params'] =  [
                     # OptParam(name, default_value, min_value, max_value, step)
                     OptParamArray('Direction', [1, -1]),

@@ -3,7 +3,7 @@ from exobuilder.contracts.optioncontract import OptionContract
 from exobuilder.contracts.putcallpair import PutCallPair
 import numpy as np
 import bisect
-
+import warnings
 
 class OptionsChain(object):
     def __init__(self, option_chain_dic, futures_contract, options_limit=0):
@@ -79,6 +79,101 @@ class OptionsChain(object):
             return self._options[strike]
         else:
             raise ValueError('Unexpected item type, must be float or int')
+
+    def get_by_delta(self, delta):
+        """
+        Search option contract by delta value:
+        If delta ==  0.5 - returns ATM call
+        If delta == -0.5 - returns ATM put
+
+        If delta > 0.5 - returns ITM call near target delta
+        If delta < -0.5 - returns ITM put near target delta
+
+        If delta > 0 and < 0.5 - returns OTM call
+        If delta < 0 and > -0.5 - returns OTM put
+
+        If delta <= -1 or >= 1 or 0 - raises error
+        :param delta: value of delta contract to find
+        :return: Option contract instance
+        """
+        if delta <= -1 or delta >= 1 or delta == 0 or np.isnan(delta):
+            raise ValueError("Delta values must be > -1 and < 1")
+
+        if delta == 0.5:
+            return self[0].C
+        if delta == -0.5:
+            return self[0].P
+
+        if delta < -0.5:
+            i = 1
+            # Search for ITM put
+            while i <= self.maxoffset:
+                if self[i].P.delta <= delta:
+                    return self[i].P
+                i += 1
+
+            # Can't find suitable delta
+            last_option = self[self.maxoffset].P
+            warnings.warn("Can't find contract with delta: {0} using last available contract in chain: {1}".format(delta, last_option))
+            return last_option
+
+
+        if delta < 0 and delta > -0.5:
+            # Search for OTM put
+            i = -1
+            while i >= self.minoffset:
+                if self[i].P.delta >= delta:
+                    return self[i].P
+                i -= 1
+
+            # Can't find suitable delta
+            last_option = self[self.minoffset].P
+            warnings.warn(
+                "Can't find contract with delta: {0} using last available contract in chain: {1}".format(delta,
+                                                                                                         last_option))
+            return last_option
+
+
+        if delta > 0.5:
+            # Search for ITM call
+            i = -1
+            while i >= self.minoffset:
+                if self[i].C.delta >= delta:
+                    return self[i].C
+                i -= 1
+
+            # Can't find suitable delta
+            last_option = self[self.minoffset].C
+            warnings.warn(
+                "Can't find contract with delta: {0} using last available contract in chain: {1}".format(delta,
+                                                                                                         last_option))
+            return last_option
+
+        if delta > 0 and delta < 0.5:
+            i = 1
+            # Search for OTM call
+            while i <= self.maxoffset:
+                if self[i].C.delta <= delta:
+                    return self[i].C
+                i += 1
+
+            # Can't find suitable delta
+            last_option = self[self.maxoffset].C
+            warnings.warn(
+                "Can't find contract with delta: {0} using last available contract in chain: {1}".format(delta,
+                                                                                                         last_option))
+            return last_option
+
+        raise NotImplementedError("Unexpected code flow")
+
+    @property
+    def maxoffset(self):
+        return len(self._strike_array) - self.atmindex - 1
+
+    @property
+    def minoffset(self):
+        return -self.atmindex
+
 
     @property
     def atmstrike(self):

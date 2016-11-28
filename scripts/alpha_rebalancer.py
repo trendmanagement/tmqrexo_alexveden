@@ -1,3 +1,13 @@
+"""
+This script used for scheduled alpha execution over weekend
+
+How it works:
+
+1. Run every alpha for every EXO
+2. Run swarm optimization routine
+3. Rebalance new swarms set
+4. Save new swarm composition to MongoDB
+"""
 try:
     from .settings import *
 except SystemError:
@@ -107,7 +117,8 @@ def main(args, loglevel):
             #
             swm = None
             context = None
-            if module == exo.lower() and os.path.isdir(os.path.join('alphas', module)):
+
+            if module.lower() == exo.lower() and os.path.isdir(os.path.join('alphas', module)):
                 for custom_file in os.listdir(os.path.join('alphas', module)):
                     if 'alpha_' in custom_file and '.py' in custom_file:
                         logging.debug('Processing custom module: ' + os.path.join('alphas', module, custom_file))

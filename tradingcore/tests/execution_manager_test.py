@@ -5,6 +5,18 @@ from tradingcore.account import Account
 from tradingcore.moneymanagement import PlainMM
 from tradingcore.tests.campaign_test import DataSourceTest1
 
+from tradingcore.execution_manager import ExecutionManager
+from tradingcore.campaign import Campaign
+from tradingcore.account import Account
+from tradingcore.moneymanagement import PlainMM
+
+from exobuilder.data.datasource_mongo import DataSourceMongo
+from exobuilder.data.datasource_sql import DataSourceSQL
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
+from exobuilder.data.exostorage import EXOStorage
+
+from scripts.settings import *
+
 class ExecutionManagerTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -76,9 +88,17 @@ class ExecutionManagerTestCase(unittest.TestCase):
         cmp_dict = self.exmgr.account_positions_process()
         pass
 
+    def test_real_world_debug(self):
+        return
 
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+        storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+        # datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit=10, options_limit=10)
+        datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit=10, options_limit=10,
+                                     exostorage=storage)
+        exmgr = ExecutionManager(MONGO_CONNSTR, datasource, dbname=MONGO_EXO_DB)
 
-
+        positions = exmgr.account_positions_process(write_to_db=False)
 
 if __name__ == '__main__':
     unittest.main()

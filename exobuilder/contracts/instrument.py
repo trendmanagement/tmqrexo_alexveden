@@ -38,12 +38,27 @@ class Instrument(object):
         return self._datadic['exchangesymbol']
 
     @property
+    def ticksize(self):
+        return self._datadic['ticksize']
+
+    @property
+    def optionticksize(self):
+        return self._datadic['optionticksize']
+
+    @property
     def point_value_futures(self):
-        return 1.0 / self._datadic['ticksize'] * self._datadic['tickvalue']
+        return 1.0 / self.ticksize * self._datadic['tickvalue']
 
     @property
     def point_value_options(self):
-        return 1.0 / self._datadic['optionticksize'] * self._datadic['optiontickvalue']
+        return 1.0 / self.optionticksize * self._datadic['optiontickvalue']
+
+    @property
+    def optionstrikeincrement(self):
+        return self._datadic['optionstrikeincrement']
+
+    def get_atm_strike(self, price):
+        return round(price / self.optionstrikeincrement) * self.optionstrikeincrement
 
     @property
     def futures(self):

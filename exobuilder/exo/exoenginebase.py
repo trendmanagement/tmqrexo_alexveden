@@ -86,7 +86,8 @@ class ExoEngineBase(object):
         roll_trans = []
 
         # Proto-code
-        if self.is_rollover():
+        is_rollover = self.is_rollover()
+        if is_rollover:
             if self.debug_mode:
                 self.logger.write("Rollover event occured\n")
 
@@ -133,13 +134,36 @@ class ExoEngineBase(object):
             dt = datetime.datetime.combine(self.date.date(), datetime.time(0, 00))
         else:
             dt = self.date
-        self.series.at[dt, 'exo'] = pnl
 
-        if self.is_eod:
-            dt = datetime.datetime.combine(self.date.date(), datetime.time(0, 00))
-            self.series.at[dt, 'exo'] = pnl
-        else:
-            self.series.at[self.date, 'exo'] = pnl
+        # Setting EXO data and delta to EXO dataframe
+        self.series.at[dt, 'exo'] = pnl
+        self.series.at[dt, 'delta'] = self.position.delta
+        self.series.at[dt, 'is_rollover'] = 1 if is_rollover else 0
+
+        # Store number of contracts traded
+        nfutures_executed = 0
+        nfutures_opened = 0
+        noptions_executed = 0
+        noptions_opened = 0
+
+        for t in trans_list:
+            if t.asset.contract_type == 'opt':
+                noptions_executed += abs(t.qty)  # <-- to avoid long/short netting
+
+            if t.asset.contract_type == 'fut':
+                nfutures_executed += abs(t.qty)  # <-- to avoid long/short netting
+
+        for asset, pos in self.position.netpositions.items():
+            if asset.contract_type == 'opt':
+                noptions_opened += abs(pos['qty'])  # <-- to avoid long/short netting
+            if asset.contract_type == 'fut':
+                nfutures_opened += abs(pos['qty'])  # <-- to avoid long/short netting
+
+        self.series.at[dt, 'nfutures_executed'] = nfutures_executed
+        self.series.at[dt, 'nfutures_opened'] = nfutures_opened
+
+        self.series.at[dt, 'noptions_executed'] = noptions_executed
+        self.series.at[dt, 'noptions_opened'] = noptions_opened
 
         for k,v in self.get_custom_values().items():
             if not isinstance(k, str):
@@ -151,12 +175,6 @@ class ExoEngineBase(object):
 
         # Save EXO state to DB
         self.save()
-
-
-
-
-
-
 
     def as_dict(self):
         """

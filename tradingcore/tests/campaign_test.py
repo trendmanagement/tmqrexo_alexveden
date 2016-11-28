@@ -2,9 +2,76 @@ import unittest
 from tradingcore.campaign import Campaign
 from bson.objectid import ObjectId
 from pymongo import MongoClient
+import pandas as pd
+from datetime import datetime
 
 
 class ExoStorageTest1:
+    def swarms_data(self, alpha_list=None):
+        dt_full = [
+            pd.Timestamp("2015-01-01"),
+            pd.Timestamp("2015-01-02"),
+            pd.Timestamp("2015-01-03"),
+            pd.Timestamp("2015-01-04"),
+            pd.Timestamp("2015-01-05"),
+            pd.Timestamp("2015-01-06"),
+            pd.Timestamp("2015-01-07"),
+            ]
+
+        dt_not_full = [
+            pd.Timestamp("2015-01-01"),
+            pd.Timestamp("2015-01-02"),
+            pd.Timestamp("2015-01-03"),
+            pd.Timestamp("2015-01-04"),
+            pd.Timestamp("2015-01-05"),
+        ]
+        # Full series
+        alpha1_exposure = [0, 0, 0, 1, 1, 0, 0]
+        alpha2_exposure = [0, 0, 0, 1, 3, 0, 1]
+
+        # not full
+        alpha3_exposure = [0, 0, 0, 1, 2]
+
+        return {
+            'alpha1': {
+                'exo_name': 'exo1',
+                'instrument': 'ES',
+                'last_exposure': 1.0,
+                'swarm_series': pd.DataFrame(
+                    {
+                        'exposure': alpha1_exposure
+                    },
+                    index=dt_full
+                )
+            },
+            'alpha2': {
+                'exo_name': 'exo1',
+                'last_exposure': -2.0,
+                'instrument': 'CL',
+                'swarm_series': pd.DataFrame(
+                    {
+                        'exposure': alpha2_exposure
+                    },
+                    index=dt_full
+                )
+            },
+            'alpha3': {
+                'last_exposure': -2.0,
+                'exo_name': 'exo2',
+                'instrument': 'ES',
+                'swarm_series': pd.DataFrame(
+                    {
+                        'exposure': alpha3_exposure
+                    },
+                    index=dt_not_full
+                ),
+
+            },
+        }
+
+
+
+
     def swarms_positions(self, alpha_list=None):
         return {
             'alpha1': {
@@ -121,30 +188,24 @@ class CampaignTestCase(unittest.TestCase):
         self.assertEqual({}, self._cmp.alphas)
 
     def test_campaign_alpha_position(self):
-        pos = self._cmp.alphas_positions
+        pos = self._cmp.alphas_positions(None)
 
         self.assertEqual(3, len(pos))
         self.assertEqual(-1.0, pos['alpha1']['exposure'])
-        self.assertEqual(0.0, pos['alpha1']['prev_exposure'])
         self.assertEqual('exo1', pos['alpha1']['exo_name'])
 
         self.assertEqual(4.0, pos['alpha2']['exposure'])
-        self.assertEqual(-4.0, pos['alpha2']['prev_exposure'])
         self.assertEqual('exo1', pos['alpha2']['exo_name'])
 
         self.assertEqual(-4.0, pos['alpha3']['exposure'])
-        self.assertEqual(-4.0, pos['alpha3']['prev_exposure'])
         self.assertEqual('exo2', pos['alpha3']['exo_name'])
 
     def test_campaign_exo_positions(self):
-        pos = self._cmp.exo_positions
+        pos = self._cmp.exo_positions(None)
 
         self.assertEqual(2, len(pos))
         self.assertEqual(3.0, pos['exo1']['exposure'])
         self.assertEqual(-4.0, pos['exo2']['exposure'])
-
-        self.assertEqual(-4.0, pos['exo1']['prev_exposure'])
-        self.assertEqual(-4.0, pos['exo2']['prev_exposure'])
 
     def test_campaign_net_positions(self):
         pos = self._cmp.positions
@@ -153,10 +214,6 @@ class CampaignTestCase(unittest.TestCase):
         self.assertEqual(20 * 3, pos['FUT1']['qty'])
         self.assertEqual(20 * -4, pos['FUT2']['qty'])
         self.assertEqual(-20*3 + 20*-4, pos['OPT1']['qty'])
-
-        self.assertEqual(-80, pos['FUT1']['prev_qty'])
-        self.assertEqual(-80, pos['FUT2']['prev_qty'])
-        self.assertEqual(0, pos['OPT1']['prev_qty'])
 
     def test_campaign_add(self):
         alpha_name = 'new_alpha'
@@ -189,6 +246,122 @@ class CampaignTestCase(unittest.TestCase):
         self.assertEqual(['alpha3', 'new_alpha2'], self._cmp.alphas_list(by_leg='leg2'))
         self.assertEqual(['alpha2', 'new_alpha3'], self._cmp.alphas_list(by_leg=''))
         self.assertEqual(['alpha2', 'new_alpha3'], self._cmp.alphas_list(by_leg=None))
+
+    def test_swarms_positions_on_date(self):
+        """
+        dt_full = [
+            pd.Timestamp("2015-01-01"),
+            pd.Timestamp("2015-01-02"),
+            pd.Timestamp("2015-01-03"),
+            pd.Timestamp("2015-01-04"),
+            pd.Timestamp("2015-01-05"),
+            pd.Timestamp("2015-01-06"),
+            pd.Timestamp("2015-01-07"),
+            ]
+
+        dt_not_full = [
+            pd.Timestamp("2015-01-01"),
+            pd.Timestamp("2015-01-02"),
+            pd.Timestamp("2015-01-03"),
+            pd.Timestamp("2015-01-04"),
+            pd.Timestamp("2015-01-05"),
+        ]
+
+        # alpha1_exposure = [0, 0, 0, 1, 1, 0, 0]
+        alpha2_exposure   = [0, 0, 0, 1, 3, 0, 1]
+        # not full
+        alpha3_exposure =   [0, 0, 0, 1, 2]
+
+        'alphas': {
+                'alpha1': {
+                    'qty': -1.0,
+                    'leg_name': 'leg1',
+                },
+                'alpha2': {
+                    'qty': -2.0,
+                },
+                'alpha3': {
+                    'qty': 2.0,
+                    'leg_name': 'leg2',
+                },
+            }
+        """
+        p = self._cmp.alphas_positions(datetime(2015, 1, 1))
+        self.assertEqual(0, p['alpha1']['exposure'])
+        self.assertEqual(0, p['alpha2']['exposure'])
+        self.assertEqual(0, p['alpha3']['exposure'])
+
+        p = self._cmp.alphas_positions(datetime(2015, 1, 4))
+        self.assertEqual(-1, p['alpha1']['exposure'])
+        self.assertEqual(-2, p['alpha2']['exposure'])
+        self.assertEqual(2, p['alpha3']['exposure'])
+
+        p = self._cmp.alphas_positions(datetime(2015, 1, 5))
+        self.assertEqual(-1, p['alpha1']['exposure'])
+        self.assertEqual(-6, p['alpha2']['exposure'])
+        self.assertEqual(4, p['alpha3']['exposure'])
+
+        p = self._cmp.alphas_positions(datetime(2015, 1, 6))
+        self.assertEqual(0, p['alpha1']['exposure'])
+        self.assertEqual(0, p['alpha2']['exposure'])
+        self.assertEqual(0, p['alpha3']['exposure'])
+
+        p = self._cmp.alphas_positions(datetime(2015, 1, 7))
+        self.assertEqual(0, p['alpha1']['exposure'])
+        self.assertEqual(-2, p['alpha2']['exposure'])
+        self.assertEqual(0, p['alpha3']['exposure'])
+
+    def test_exo_positions_on_date(self):
+        """
+        dt_full = [
+            pd.Timestamp("2015-01-01"),
+            pd.Timestamp("2015-01-02"),
+            pd.Timestamp("2015-01-03"),
+            pd.Timestamp("2015-01-04"),
+            pd.Timestamp("2015-01-05"),
+            pd.Timestamp("2015-01-06"),
+            pd.Timestamp("2015-01-07"),
+            ]
+
+        dt_not_full = [
+            pd.Timestamp("2015-01-01"),
+            pd.Timestamp("2015-01-02"),
+            pd.Timestamp("2015-01-03"),
+            pd.Timestamp("2015-01-04"),
+            pd.Timestamp("2015-01-05"),
+        ]
+
+        # alpha1_exposure = [0, 0, 0, 1, 1, 0, 0]
+        alpha2_exposure   = [0, 0, 0, 1, 3, 0, 1]
+        # not full
+        alpha3_exposure =   [0, 0, 0, 1, 2]
+
+        'alphas': {
+                'alpha1': {
+                exo1
+                    'qty': -1.0,
+                    'leg_name': 'leg1',
+                },
+                'alpha2': {
+                exo1
+                    'qty': -2.0,
+                },
+                'alpha3': {
+                exo2
+                    'qty': 2.0,
+                    'leg_name': 'leg2',
+                },
+            }
+        """
+
+        p = self._cmp.exo_positions(datetime(2015, 1, 5))
+        self.assertEqual(-7, p['exo1']['exposure'])
+        self.assertEqual(4, p['exo2']['exposure'])
+
+        p = self._cmp.exo_positions(datetime(2015, 1, 7))
+        self.assertEqual(-2, p['exo1']['exposure'])
+        self.assertEqual(0, p['exo2']['exposure'])
+
 
 
 if __name__ == '__main__':

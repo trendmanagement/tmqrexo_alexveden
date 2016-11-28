@@ -7,6 +7,7 @@ ctypedef np.float64_t DTYPE_t_float
 ctypedef np.uint64_t DTYPE_t_uint64
 ctypedef np.uint8_t DTYPE_t_uint8
 from libc.math cimport abs, isnan
+import warnings
 
 np.import_array()
 
@@ -64,110 +65,26 @@ def backtest(data,
     return pd.Series(pl, index=data.index), pd.Series(inpositon, index=data.index)
 
 
-@cython.cdivision(True)
-@cython.boundscheck(False)
-def stats(pl, inposition, positionsize=None, costs=None):
-    """
-    Calculate equity and summary statistics, based on output of `backtest` method
-    :param pl: Profit-loss array (returned by backtest())
-    :param inposition: In-position array (returned by backtest())
-    :param positionsize: Value of position size (by default is: 1.0)
-    :param costs: transaction costs expressed as base points of price
-    :return: tuple (equity, stats)
-        - equity - is cumulative profits array
-        - stats - is a dict()
-    """
-    # Calculate trade-by-trade payoffs
-    cdef float profit = 0.0
-    cdef int entry_i = -1
-    cdef float barsintrade = 0.0
-    cdef float summae = 0.0
-    cdef float mae = 0.0
-    cdef float costs_sum = 0.0
-
-    cdef np.ndarray[DTYPE_t_float, ndim=1] _pl = pl.values
-    cdef np.ndarray[DTYPE_t_uint8, ndim=1] _inposition = inposition.values
-
-    cdef int barcount = _pl.shape[0]
-
-    cdef np.ndarray[DTYPE_t_float, ndim=1] equity = np.zeros(barcount)
-
-    cdef int i = 0
-    cdef int v = 0
-    cdef float psize = 0.0
+def calc_costs(float transaction_costs,float rollover_costs, float prev_exp, float current_exp):
+    # If rollover occurred
     cdef float _costs_value = 0.0
+    if rollover_costs != 0:
+        _costs_value += (-abs(rollover_costs) * abs(prev_exp))
 
-    cdef int has_possize = positionsize is not None
-    cdef int has_costs = costs is not None
+    _costs_value += (-abs(transaction_costs) * abs(prev_exp - current_exp))
 
-    cdef np.ndarray[DTYPE_t_float, ndim=1] _positionsize
-    cdef np.ndarray[DTYPE_t_float, ndim=1] _costs
+    return _costs_value
 
-    if has_possize:
-        _positionsize = positionsize.values
-    if has_costs:
-        _costs = costs.values
-
-    for i in range(1, barcount):
-        # Calculate cumulative profit inside particular trade
-        if _inposition[i] == 1:
-            # Calculate position size it may be used for
-            # - Volatility adjusted sizing
-            # - Taking into account pointvalue > 1.0
-            # For compatibility with old code, we use 1.0 by default
-            psize = 1.0
-            if has_possize:
-                if isnan(_positionsize[entry_i]):
-                    continue
-                psize = _positionsize[entry_i]
-
-
-            if _inposition[i-1] == 0:
-                # Store index of entry point
-                entry_i = i
-                equity[i] = equity[i-1]
-                mae = 0.0
-                # Important hack!
-                # When we apply global_filter
-                # PL on entry point must be 0
-                profit = 0.0
-            else:
-                profit += _pl[i] * psize
-
-
-            # Apply transaction costs
-            # Apply on entry point
-            if has_costs and i == entry_i:
-                _costs_value = (-abs(_costs[i]) * psize * 2)
-                costs_sum +=_costs_value
-                profit += _costs_value
-
-            mae = min(profit, mae)
-
-            equity[i] = equity[entry_i-1] + profit
-
-        # Store result
-        if _inposition[i] == 0:
-            if _inposition[i-1] == 1:
-                profit += _pl[i] * psize
-                equity[i] = equity[entry_i - 1] + profit
-                summae += mae
-                barsintrade += (i-1)-entry_i
-                profit = 0.0
-            else:
-                # Continuing equity line if no trades
-                equity[i] = equity[i-1]
-
-    return pd.Series(equity, index=inposition.index), None
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
-def stats_exposure(price, exposure, costs=None, extendedstats=False):
+def stats_exposure(exo_dataframe, exposure, costs=None, extendedstats=False):
     """
     Calculate equity and summary statistics, based on output of `backtest` method
-    :param price: price of EXO or another asset
+    :param exo_dataframe: price of EXO or another asset
     :param exposure: exposure of asset
     :param costs: transaction costs expressed as base points of price
+    :param extendedstats: calculate extended stats (like delta, costs values and etc)
     :return: tuple (equity, stats)
         - equity - is cumulative profits array
         - stats - is a dict() if extendedstats=True
@@ -180,7 +97,8 @@ def stats_exposure(price, exposure, costs=None, extendedstats=False):
     cdef float mae = 0.0
     cdef float costs_sum = 0.0
 
-    cdef np.ndarray[DTYPE_t_float, ndim=1] _price = price.values
+    cdef np.ndarray[DTYPE_t_float, ndim=1] _price = exo_dataframe['exo'].values
+    cdef np.ndarray[DTYPE_t_float, ndim=1] _delta
     cdef np.ndarray[DTYPE_t_float, ndim=1] _exposure
 
     try:
@@ -190,19 +108,24 @@ def stats_exposure(price, exposure, costs=None, extendedstats=False):
 
     cdef int barcount = _price.shape[0]
 
-    cdef np.ndarray[DTYPE_t_float, ndim=1] equity = np.zeros(barcount)
+    cdef np.ndarray[DTYPE_t_float, ndim=1] result_equity = np.zeros(barcount)
+    cdef np.ndarray[DTYPE_t_float, ndim=1] result_costs = np.zeros(barcount)
 
     cdef int i = 0
     cdef int v = 0
     cdef float _costs_value = 0.0
-    cdef psize = 0.0
+    cdef float current_exp = 0.0
+    cdef float prev_exp = 0.0
 
     cdef int has_costs = costs is not None
 
-    cdef np.ndarray[DTYPE_t_float, ndim=1] _costs
+
+    cdef np.ndarray[DTYPE_t_float, ndim=1] rollover_costs
+    cdef np.ndarray[DTYPE_t_float, ndim=1] transaction_costs
 
     if has_costs:
-        _costs = costs.values
+        rollover_costs = costs['rollover_costs'].values
+        transaction_costs = costs['transaction_costs'].values
 
     for i in range(1, barcount):
         # Calculate cumulative profit inside particular trade
@@ -212,24 +135,34 @@ def stats_exposure(price, exposure, costs=None, extendedstats=False):
         profit = (_price[i] - _price[i-1]) * prev_exp
 
         # Apply transaction costs
-        # Apply on entry point
-        if has_costs and current_exp != prev_exp:
-            _costs_value = (-abs(_costs[i]) * abs(prev_exp-current_exp))
+        if has_costs:
+            _costs_value = calc_costs(transaction_costs[i], rollover_costs[i], prev_exp, current_exp)
             profit += _costs_value
+            result_costs[i] = _costs_value
 
-        equity[i] = equity[i-1] + profit
-        '''
-            # Apply transaction costs
-            # Apply on entry point
-            if has_costs and i == entry_i:
-                _costs_value = (-abs(_costs[i]) * psize * 2)
-                costs_sum +=_costs_value
-                profit += _costs_value
+        result_equity[i] = result_equity[i-1] + profit
 
-            equity[i] = equity[entry_i-1] + profit
-        '''
+    results_series_dict = {'equity': result_equity}
 
-    return pd.Series(equity, index=price.index), {'note:' 'Not implemented yet'}
+    result_stats_dict = {}
+
+    if extendedstats:
+        # Calculate extended stats
+        results_series_dict['costs'] = result_costs
+        results_series_dict['exposure'] = _exposure
+
+        if 'delta' not in exo_dataframe:
+            # Old exo data array (need to rebuild EXO data)
+            warnings.warn("EXO data frame doesn't contain 'delta' series, you should rebuild EXO data to get delta information")
+            results_series_dict['delta'] = pd.Series(np.zeros(barcount), index=exo_dataframe.index)
+        else:
+            # Delta array is present in EXO dataframe
+            i = 0
+            _delta = exo_dataframe['delta'].values
+            results_series_dict['delta']  = pd.Series(_delta * _exposure, index=exo_dataframe.index)
+
+    return pd.DataFrame(results_series_dict, index=exo_dataframe.index), result_stats_dict
+
 
 
 @cython.cdivision(True)

@@ -19,7 +19,7 @@ class EXOStorage(object):
             data = self.db.exo_data.find({'name': exo_name}).next()
 
             # Loading metadata for EXO
-            exo_dic = {'pcf': [], 'pcfqty': [], 'margin': 0, 'underlying': '', 'name': exo_name, 'dbdata': data}
+            exo_dic = {'margin': 0, 'underlying': '', 'name': exo_name, 'dbdata': data}
 
             series_df = pickle.loads(data['series'])
             series_df.index = pd.to_datetime(series_df.index)
@@ -116,12 +116,17 @@ class EXOStorage(object):
             }
         )
 
-        swarm_data = [swm for swm in cursor]
+        swarm_data = []
+
+        for swm in cursor:
+            if 'swarm_series' in swm:
+                swm['swarm_series'] = pickle.loads(swm['swarm_series'])
+            swarm_data.append(swm)
 
         series_dict = {}
 
         for s in swarm_data:
-            series_dict[s['swarm_name']] = pickle.loads(s['picked_equity'])
+            series_dict[s['swarm_name']] = s['swarm_series']['equity']
 
         return pd.DataFrame(series_dict), swarm_data
 
@@ -141,3 +146,31 @@ class EXOStorage(object):
             result[c['swarm_name']] = {'exposure': c['last_exposure'], 'exo_name': c['exo_name'], 'prev_exposure': c['last_prev_exposure']}
 
         return result
+
+    def swarms_data(self, alpha_list=None):
+        """
+        Returns swarm positions with alpha_filter
+        :param alpha_list: if None - select all, otherwize use list of alpha names ex. ['alpha1', 'alpha2']
+        :return: dict {'alpha_name: swarm_series dataframe}
+        """
+        result = {}
+        if alpha_list is not None:
+            cursor = self.db['swarms'].find({'swarm_name': {'$in': list(alpha_list)}})
+        else:
+            cursor = self.db['swarms'].find()
+
+        for c in cursor:
+            c['swarm_series'] = pickle.loads(c['swarm_series'])
+            result[c['swarm_name']] = c
+
+        return result
+
+    def campaign_load(self, campaign_name=None):
+        try:
+            campaign_collection = self.db['campaigns']
+            if campaign_name is None:
+                return campaign_collection.find()
+            else:
+                return campaign_collection.find_one({'name': campaign_name})
+        except:
+            return None

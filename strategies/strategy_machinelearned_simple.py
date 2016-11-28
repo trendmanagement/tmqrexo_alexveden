@@ -2,19 +2,14 @@
 
 # In[2]:
 
-import sys, os
+from sklearn import grid_search, preprocessing
+from sklearn import neighbors
 
-sys.path.append('..')
-from backtester import matlab, backtester
 from backtester.analysis import *
-from backtester.strategy import StrategyBase, OptParam
-
+from backtester.strategy import StrategyBase
 import pandas as pd
 import numpy as np
-import scipy
 
-from sklearn import tree, neighbors, ensemble
-from sklearn import metrics, grid_search, cross_validation, preprocessing
 
 class StrategyMachineLearnedSimple(StrategyBase):
     name = 'MachineLearnedSimple'
@@ -122,17 +117,3 @@ class StrategyMachineLearnedSimple(StrategyBase):
 
         return swarm_member_name, entry_rule, exit_rule, calc_info
 
-
-if __name__ == "__main__":
-    #
-    #   Run this code only from direct shell execution
-    #
-    # strategy = StrategyMACrossTrail()
-    # equity, stats = strategy.calculate()
-
-    # Do some work
-    data, info = matlab.loaddata('../mat/strategy_270225.mat')
-    data.plot()
-
-
-# In[ ]:

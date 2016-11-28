@@ -1,0 +1,270 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Trading scripts information &mdash; TMQR framework 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="TMQR framework 1.0 documentation" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="trading-scripts-information">
+<span id="trading-scripts-info"></span><h1>Trading scripts information<a class="headerlink" href="#trading-scripts-information" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="installation-and-settings">
+<h2>Installation and settings<a class="headerlink" href="#installation-and-settings" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-scripts.install">
+<span id="install-py"></span><h3><code class="docutils literal"><span class="pre">install.py</span></code><a class="headerlink" href="#module-scripts.install" title="Permalink to this headline">¶</a></h3>
+<p>TMQR EXO online installation script</p>
+<p>Used for new EXO, Alphas and products deployment</p>
+<p>How it works:</p>
+<ol class="arabic simple">
+<li>Clean old settings</li>
+<li>Install online EXO scripts</li>
+<li>Install online Quotes notifications</li>
+<li>Install alphas scripts</li>
+<li>Install scheduled scripts (to CRON folder)</li>
+<li>Restart <strong>supervisor</strong> daemon</li>
+</ol>
+</div>
+<div class="section" id="module-scripts.settings">
+<span id="settings-py"></span><h3><code class="docutils literal"><span class="pre">settings.py</span></code><a class="headerlink" href="#module-scripts.settings" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="data-management">
+<h2>Data management<a class="headerlink" href="#data-management" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-scripts.assetindex_updater">
+<span id="assetindex-updater-py"></span><h3><code class="docutils literal"><span class="pre">assetindex_updater.py</span></code><a class="headerlink" href="#module-scripts.assetindex_updater" title="Permalink to this headline">¶</a></h3>
+<p>Scheduled asset index updater</p>
+<p>Loads information about assets metadata from SQL server and save it to MongoDB.</p>
+<p>Loads information about recently added:</p>
+<ul class="simple">
+<li>Instruments</li>
+<li>Futures</li>
+<li>Options</li>
+</ul>
+</div>
+<div class="section" id="module-scripts.quotes_notification">
+<span id="quotes-notification-py"></span><h3><code class="docutils literal"><span class="pre">quotes_notification.py</span></code><a class="headerlink" href="#module-scripts.quotes_notification" title="Permalink to this headline">¶</a></h3>
+<p>Quotes notification script</p>
+<p>Used in online trading setup, checks if last bar time of the last quote for particular instrument &gt; decision time fires
+<code class="docutils literal"><span class="pre">new_quote</span></code> event to RabbitMQ and launches full execution chain NewQuote -&gt; ExoCalculation -&gt; NewEXOQuote -&gt; AlphaCalcultation -&gt; PositionQtyUpdate</p>
+<p>Poll interval: 15 secs</p>
+</div>
+</div>
+<div class="section" id="exo-management">
+<h2>EXO management<a class="headerlink" href="#exo-management" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-scripts.exo_builder">
+<span id="exo-builder-py"></span><h3><code class="docutils literal"><span class="pre">exo_builder.py</span></code><a class="headerlink" href="#module-scripts.exo_builder" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">scripts/exo_builder.py</span></code> is a main script for EXO historical backfill and online management, using command line arguments you can use this script in 2 modes:</dt>
+<dd><ul class="first last simple">
+<li><strong>backfill mode</strong> - used for EXO historical price building and backfilling</li>
+<li><strong>online mode</strong> - used for online EXO data processing on current date</li>
+</ul>
+</dd>
+</dl>
+<p>One <code class="docutils literal"><span class="pre">exo_builder.py</span></code> instance run for each product required</p>
+<p>Script usage:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>usage: exo_builder.py [-h] [-v] [-E EXOLIST] [-D DEBUG] [-B BACKFILL]
+                  instrument
+
+EXO generation batch script
+
+positional arguments:
+  instrument            instrument name for EXO
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         increase output verbosity
+  -E EXOLIST, --exolist EXOLIST
+                        List of EXO products to calculate default: *
+  -D DEBUG, --debug DEBUG
+                        Debug log files folder path if set
+  -B BACKFILL, --backfill BACKFILL
+                        Backfill EXO data from date YYYY-MM-DD
+
+As an alternative to the commandline, params can be placed in a file, one per
+line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39;.
+</pre></div>
+</div>
+<p>By default <code class="docutils literal"><span class="pre">exo_builder.py</span></code> uses EXO list stored in constant <code class="docutils literal"><span class="pre">EXO_LIST</span></code> in <code class="docutils literal"><span class="pre">scripts/settings.py</span></code></p>
+<p>Brief algorithm of work (in <code class="docutils literal"><span class="pre">backfill</span></code> mode):</p>
+<ol class="arabic">
+<li><p class="first">Load information about defined product (i.e. <code class="docutils literal"><span class="pre">instrument</span></code> positional argument)</p>
+</li>
+<li><p class="first">Load EXO settings from <code class="docutils literal"><span class="pre">scripts/settings.py</span></code></p>
+</li>
+<li><dl class="first docutils">
+<dt>For each day in period between starting date (i.e. &#8211;backfill YYYY-MM-DD argument) and Date.Now</dt>
+<dd><ul class="first last simple">
+<li>Load and initiate EXO class instance</li>
+<li>Calculate EXO position</li>
+<li>Store EXO values for particular date</li>
+<li>Loop to next date</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ol>
+<p>In <strong>online mode</strong> <code class="docutils literal"><span class="pre">exo_builder.py</span></code> is calculated only for current date and sends signal to RabbitMQ about EXO calculation finished.</p>
+</div>
+<div class="section" id="module-scripts.exo_batch_update">
+<span id="exo-batch-update-py"></span><h3><code class="docutils literal"><span class="pre">exo_batch_update.py</span></code><a class="headerlink" href="#module-scripts.exo_batch_update" title="Permalink to this headline">¶</a></h3>
+<p>Standalone bulk EXO quotes updater</p>
+<p>Can be used to backfill EXO quotes or populate new EXOs with data</p>
+<p>EXO start date: 2011-06-01</p>
+</div>
+</div>
+<div class="section" id="alpha-management">
+<h2>Alpha management<a class="headerlink" href="#alpha-management" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-scripts.alpha_rebalancer">
+<span id="alpha-rebalancer-py"></span><h3><code class="docutils literal"><span class="pre">alpha_rebalancer.py</span></code><a class="headerlink" href="#module-scripts.alpha_rebalancer" title="Permalink to this headline">¶</a></h3>
+<p>This script used for scheduled alpha execution over weekend</p>
+<p>How it works:</p>
+<ol class="arabic simple">
+<li>Run every alpha for every EXO</li>
+<li>Run swarm optimization routine</li>
+<li>Rebalance new swarms set</li>
+<li>Save new swarm composition to MongoDB</li>
+</ol>
+</div>
+<div class="section" id="module-scripts.alpha_online">
+<span id="alpha-online-py"></span><h3><code class="docutils literal"><span class="pre">alpha_online.py</span></code><a class="headerlink" href="#module-scripts.alpha_online" title="Permalink to this headline">¶</a></h3>
+<p>Online alpha execution script for generic alphas (calculated for each EXO)</p>
+</div>
+<div class="section" id="module-scripts.alpha_online_custom">
+<span id="alpha-online-custom-py"></span><h3><code class="docutils literal"><span class="pre">alpha_online_custom.py</span></code><a class="headerlink" href="#module-scripts.alpha_online_custom" title="Permalink to this headline">¶</a></h3>
+<p>Online alpha execution script for custom alphas (calculated for only particular EXO)</p>
+</div>
+</div>
+<div class="section" id="trading-scripts">
+<h2>Trading scripts<a class="headerlink" href="#trading-scripts" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-scripts.trading_online">
+<span id="trading-online-py"></span><h3><code class="docutils literal"><span class="pre">trading_online.py</span></code><a class="headerlink" href="#module-scripts.trading_online" title="Permalink to this headline">¶</a></h3>
+<p>Calculates account positions after some of alphas is calculated</p>
+</div>
+<div class="section" id="module-scripts.trading_positions_archive">
+<span id="trading-positions-archive-py"></span><h3><code class="docutils literal"><span class="pre">trading_positions_archive.py</span></code><a class="headerlink" href="#module-scripts.trading_positions_archive" title="Permalink to this headline">¶</a></h3>
+<p>Scheduled script for account positions archiving</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Trading scripts information</a><ul>
+<li><a class="reference internal" href="#installation-and-settings">Installation and settings</a><ul>
+<li><a class="reference internal" href="#module-scripts.install"><code class="docutils literal"><span class="pre">install.py</span></code></a></li>
+<li><a class="reference internal" href="#module-scripts.settings"><code class="docutils literal"><span class="pre">settings.py</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#data-management">Data management</a><ul>
+<li><a class="reference internal" href="#module-scripts.assetindex_updater"><code class="docutils literal"><span class="pre">assetindex_updater.py</span></code></a></li>
+<li><a class="reference internal" href="#module-scripts.quotes_notification"><code class="docutils literal"><span class="pre">quotes_notification.py</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exo-management">EXO management</a><ul>
+<li><a class="reference internal" href="#module-scripts.exo_builder"><code class="docutils literal"><span class="pre">exo_builder.py</span></code></a></li>
+<li><a class="reference internal" href="#module-scripts.exo_batch_update"><code class="docutils literal"><span class="pre">exo_batch_update.py</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#alpha-management">Alpha management</a><ul>
+<li><a class="reference internal" href="#module-scripts.alpha_rebalancer"><code class="docutils literal"><span class="pre">alpha_rebalancer.py</span></code></a></li>
+<li><a class="reference internal" href="#module-scripts.alpha_online"><code class="docutils literal"><span class="pre">alpha_online.py</span></code></a></li>
+<li><a class="reference internal" href="#module-scripts.alpha_online_custom"><code class="docutils literal"><span class="pre">alpha_online_custom.py</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#trading-scripts">Trading scripts</a><ul>
+<li><a class="reference internal" href="#module-scripts.trading_online"><code class="docutils literal"><span class="pre">trading_online.py</span></code></a></li>
+<li><a class="reference internal" href="#module-scripts.trading_positions_archive"><code class="docutils literal"><span class="pre">trading_positions_archive.py</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/trading-scripts-info.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, TMQR.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="_sources/trading-scripts-info.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

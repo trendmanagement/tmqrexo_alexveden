@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>EXO management &mdash; TMQR framework 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="TMQR framework 1.0 documentation" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="exo-management">
+<span id="trading-exo-management"></span><h1>EXO management<a class="headerlink" href="#exo-management" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="module-scripts.exo_builder">
+<span id="how-exo-scripts-work"></span><h2>How EXO scripts work<a class="headerlink" href="#module-scripts.exo_builder" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">scripts/exo_builder.py</span></code> is a main script for EXO historical backfill and online management, using command line arguments you can use this script in 2 modes:</dt>
+<dd><ul class="first last simple">
+<li><strong>backfill mode</strong> - used for EXO historical price building and backfilling</li>
+<li><strong>online mode</strong> - used for online EXO data processing on current date</li>
+</ul>
+</dd>
+</dl>
+<p>One <code class="docutils literal"><span class="pre">exo_builder.py</span></code> instance run for each product required</p>
+<p>Script usage:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>usage: exo_builder.py [-h] [-v] [-E EXOLIST] [-D DEBUG] [-B BACKFILL]
+                  instrument
+
+EXO generation batch script
+
+positional arguments:
+  instrument            instrument name for EXO
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         increase output verbosity
+  -E EXOLIST, --exolist EXOLIST
+                        List of EXO products to calculate default: *
+  -D DEBUG, --debug DEBUG
+                        Debug log files folder path if set
+  -B BACKFILL, --backfill BACKFILL
+                        Backfill EXO data from date YYYY-MM-DD
+
+As an alternative to the commandline, params can be placed in a file, one per
+line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39;.
+</pre></div>
+</div>
+<p>By default <code class="docutils literal"><span class="pre">exo_builder.py</span></code> uses EXO list stored in constant <code class="docutils literal"><span class="pre">EXO_LIST</span></code> in <code class="docutils literal"><span class="pre">scripts/settings.py</span></code></p>
+<p>Brief algorithm of work (in <code class="docutils literal"><span class="pre">backfill</span></code> mode):</p>
+<ol class="arabic">
+<li><p class="first">Load information about defined product (i.e. <code class="docutils literal"><span class="pre">instrument</span></code> positional argument)</p>
+</li>
+<li><p class="first">Load EXO settings from <code class="docutils literal"><span class="pre">scripts/settings.py</span></code></p>
+</li>
+<li><dl class="first docutils">
+<dt>For each day in period between starting date (i.e. &#8211;backfill YYYY-MM-DD argument) and Date.Now</dt>
+<dd><ul class="first last simple">
+<li>Load and initiate EXO class instance</li>
+<li>Calculate EXO position</li>
+<li>Store EXO values for particular date</li>
+<li>Loop to next date</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ol>
+<p>In <strong>online mode</strong> <code class="docutils literal"><span class="pre">exo_builder.py</span></code> is calculated only for current date and sends signal to RabbitMQ about EXO calculation finished.</p>
+</div>
+<div class="section" id="how-to-add-new-product-or-exo">
+<h2>How to add new product or EXO<a class="headerlink" href="#how-to-add-new-product-or-exo" title="Permalink to this headline">¶</a></h2>
+<p>All setting for EXO generation and product list are stored in <code class="docutils literal"><span class="pre">scripts/settings.py</span></code></p>
+<p>Main options:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">INSTRUMENTS_LIST</span></code> - list of products used for calculations (this list used by <code class="docutils literal"><span class="pre">install.py</span></code> script for <code class="docutils literal"><span class="pre">supervisor</span></code> configuration files generation)</li>
+<li><code class="docutils literal"><span class="pre">EXO_LIST</span></code> - list of EXO algorithms and names</li>
+</ul>
+<div class="section" id="to-add-new-product">
+<h3>To add new product<a class="headerlink" href="#to-add-new-product" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li>Type in new <code class="docutils literal"><span class="pre">exchangesymbol</span></code> name to the <code class="docutils literal"><span class="pre">INSTRUMENTS_LIST</span></code></li>
+<li>Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)</li>
+<li>Commit and push changes to GitHub and log in to the server</li>
+<li>Run deployment process as described at <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a> but without <strong>service supervisor restart</strong> step</li>
+<li>Run on the server <code class="docutils literal"><span class="pre">cd</span> <span class="pre">/var/data/tmqrengine/scripts/</span></code> and then <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./install.py</span></code>, this script will clear the logs and deploy new settings for online trading. Also <code class="docutils literal"><span class="pre">supervisor</span> <span class="pre">service</span></code> will be restarted.</li>
+<li>Make sure that new product is present in <code class="docutils literal"><span class="pre">supervisorctl</span> <span class="pre">status</span></code> command output, otherwise try to restart it manually one more time <code class="docutils literal"><span class="pre">service</span> <span class="pre">supervisor</span> <span class="pre">restart</span></code></li>
+</ol>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Name of the product <strong>must</strong> reflect <code class="docutils literal"><span class="pre">exchangesymbol</span></code> field of <code class="docutils literal"><span class="pre">instruments</span></code> MongoDB collection</p>
+</div>
+</div>
+<div class="section" id="to-add-new-exo-incl-smartexo">
+<h3>To add new EXO (incl. SmartEXO)<a class="headerlink" href="#to-add-new-exo-incl-smartexo" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p class="first">Add new tested EXO python file to <code class="docutils literal"><span class="pre">exobuilder/algorithms</span></code></p>
+</li>
+<li><dl class="first docutils">
+<dt>Edit <code class="docutils literal"><span class="pre">scripts/settings.py</span></code> file</dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>Add new import statement to the header of the file</dt>
+<dd><p class="first">For example:</p>
+<div class="last highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">exobuilder.algorithms.exo_continous_fut</span> <span class="k">import</span> <span class="n">EXOContinuousFut</span>
+<span class="kn">from</span> <span class="nn">exobuilder.algorithms.new_exo_module</span> <span class="k">import</span> <span class="n">NewEXOClassName</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Add new EXO item to <code class="docutils literal"><span class="pre">EXO_LIST</span></code></dt>
+<dd><p class="first">For example:</p>
+<div class="last highlight-default"><div class="highlight"><pre><span></span><span class="n">EXO_LIST</span> <span class="o">=</span> <span class="p">[</span>
+<span class="p">{</span>
+    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;CollarBW&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="n">EXOBrokenwingCollar</span><span class="p">,</span>
+<span class="p">},</span>
+<span class="o">....</span>
+<span class="p">{</span>
+    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;NewExoName&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="n">NewEXOClassName</span><span class="p">,</span>   <span class="c1"># As in import statement above</span>
+<span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first">Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)</p>
+</li>
+<li><p class="first">Commit and push changes to GitHub and log in to the server</p>
+</li>
+<li><p class="first">Run deployment process as described at <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a>, don&#8217;t forget to run <code class="docutils literal"><span class="pre">service</span> <span class="pre">supervisor</span> <span class="pre">restart</span></code> to refresh changes</p>
+</li>
+<li><p class="first">Run EXO batch backfill <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./exo_batch_update.py</span></code></p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="index.html#index-page"><span class="std std-ref">TMQR documentation home page</span></a></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">EXO management</a><ul>
+<li><a class="reference internal" href="#module-scripts.exo_builder">How EXO scripts work</a></li>
+<li><a class="reference internal" href="#how-to-add-new-product-or-exo">How to add new product or EXO</a><ul>
+<li><a class="reference internal" href="#to-add-new-product">To add new product</a></li>
+<li><a class="reference internal" href="#to-add-new-exo-incl-smartexo">To add new EXO (incl. SmartEXO)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/trading-exo-management.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, TMQR.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="_sources/trading-exo-management.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

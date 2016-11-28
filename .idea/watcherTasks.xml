@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectTasksOptions">
+    <TaskOptions isEnabled="true">
+      <option name="arguments" value="html" />
+      <option name="checkSyntaxErrors" value="true" />
+      <option name="description" value="" />
+      <option name="exitCodeBehavior" value="ERROR" />
+      <option name="fileExtension" value="rst" />
+      <option name="immediateSync" value="true" />
+      <option name="name" value="Sphinx autobuild" />
+      <option name="output" value="" />
+      <option name="outputFilters">
+        <array />
+      </option>
+      <option name="outputFromStdout" value="false" />
+      <option name="program" value="make" />
+      <option name="scopeName" value="docs" />
+      <option name="trackOnlyRoot" value="false" />
+      <option name="workingDir" value="$PROJECT_DIR$/documentation" />
+      <envs>
+        <env name="PYTHONPATH" value="/home/ubertrader/Dropbox/tmqrexo/tmqrv" />
+        <env name="PATH" value="/home/ubertrader/anaconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games" />
+      </envs>
+    </TaskOptions>
+  </component>
+</project>
