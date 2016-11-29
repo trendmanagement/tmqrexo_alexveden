@@ -59,6 +59,20 @@ class PayoffsTestCase(unittest.TestCase):
 
         self.assertEqual(True, False)
 
+    def test_campaign(self):
+        CAMPAIGN_NAME = 'CL_Bidirectional'
+        strikes_on_graph = 50
+
+        payoff = PayoffAnalyzer(self.datasource)
+        analysis_date = None
+
+        # Edit (or comment) next line to change analysis date
+        analysis_date = datetime(2016, 11, 18, 23, 59)
+
+        payoff.load_campaign(CAMPAIGN_NAME, date=analysis_date)
+
+        self.assertEqual(True, False)
+
 
 if __name__ == '__main__':
     unittest.main()

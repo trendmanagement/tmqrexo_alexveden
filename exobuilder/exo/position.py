@@ -164,9 +164,9 @@ class Position(object):
         :param date: date of position analysis
         :return: None (converts internal position structure)
         """
-        if self.transaction_mode != 'D':
+        if len(self.netpositions) > 0 and self.transaction_mode != 'D':
             raise Exception(
-                "Conversion is now allowed, current position instance must be initiated using add_transaction_dict()"
+                "Conversion is not allowed, current position instance must be initiated using add_transaction_dict()"
             )
         new_positions = {}
         for asset_hash, pos_dict in self.netpositions.items():
