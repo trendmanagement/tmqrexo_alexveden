@@ -12,7 +12,7 @@ from exobuilder.exo.transaction import Transaction
 import time
 from exobuilder.algorithms.rollover_helper import RolloverHelper
 import logging
-from scripts.settings import *
+from scripts.settings_connections import *
 
 EXO_NAME = 'SmartEXO_Ichi_Bearish_Straddle_150Delta'
 

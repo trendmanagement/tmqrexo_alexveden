@@ -2,7 +2,7 @@ from backtester.costs import CostsManagerEXOFixed
 from backtester.strategy import OptParam, OptParamArray
 from backtester.swarms.rankingclasses import *
 from backtester.swarms.rebalancing import SwarmRebalance
-from strategies.strategy_pnf import StrategyPointAndFigurePatterns
+from strategies.strategy_ichimokucloud import StrategyIchimokuCloud
 
 STRATEGY_NAME = "IchimokuCloud"
 
@@ -12,7 +12,7 @@ STRATEGY_CONTEXT = {
     'strategy': {
         'class': StrategyIchimokuCloud,
         'exo_name': 'CL_SmartEXO_Ichi_Bearish_Straddle_150Delta',        # <---- Select and paste EXO name from cell above
-        'exo_storage': storage,
+        #'exo_storage': storage,
         'opt_params': [
                         #OptParam(name, default_value, min_value, max_value, step)
                         OptParamArray('Direction', [1]),
