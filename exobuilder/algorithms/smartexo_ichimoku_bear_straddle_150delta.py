@@ -12,7 +12,7 @@ from exobuilder.exo.transaction import Transaction
 import time
 from exobuilder.algorithms.rollover_helper import RolloverHelper
 import logging
-from scripts.settings_connections import *
+
 
 EXO_NAME = 'SmartEXO_Ichi_Bearish_Straddle_150Delta'
 
@@ -263,50 +263,4 @@ class SmartexoIchimokuBearStraddle150Delta(ExoEngineBase):
         # Manage opened position
         #
         return manage_opened_position(self.date, fut, opt_chain, regime, self.position)
-
-
-
-
-if __name__ == "__main__":
-    assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
-    exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
-
-    base_date = datetime(2011, 6, 13, 12, 45, 0)
-    futures_limit = 3
-    options_limit = 10
-
-    DEBUG = '.'
-
-    datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, exostorage)
-
-    datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
-
-    enddate = datetime.combine(datetime.now().date(), dttime(12, 45, 0))
-    currdate = base_date
-
-    instruments = ['CL'] #, 'ES', 'NG', 'ZC', 'ZS', 'ZW', 'ZN']
-    directions = [1] #[1, -1]
-
-    # for i in range(100):
-    while currdate <= enddate:
-        start_time = time.time()
-        # date = base_date + timedelta(days=i)
-        date = currdate
-
-        for ticker in instruments:
-            asset_info = assetindex.get_instrument_info(ticker)
-            exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(date, asset_info)
-
-            for dir in directions:
-                with SmartexoIchimokuBearStraddle150Delta(ticker, dir, exec_time_end, datasource,log_file_path=DEBUG) as exo_engine:
-                    # Load EXO information from mongo
-                    exo_engine.load()
-                    exo_engine.calculate()
-
-
-        end_time = time.time()
-
-        currdate += timedelta(days=1)
-        print("{0} Elasped: {1}".format(date, end_time-start_time))
-    print('Done')
 
