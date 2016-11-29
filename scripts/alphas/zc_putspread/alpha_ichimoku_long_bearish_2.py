@@ -6,7 +6,7 @@ from strategies.strategy_ichimokucloud import StrategyIchimokuCloud
 
 STRATEGY_NAME = StrategyIchimokuCloud.name
 
-STRATEGY_SUFFIX = 'bearish-'
+STRATEGY_SUFFIX = 'alt2-bearish-'
 
 STRATEGY_CONTEXT = {
     'strategy': {
