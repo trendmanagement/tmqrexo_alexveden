@@ -6,7 +6,7 @@ from strategies.strategy_bbands import StrategyBollingerBands
 
 STRATEGY_NAME = "IchimokuCloud"
 
-STRATEGY_SUFFIX = 'custom-cl-smartexo-alpha'
+STRATEGY_SUFFIX = 'custom-cl-smartexo-alpha-nov22-2016'
 
 STRATEGY_CONTEXT = {
    'strategy': {

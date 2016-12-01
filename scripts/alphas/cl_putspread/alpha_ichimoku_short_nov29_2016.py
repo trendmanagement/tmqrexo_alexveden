@@ -6,7 +6,7 @@ from strategies.strategy_ichimokucloud import StrategyIchimokuCloud
 
 STRATEGY_NAME = StrategyIchimokuCloud.name
 
-STRATEGY_SUFFIX = 'bullish-nov29-2016'
+STRATEGY_SUFFIX = 'bullish-nov29-2016-id-testnew2'
 
 STRATEGY_CONTEXT = {
    'strategy': {
@@ -14,16 +14,14 @@ STRATEGY_CONTEXT = {
        'exo_name': 'CL_PutSpread',  # <---- Select and paste EXO name from cell above
        'opt_params': [
                        #OptParam(name, default_value, min_value, max_value, step)
-                       OptParamArray('Direction', [1]),
-                       OptParam('conversion_line_period', 9, 7, 21, 7),
+                       OptParamArray('Direction', [-1]),
+                       OptParam('conversion_line_period', 9, 15, 55, 5),
                        OptParam('base_line_period', 26, 13, 13, 13),
                        OptParam('leading_spans_lookahead_period', 26, 26, 26, 13),
-                       OptParam('leading_span_b_period', 52, 15, 15, 10),
+                       OptParam('leading_span_b_period', 52, 55, 55, 10),
                        #OptParamArray('RulesIndex', np.arange(14)),
-                       OptParamArray('RulesIndex', [13]),
-                       #OptParamArray('RulesIndex', [,7]),
-                       #OptParamArray('RulesIndex', [0,1,2,3,4]), # 7,9
-                       OptParam('MedianPeriod', 5, 25, 55, 10)
+                       OptParamArray('RulesIndex', [6,11,0]),
+                       OptParam('MedianPeriod', 5, 25, 25, 10)
            ],
    },
    'swarm': {
