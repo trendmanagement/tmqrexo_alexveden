@@ -25,7 +25,7 @@ class OptParam(object):
         self.step = step
 
     def __str__(self):
-        return "OptParam('{0}', min={1}, max={2}, step={3})".format(self.name, self.min, self.max, self.step)
+        return "OptParam('{0}', {1}, {2}, {3}, {4})".format(self.name, self.default, self.min, self.max, self.step)
 
 class OptParamArray(object):
     """

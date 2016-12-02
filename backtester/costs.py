@@ -15,7 +15,7 @@ class CostsManagerBase(object):
         raise NotImplementedError('You must override get_costs() method')
 
     def __str__(self):
-        return 'CostsManagerBase'
+        raise NotImplementedError('You must override __str__() method')
 
 
 class CostsManagerEXOFixed(CostsManagerBase):

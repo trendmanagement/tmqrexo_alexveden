@@ -124,7 +124,7 @@ def main(args, loglevel):
                         logging.debug('Processing custom module: ' + os.path.join('alphas', module, custom_file))
                         m = importlib.import_module('scripts.alphas.{0}.{1}'.format(module, custom_file.replace('.py', '')))
 
-                        logging.info('Running CUSTOM alpha: ' + m.STRATEGY_NAME)
+                        logging.info('Running CUSTOM alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX))
                         context = m.STRATEGY_CONTEXT
                         if 'exo_name' in context['strategy'] and context['strategy']['exo_name'] != exo:
                             logging.error("Custom strategy context exo_name != current EXO name (folder mismatch?)")
@@ -134,12 +134,10 @@ def main(args, loglevel):
                         context['strategy']['suffix'] = m.STRATEGY_SUFFIX + 'custom'
                         context['strategy']['exo_storage'] = exo_storage
 
+
                         swm = Swarm(context)
                         swm.run_swarm()
                         swm.pick()
-                        # Saving results to swarms directory
-                        # TODO: To be deleted...
-                        #swm.save(os.path.join(TMQRPATH, "swarms"))
 
                         #
                         # Saving last EXO state to online DB
@@ -153,7 +151,7 @@ def main(args, loglevel):
 
                 m = importlib.import_module('scripts.alphas.{0}'.format(module.replace('.py','')))
                 for direction in [-1, 1]:
-                    logging.info('Running alpha: ' + m.STRATEGY_NAME + ' Direction: {0}'.format(direction))
+                    logging.info('Running alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT) + ' Direction: {0}'.format(direction))
                     context = m.STRATEGY_CONTEXT
                     context['strategy']['exo_name'] = exo
                     context['strategy']['opt_params'][0] = OptParamArray('Direction', [direction])
@@ -163,8 +161,6 @@ def main(args, loglevel):
                     swm = Swarm(context)
                     swm.run_swarm()
                     swm.pick()
-                    # Saving results to swarms directory
-                    swm.save(os.path.join(TMQRPATH, "swarms"))
 
                     #
                     # Saving last EXO state to online DB

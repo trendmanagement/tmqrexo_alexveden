@@ -307,20 +307,45 @@ class Swarm:
 
     @property
     def direction(self):
-        direction_param = self.context['strategy']['opt_params'][0]
+        """
+        Get alpha direction
+        :return: tuple (int, str), (0|1|-1, 'Bidir'|'Long'|'Short')
+        """
+        return self.get_direction(self.context)
+
+    @staticmethod
+    def get_direction(strategy_context):
+        """
+        Get alpha direction from strategy_context
+        :param strategy_context:
+        :return: tuple (int, str), (0|1|-1, 'Bidir'|'Long'|'Short')
+        """
+        direction_param = strategy_context['strategy']['opt_params'][0]
 
         if direction_param.name.lower() != 'direction':
             raise ValueError('First OptParam of strategy must be Direction')
 
         if len(direction_param.array) == 2:
-            return 0,'Bidir'
+            return 0, 'Bidir'
         else:
             if direction_param.array[0] == 1:
                 return 1, 'Long'
             elif direction_param.array[0] == -1:
                 return -1, 'Short'
-
             raise ValueError("Unexpected direction parameter value")
+
+    @staticmethod
+    def get_name(strategy_context, suffix=''):
+        """
+        Return swarm name based on strategy_context
+        :param strategy_context:
+        :param suffix: custom alpha suffix default: ''
+        :return:
+        """
+        return '{0}_{1}_{2}{3}'.format(strategy_context['strategy']['exo_name'],
+                                       Swarm.get_direction(strategy_context)[1],
+                                       strategy_context['strategy']['class'].name,
+                                       suffix)
 
     @property
     def name(self):
@@ -329,28 +354,16 @@ class Swarm:
         Underlying_EXOName_Strategy_Direction
         :return:
         """
-        exoname = self.strategy.exoinfo.exo_info['name']
-        strategyname = self.strategy.name
-
         suffix = ''
         if 'suffix' in self.context['strategy'] \
                 and self.context['strategy']['suffix'] is not None \
                 and len(self.context['strategy']['suffix']) > 0:
             suffix = "_" + self.context['strategy']['suffix']
 
-        return '{0}_{1}_{2}{3}'.format(exoname, self.direction[1], strategyname, suffix)
+        return self.get_name(self.context, suffix)
 
     def save(self, directory,  filename=None):
-        if not os.path.isdir(directory):
-            os.makedirs(directory)
-
-        if filename is None:
-            fn = os.path.join(directory, self.name + '.swm')
-        else:
-            fn = filename
-
-        with open(fn, 'wb') as f:
-            pickle.dump(self, f)
+        warnings.warn("Save method is obsolete and empty. Please delete all references from code.")
 
     @staticmethod
     def load(filename=None, strategy_context=None, directory=''):
