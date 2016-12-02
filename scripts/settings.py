@@ -3,7 +3,7 @@ from exobuilder.algorithms.exo_brokenwing import EXOBrokenwingCollar
 from exobuilder.algorithms.exo_vertical_spread import EXOVerticalSpread
 from exobuilder.algorithms.exo_continous_fut import EXOContinuousFut
 from exobuilder.algorithms.smartexo_ichimoku_bear_straddle_150delta import SmartexoIchimokuBearStraddle150Delta
-
+from exobuilder.algorithms.smartexo_ichi_bullish_straddle_150delta_exphedged_nov22_2016 import SmartEXOIchiBullishStraddle150DeltaExpHedgedNov22_2016
 
 #
 # Instruments list
@@ -30,6 +30,10 @@ EXO_LIST = [
         'name': 'SmartexoIchimokuBearStraddle150Delta',
         'class': SmartexoIchimokuBearStraddle150Delta,
     },
+    {
+        'name': 'SmartEXOIchiBullishStraddle150DeltaExpHedgedNov22_2016',
+        'class': SmartEXOIchiBullishStraddle150DeltaExpHedgedNov22_2016,
+    },
 
 ]
 
@@ -54,6 +58,7 @@ ALPHAS_CUSTOM = [
     'zw_callspread',
     'zw_putspread',
     'cl_smartexo_ichi_bearish_straddle_150delta',
+    'cl_smartexo_ichi_bullish_straddle_150delta_exphedged_nov22_2016',
 ]
 
 # MongoDB credentials

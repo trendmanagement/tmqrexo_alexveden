@@ -12,7 +12,6 @@ STRATEGY_CONTEXT = {
     'strategy': {
        'class': StrategyIchimokuCloud,
        'exo_name': 'ZC_PutSpread',        # <---- Select and paste EXO name from cell above
-       #'exo_storage': storage,
        'opt_params': [
                        #OptParam(name, default_value, min_value, max_value, step)
                        OptParamArray('Direction', [1]),
