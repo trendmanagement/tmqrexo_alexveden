@@ -75,14 +75,14 @@ def run_custom(args, exo_storage):
 
     logging.info('Running CUSTOM alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX))
     context = m.STRATEGY_CONTEXT
-    if 'exo_name' in context['strategy'] and context['strategy']['exo_name'].lower() not in args.alpha_file:
-        logging.error("Custom strategy context exo_name != current EXO name (folder mismatch?)")
-        raise ValueError("Custom strategy context exo_name != current EXO name (folder mismatch?)")
-
     context['strategy']['suffix'] = m.STRATEGY_SUFFIX + 'custom'
     context['strategy']['exo_storage'] = exo_storage
 
     try:
+        if 'exo_name' in context['strategy'] and context['strategy']['exo_name'].lower() not in args.alpha_file:
+            logging.error("Custom strategy context exo_name != current EXO name (folder mismatch?)")
+            raise ValueError("Custom strategy context exo_name != current EXO name (folder mismatch?)")
+
         swm = Swarm(context)
         swm.run_swarm()
         swm.pick()

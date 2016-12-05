@@ -123,21 +123,21 @@ def main(args, loglevel):
                 for custom_file in os.listdir(os.path.join('alphas', module)):
                     if 'alpha_' in custom_file and '.py' in custom_file:
                         logging.debug('Processing custom module: ' + os.path.join('alphas', module, custom_file))
-                        m = importlib.import_module('scripts.alphas.{0}.{1}'.format(module, custom_file.replace('.py', '')))
-
-
-                        context = m.STRATEGY_CONTEXT
-                        if 'exo_name' in context['strategy'] and context['strategy']['exo_name'] != exo:
-                            logging.error("Custom strategy context exo_name != current EXO name (folder mismatch?)")
-                            raise ValueError("Custom strategy context exo_name != current EXO name (folder mismatch?)")
-
-                        context['strategy']['exo_name'] = exo
-                        context['strategy']['suffix'] = m.STRATEGY_SUFFIX + 'custom'
-                        context['strategy']['exo_storage'] = exo_storage
-
-                        logging.info('Running CUSTOM alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX))
-
                         try:
+                            m = importlib.import_module('scripts.alphas.{0}.{1}'.format(module, custom_file.replace('.py', '')))
+
+                            context = m.STRATEGY_CONTEXT
+                            context['strategy']['exo_name'] = exo
+                            context['strategy']['suffix'] = m.STRATEGY_SUFFIX + 'custom'
+                            context['strategy']['exo_storage'] = exo_storage
+
+                            logging.info('Running CUSTOM alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX))
+
+                            if 'exo_name' in context['strategy'] and context['strategy']['exo_name'] != exo:
+                                logging.error("Custom strategy context exo_name != current EXO name (folder mismatch?)")
+                                raise ValueError(
+                                    "Custom strategy context exo_name != current EXO name (folder mismatch?)")
+
                             swm = Swarm(context)
                             swm.run_swarm()
                             swm.pick()
@@ -153,18 +153,18 @@ def main(args, loglevel):
 
             elif 'alpha_' in module and '.py' in module:
                 logging.debug('Processing generic module: ' + module)
+                try:
+                    m = importlib.import_module('scripts.alphas.{0}'.format(module.replace('.py','')))
+                    for direction in [-1, 1]:
+                        context = m.STRATEGY_CONTEXT
+                        context['strategy']['exo_name'] = exo
+                        context['strategy']['opt_params'][0] = OptParamArray('Direction', [direction])
+                        context['strategy']['suffix'] = m.STRATEGY_SUFFIX
+                        context['strategy']['exo_storage'] = exo_storage
 
-                m = importlib.import_module('scripts.alphas.{0}'.format(module.replace('.py','')))
-                for direction in [-1, 1]:
-                    context = m.STRATEGY_CONTEXT
-                    context['strategy']['exo_name'] = exo
-                    context['strategy']['opt_params'][0] = OptParamArray('Direction', [direction])
-                    context['strategy']['suffix'] = m.STRATEGY_SUFFIX
-                    context['strategy']['exo_storage'] = exo_storage
+                        logging.info('Running alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT) + ' Direction: {0}'.format(direction))
 
-                    logging.info('Running alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT) + ' Direction: {0}'.format(direction))
 
-                    try:
                         swm = Swarm(context)
                         swm.run_swarm()
                         swm.pick()
@@ -174,8 +174,8 @@ def main(args, loglevel):
                         swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
                         logging.debug('Saving: {0}'.format(swm.name))
                         swmonline.save(swm)
-                    except:
-                        logging.exception('Exception occurred:')
+                except:
+                    logging.exception('Exception occurred:')
 
     logging.info("Done.")
 
