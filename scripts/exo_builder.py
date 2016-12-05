@@ -192,32 +192,33 @@ class EXOScript:
 
             ExoClass = exo['class']
 
-
             # Processing Long/Short and bidirectional EXOs
             for direction in [1, -1]:
                 if ExoClass.direction_type() == 0 or ExoClass.direction_type() == direction:
-                    with ExoClass(symbol, direction, decision_time, datasource, log_file_path=args.debug) as exo_engine:
-                        if backfill_dict is not None:
-                            #
-                            # Check if last EXO quote is < decision_time
-                            #   if True - skip the calculation until actual date come
-                            #
-                            # Note: this is fix for situations when we added new EXO, and we need it to be calculated
-                            #  from the beginning of the history
-                            if exo_engine.exo_name in backfill_dict:
-                                exo_start_date = backfill_dict[exo_engine.exo_name]
-                                if decision_time < exo_start_date:
-                                    break
+                    try:
+                        with ExoClass(symbol, direction, decision_time, datasource, log_file_path=args.debug) as exo_engine:
+                            if backfill_dict is not None:
+                                #
+                                # Check if last EXO quote is < decision_time
+                                #   if True - skip the calculation until actual date come
+                                #
+                                # Note: this is fix for situations when we added new EXO, and we need it to be calculated
+                                #  from the beginning of the history
+                                if exo_engine.exo_name in backfill_dict:
+                                    exo_start_date = backfill_dict[exo_engine.exo_name]
+                                    if decision_time < exo_start_date:
+                                        break
 
 
-                        self.logger.debug("Running EXO instance: " + exo_engine.name)
-                        # Load EXO information from mongo
-                        exo_engine.load()
-                        exo_engine.calculate()
-                        if backfill_dict is None:
-                            # Sending signal to alphas that EXO price is ready
-                            self.signalapp.send(MsgEXOQuote(exo_engine.exo_name, decision_time))
-
+                            self.logger.debug("Running EXO instance: " + exo_engine.name)
+                            # Load EXO information from mongo
+                            exo_engine.load()
+                            exo_engine.calculate()
+                            if backfill_dict is None:
+                                # Sending signal to alphas that EXO price is ready
+                                self.signalapp.send(MsgEXOQuote(exo_engine.exo_name, decision_time))
+                    except:
+                        self.logger.exception("Failed processing EXO: {0} on {1}".format(ExoClass, symbol))
 
 
 

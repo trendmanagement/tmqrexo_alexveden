@@ -82,16 +82,19 @@ def run_custom(args, exo_storage):
     context['strategy']['suffix'] = m.STRATEGY_SUFFIX + 'custom'
     context['strategy']['exo_storage'] = exo_storage
 
-    swm = Swarm(context)
-    swm.run_swarm()
-    swm.pick()
-
-    #
-    # Saving last EXO state to online DB
-    #
-    swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
-    logging.debug('Saving: {0}'.format(swm.name))
-    swmonline.save(swm)
+    try:
+        swm = Swarm(context)
+        swm.run_swarm()
+        swm.pick()
+        #
+        # Saving last EXO state to online DB
+        #
+        swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
+        logging.debug('Saving: {0}'.format(swm.name))
+        swmonline.save(swm)
+    except:
+        logging.exception("Exception occurred:")
+        sys.exit(-1)
 
 
 def main(args, loglevel):

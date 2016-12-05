@@ -82,19 +82,22 @@ class AlphaOnlineScript:
                     for custom_file in os.listdir(os.path.join('alphas', module)):
                         if 'alpha_' in custom_file and '.py' in custom_file:
                             self.log.info('Running alpha strategy from: {0}'.format(os.path.join('alphas', module, custom_file)))
-                            # Load strategy_context
-                            m = importlib.import_module(
-                                'scripts.alphas.{0}.{1}'.format(module, custom_file.replace('.py', '')))
+                            try:
+                                # Load strategy_context
+                                m = importlib.import_module(
+                                    'scripts.alphas.{0}.{1}'.format(module, custom_file.replace('.py', '')))
 
-                            # Initiate swarm from Mongo DB
-                            exo_name = msg.exo_name
+                                # Initiate swarm from Mongo DB
+                                exo_name = msg.exo_name
 
-                            context = m.STRATEGY_CONTEXT
-                            context['strategy']['suffix'] = m.STRATEGY_SUFFIX + 'custom'
+                                context = m.STRATEGY_CONTEXT
+                                context['strategy']['suffix'] = m.STRATEGY_SUFFIX + 'custom'
 
-                            swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, context)
-                            # Update and save swarm with new day data (and run callback)
-                            swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
+                                swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, context)
+                                # Update and save swarm with new day data (and run callback)
+                                swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
+                            except:
+                                self.log.exception("Failed to process EXO quote: {0}".format(msg.exo_name))
 
     def main(self):
         """

@@ -78,19 +78,22 @@ class AlphaOnlineScript:
             self.log.debug('on_exo_quote_callback: {0}.{1} Data: {2}'.format(appname, appclass, data_object))
 
             self.log.info('Processing EXO quote: {0} at {1}'.format(msg.exo_name, msg.exo_date))
-            # Load strategy_context
-            m = importlib.import_module(
-                'scripts.alphas.alpha_{0}'.format(self.alpha_name.replace('alpha_', '').replace('.py', '')))
+            try:
+                # Load strategy_context
+                m = importlib.import_module(
+                    'scripts.alphas.alpha_{0}'.format(self.alpha_name.replace('alpha_', '').replace('.py', '')))
 
-            # Initiate swarm from Mongo DB
-            exo_name = msg.exo_name
+                # Initiate swarm from Mongo DB
+                exo_name = msg.exo_name
 
-            context = m.STRATEGY_CONTEXT
-            context['strategy']['suffix'] = m.STRATEGY_SUFFIX
+                context = m.STRATEGY_CONTEXT
+                context['strategy']['suffix'] = m.STRATEGY_SUFFIX
 
-            swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, context)
-            # Update and save swarm with new day data (and run callback)
-            swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
+                swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, context)
+                # Update and save swarm with new day data (and run callback)
+                swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
+            except:
+                self.log.exception("Error in processing EXO quote: {0}".format(msg.exo_name))
 
     def main(self):
         """

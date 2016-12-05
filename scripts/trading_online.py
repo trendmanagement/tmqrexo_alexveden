@@ -74,17 +74,16 @@ class TradingOnlineScript:
         if msg.mtype == MsgAlphaState.mtype:
             self.log.debug('on_alpha_signal_callback: {0}.{1} Data: {2}'.format(appname, appclass, data_object))
             self.log.info('Processing Alpha state of: {0} at {1}'.format(msg.swarm_name, msg.last_date))
+            try:
+                # Processing positions for each campaign/account
+                pos_list = self.exmgr.account_positions_process(write_to_db=True)
+                pp = pprint.PrettyPrinter(indent=4)
+                self.log.debug(pp.pformat(pos_list))
 
-            # Processing positions for each campaign/account
-            pos_list = self.exmgr.account_positions_process(write_to_db=True)
-
-            pp = pprint.PrettyPrinter(indent=4)
-
-            self.log.debug(pp.pformat(pos_list))
-
-
-            # Send position information to real-time software via RabbitMQ
-            self.signal_app.send(MsgAlphaSignal(msg, pos_list))
+                # Send position information to real-time software via RabbitMQ
+                self.signal_app.send(MsgAlphaSignal(msg, pos_list))
+            except:
+                self.log.exception("Error in processing account positions")
 
 
     def main(self):

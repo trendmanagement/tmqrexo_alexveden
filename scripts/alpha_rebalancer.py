@@ -29,6 +29,7 @@ from backtester.swarms.swarm import Swarm
 from backtester.strategy import OptParamArray
 from exobuilder.data.exostorage import EXOStorage
 from tradingcore.swarmonlinemanager import SwarmOnlineManager
+import traceback
 
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
@@ -124,7 +125,7 @@ def main(args, loglevel):
                         logging.debug('Processing custom module: ' + os.path.join('alphas', module, custom_file))
                         m = importlib.import_module('scripts.alphas.{0}.{1}'.format(module, custom_file.replace('.py', '')))
 
-                        logging.info('Running CUSTOM alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX))
+
                         context = m.STRATEGY_CONTEXT
                         if 'exo_name' in context['strategy'] and context['strategy']['exo_name'] != exo:
                             logging.error("Custom strategy context exo_name != current EXO name (folder mismatch?)")
@@ -134,40 +135,48 @@ def main(args, loglevel):
                         context['strategy']['suffix'] = m.STRATEGY_SUFFIX + 'custom'
                         context['strategy']['exo_storage'] = exo_storage
 
+                        logging.info('Running CUSTOM alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX))
 
-                        swm = Swarm(context)
-                        swm.run_swarm()
-                        swm.pick()
+                        try:
+                            swm = Swarm(context)
+                            swm.run_swarm()
+                            swm.pick()
 
-                        #
-                        # Saving last EXO state to online DB
-                        #
-                        swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
-                        logging.debug('Saving: {0}'.format(swm.name))
-                        swmonline.save(swm)
+                            #
+                            # Saving last EXO state to online DB
+                            #
+                            swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
+                            logging.debug('Saving: {0}'.format(swm.name))
+                            swmonline.save(swm)
+                        except:
+                            logging.exception('Exception occurred:')
 
             elif 'alpha_' in module and '.py' in module:
                 logging.debug('Processing generic module: ' + module)
 
                 m = importlib.import_module('scripts.alphas.{0}'.format(module.replace('.py','')))
                 for direction in [-1, 1]:
-                    logging.info('Running alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT) + ' Direction: {0}'.format(direction))
                     context = m.STRATEGY_CONTEXT
                     context['strategy']['exo_name'] = exo
                     context['strategy']['opt_params'][0] = OptParamArray('Direction', [direction])
                     context['strategy']['suffix'] = m.STRATEGY_SUFFIX
                     context['strategy']['exo_storage'] = exo_storage
 
-                    swm = Swarm(context)
-                    swm.run_swarm()
-                    swm.pick()
+                    logging.info('Running alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT) + ' Direction: {0}'.format(direction))
 
-                    #
-                    # Saving last EXO state to online DB
-                    #
-                    swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
-                    logging.debug('Saving: {0}'.format(swm.name))
-                    swmonline.save(swm)
+                    try:
+                        swm = Swarm(context)
+                        swm.run_swarm()
+                        swm.pick()
+                        #
+                        # Saving last EXO state to online DB
+                        #
+                        swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
+                        logging.debug('Saving: {0}'.format(swm.name))
+                        swmonline.save(swm)
+                    except:
+                        logging.exception('Exception occurred:')
+
     logging.info("Done.")
 
 if __name__ == '__main__':
