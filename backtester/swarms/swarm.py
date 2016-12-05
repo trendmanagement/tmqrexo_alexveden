@@ -275,7 +275,7 @@ class Swarm:
         """
         if len(self.picked_exposure) < 2 or len(self.rebalance_info) < 2:
             # Insufficient data
-            return
+            raise RuntimeError("Swarm has less than 2 datapoints, check EXO quote to make sure that is enough data.")
 
         self._last_exposure = self.picked_exposure.iloc[-1].sum()
         self._last_prev_exposure = self.picked_exposure.iloc[-2].sum()
