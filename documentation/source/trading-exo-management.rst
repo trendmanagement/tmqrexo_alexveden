@@ -34,8 +34,8 @@ To add new product
 
 .. note:: Name of the product **must** reflect ``exchangesymbol`` field of ``instruments`` MongoDB collection
 
-To add new EXO (incl. SmartEXO)
--------------------------------
+To add new EXO
+--------------
 1. Add new tested EXO python file to ``exobuilder/algorithms``
 2. Edit ``scripts/settings.py`` file
     * Add new import statement to the header of the file
@@ -62,6 +62,43 @@ To add new EXO (incl. SmartEXO)
 4. Commit and push changes to GitHub and log in to the server
 5. Run deployment process as described at :ref:`server-code-deployment`, don't forget to run ``service supervisor restart`` to refresh changes
 6. Run EXO batch backfill ``python3.5 ./exo_batch_update.py``
+
+To add new SmartEXO
+-------------------
+.. note:: This section related to new class based SmartEXOs implemented in 2016-12-08
+
+1. Make sure that class based SmartEXO is working properly from the notebook
+2. Delete all temporary generated history running ``smart_utils.clear_smartexo()`` in SmartEXO notebook from *Deployment* section
+3. Copy 'import' statements from the header of the notebook and class source code from cell
+4. Add copied text to new EXO python file to ``exobuilder/algorithms``
+5. Rename SmartEXO class from SmartEXOGeneric to another name, it should be unique
+6. Define ``ASSET_LIST`` value to set required list of products for this SmartEXO or set it to ``None`` if you need to run this SmartEXO on all assets.
+7. Run steps 2 and 3 from EXO deployment manual above
+8. Commit and push changes to GitHub and log in to the server
+9. Run EXO batch backfill ``python3.5 ./exo_batch_update.py``. Refer to :ref:`server-code-deployment` to get information how to execute long-running tasks.
+
+.. warning:: ``python3.5 ./exo_batch_update.py`` is an long running task it's better to run it overnight or over weekend using
+
+How to migrate from old version of SmartEXO notebook
+++++++++++++++++++++++++++++++++++++++++++++++++++++
+1. SmartEXOGeneric class defined in new version of the notebook has similar methods new_position_bullish_zone() / new_position_bearish_zone() / new_position_neutral_zone / manage_opened_position()
+2. Copy&Paste the ``trans_list = []`` contents from the old notebook to particular methods inside the class. New method should only contains trans_list and return statements.
+3. Change Ichimoku regime algorithm parameters if required in the __init__ method of the class
+    For example::
+
+         def __init__(self, symbol, direction, date, datasource, **kwargs):
+            super().__init__(symbol, direction, date, datasource,
+                             #
+                             # Change following values if you need to customize Ichimoku settings
+                             #
+                             conversion_line_period = 9,
+                             base_line_period=26,
+                             leading_spans_lookahead_period=52,
+                             leading_span_b_period=52
+                            )
+
+4. Run new class based notebook to compare results
+5. Follow SmartEXO deployment instructions if necessary
 
 
 Indices and tables

@@ -124,7 +124,7 @@ class SmartEXOBase(ExoEngineBase):
 
         regime = self.calculate_regime(self.date, exo_df)
 
-        logging.info("Regime {0}".format(regime))
+        logging.debug("Regime {0}".format(regime))
 
         trans_list = []
 

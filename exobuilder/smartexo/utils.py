@@ -57,12 +57,14 @@ class SmartEXOUtils:
         payoff.load_transactions(smart_exo_position_func(analysis_date, fut, opt_chain), analysis_date)
         payoff.plot(strikes_on_graph, whatif_iv_change, whatif_days_to_expiration)
 
-
-    def build_smartexo(self, start_date, **smartexo_kwargs):
+    def clear_smartexo(self):
         logging.info("Deleting all SmartEXO of :" + self.smartexo_class.EXO_NAME)
         client = MongoClient(MONGO_CONNSTR)
         db = client[MONGO_EXO_DB]
         db['exo_data'].delete_many({'name': {'$regex': '.*{0}*.'.format(self.smartexo_class.EXO_NAME)}})
+
+    def build_smartexo(self, start_date, **smartexo_kwargs):
+        self.clear_smartexo()
 
         logging.info("Starting EXO calculation process from: {0}".format(start_date))
 
