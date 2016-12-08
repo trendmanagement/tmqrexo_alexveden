@@ -7,7 +7,15 @@ import datetime
 
 
 class ExoEngineBase(object):
-    def __init__(self, symbol, direction, date, datasource, log_file_path='', is_eod=True):
+    """
+    List of products for current EXO calculation.
+    If None the exo will be calculated for each asset
+    If list like ['CL', 'ES', 'ZW'] - only defined assets will be calculated
+    """
+    ASSET_LIST = None
+
+
+    def __init__(self, symbol, direction, date, datasource, **kwargs):
         self._position = Position()
         self._date = date
         self._datasource = datasource
@@ -15,6 +23,9 @@ class ExoEngineBase(object):
         self._extra_context = {}
         self._transactions = []
         self._old_transactions = []
+        log_file_path = kwargs.get('log_file_path', '')
+        is_eod = kwargs.get('is_eod', True)
+
         self.debug_mode = log_file_path != ''
         self.logger = None
         self.is_eod = is_eod
@@ -239,6 +250,15 @@ class ExoEngineBase(object):
     def datasource(self):
         return self._datasource
 
+    def log(self, message):
+        if self.logger is not None:
+            self.logger.write(message + '\n')
+
     def _log_transactions(self, trans_list):
-        for t in trans_list:
-            self.logger.write("Transaction:\t {0}\n".format(t))
+        if self.logger is not None:
+            for t in trans_list:
+                self.logger.write("Transaction:\t {0}\n".format(t))
+
+    def __str__(self):
+        return self.exo_name
+
