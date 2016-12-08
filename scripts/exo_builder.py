@@ -50,19 +50,20 @@ In **online mode** ``exo_builder.py`` is calculated only for current date and se
 #
 
 # import modules used here -- sys is a very standard one
-import sys, argparse, logging
-from datetime import datetime, timedelta
+import argparse
+import logging
+import sys
 import time
-import pymongo
-from pymongo import MongoClient
-from tradingcore.signalapp import SignalApp, APPCLASS_DATA, APPCLASS_EXO
-from tradingcore.messages import *
+from datetime import timedelta
 
-from exobuilder.data.datasource_mongo import DataSourceMongo
-from exobuilder.data.datasource_sql import DataSourceSQL
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
-from exobuilder.data.exostorage import EXOStorage
 from exobuilder.data.datasource_hybrid import DataSourceHybrid
+from exobuilder.data.datasource_sql import DataSourceSQL
+from exobuilder.data.exostorage import EXOStorage
+from tradingcore.messages import *
+from tradingcore.signalapp import SignalApp, APPCLASS_DATA, APPCLASS_EXO
+import warnings
+
 try:
     from .settings import *
 except SystemError:
@@ -197,6 +198,16 @@ class EXOScript:
                 if ExoClass.direction_type() == 0 or ExoClass.direction_type() == direction:
                     try:
                         with ExoClass(symbol, direction, decision_time, datasource, log_file_path=args.debug) as exo_engine:
+                            try:
+                                asset_list = exo_engine.ASSET_LIST
+                                # Checking if current symbol is present in EXO class ASSET_LIST
+                                if asset_list is not None:
+                                    if symbol not in asset_list:
+                                        # Skipping assets which are not in the list
+                                        continue
+                            except AttributeError:
+                                warnings.warn("EXO class {0} doesn't contain ASSET_LIST attribute filter, calculating all assets".format(ExoClass))
+
                             if backfill_dict is not None:
                                 #
                                 # Check if last EXO quote is < decision_time

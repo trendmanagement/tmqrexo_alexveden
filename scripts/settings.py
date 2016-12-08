@@ -14,6 +14,13 @@ INSTRUMENTS_LIST = ['ES', 'CL', 'NG', 'ZN', 'ZS', 'ZW', 'ZC']
 # Settings part
 #
 EXO_LIST = [
+    #
+    #  ContFut EXO must be first element of this list
+    #     because ContFut EXO used by SmartEXOs we need to calculate it first
+    {
+        'name': 'ContFut',
+        'class': EXOContinuousFut,
+    },
     {
         'name': 'CollarBW',
         'class': EXOBrokenwingCollar,
@@ -21,10 +28,6 @@ EXO_LIST = [
     {
         'name': 'VerticalSpread',
         'class': EXOVerticalSpread,
-    },
-    {
-        'name': 'ContFut',
-        'class': EXOContinuousFut,
     },
     {
         'name': 'SmartexoIchimokuBearStraddle150Delta',

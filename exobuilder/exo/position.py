@@ -375,6 +375,8 @@ class Position(object):
         result += template.format('Leg', 'Asset', 'Qty', 'PnL', 'EntryPrice', 'CurrentPrice', 'Delta')
 
         for asset, pdic in self.netpositions.items():
+            if pdic['qty'] == 0:
+                continue
             result += template.format(pdic['leg_name'],
                                       asset.name,
                                       pdic['qty'],

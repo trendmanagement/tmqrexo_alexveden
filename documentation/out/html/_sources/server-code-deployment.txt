@@ -35,7 +35,14 @@ How to deploy new or changed script to the server
 
     **To reboot** the framework and trading scripts run ``service supervisor restart`` command.
 
+Executing long running tasks on the server
+==========================================
+The main problem with execution of long-running tasks via SSH is in task halt when the SSH connection is closed in some reasons.
+If you need to execute long-running task or script like EXO backfilling or Alpha rebalancing you need to utilize ``tmux`` command.
+Tmux is opening new long-living session in the background even when SSH is disconnected.
 
+To launch new session just type ``tmux``, to attach to existing session run ``tmux attach``. To minimize the current Tmux session to background hit ``ctlr+b and then d``, you can always
+return to this session typing ``tmux attach``.
 
 
 Indices and tables
