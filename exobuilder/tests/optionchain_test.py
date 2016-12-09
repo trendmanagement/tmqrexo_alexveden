@@ -17,6 +17,7 @@ from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from scripts.settings import *
 from exobuilder.algorithms.rollover_helper import RolloverHelper
 
+
 class OptionChainTestCase(unittest.TestCase):
     def setUp(self):
         self.assetindex = AssetIndexDicts()
@@ -27,15 +28,15 @@ class OptionChainTestCase(unittest.TestCase):
         self.instrument = self.datasource.get(self.symbol, self.date)
 
         fut_contract_dic = {'_id': '577a4f9e4b01f47f84caad7b',
-                          'contractname': 'F.US.EPH14',
-                          'cqgsymbol': 'F.EPH14',
-                          'expirationdate': datetime(2014, 3, 21, 0, 0),
-                          'idcontract': 4736,
-                          'idinstrument': 11,
-                          'month': 'H',
-                          'monthint': 3,
-                          'year': 2014
-                          }
+                            'contractname': 'F.US.EPH14',
+                            'cqgsymbol': 'F.EPH14',
+                            'expirationdate': datetime(2014, 3, 21, 0, 0),
+                            'idcontract': 4736,
+                            'idinstrument': 11,
+                            'month': 'H',
+                            'monthint': 3,
+                            'year': 2014
+                            }
 
         self.fut = FutureContract(fut_contract_dic, self.instrument)
 
@@ -60,7 +61,7 @@ class OptionChainTestCase(unittest.TestCase):
     def test_chain_has_contracts(self):
         self.assertEqual(type(self.opt_chain.contracts), OrderedDict)
 
-        for k,v in self.opt_chain.contracts.items():
+        for k, v in self.opt_chain.contracts.items():
             self.assertEqual(float, type(k))
             self.assertEqual(PutCallPair, type(v))
 
@@ -129,7 +130,7 @@ class OptionChainTestCase(unittest.TestCase):
         self.fut._price = 1060.000001
         self.assertRaises(IndexError, self.opt_chain.__getitem__, -100)
         self.assertRaises(IndexError, self.opt_chain.__getitem__, 1000)
-        self.assertRaises(IndexError, self.opt_chain.__getitem__, -self.opt_chain.atmindex-1)
+        self.assertRaises(IndexError, self.opt_chain.__getitem__, -self.opt_chain.atmindex - 1)
         self.assertRaises(IndexError, self.opt_chain.__getitem__, len(self.opt_chain.strikes) - self.opt_chain.atmindex)
 
     def test_chain_has_get_item_by_offset_different_int_types(self):
@@ -155,8 +156,9 @@ class OptionChainTestCase(unittest.TestCase):
     def test_chain_has_applyed_options_limit(self):
         self.fut._price = 1060.000001
         opt_chain = OptionsChain(self.opt_chain_dict, self.fut, 5)
-        self.assertEqual(len(opt_chain.strikes), 11) # 5 stikes per side + 1 ATM
-        self.assertEqual(True, np.all(opt_chain.strikes == np.array([1020, 1025, 1030, 1040, 1050, 1060, 1070, 1075, 1080, 1090, 1100])))
+        self.assertEqual(len(opt_chain.strikes), 11)  # 5 stikes per side + 1 ATM
+        self.assertEqual(True, np.all(
+            opt_chain.strikes == np.array([1020, 1025, 1030, 1040, 1050, 1060, 1070, 1075, 1080, 1090, 1100])))
 
     def test_chain_repr(self):
         opt_str = ""
@@ -187,7 +189,6 @@ class OptionChainTestCase(unittest.TestCase):
 
         offset = opt_chain.minoffset
         self.assertEqual(-20, offset)
-
 
     def test_chain_get_by_delta(self):
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
@@ -257,3 +258,29 @@ class OptionChainTestCase(unittest.TestCase):
 
         opt = opt_chain.get_by_delta(0.000001)
         self.assertEqual(opt, opt_chain[20].C)
+
+    def test_chain_handle_missing_data(self):
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+
+
+
+        futures_limit = 3
+        options_limit = 20
+
+        datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit)
+
+        base_date = datetime(2014, 2, 18, 11, 10, 0)
+        instr = datasource.get("CL", base_date)
+        rh = RolloverHelper(instr)
+        fut, opt_chain = rh.get_active_chains()
+        # opt_chain.get_by_delta(0.05) on the CL on this date is has absent data
+        # opt_chain selects next available date
+        self.assertEqual(opt_chain.get_by_delta(0.05), opt_chain.get_by_delta(0.04))
+
+        base_date = datetime(2016, 2, 17, 11, 10, 0)
+        instr = datasource.get("ZN", base_date)
+        rh = RolloverHelper(instr)
+        fut, opt_chain = rh.get_active_chains()
+        # opt_chain[11] is an absent strike inside DB, if it absent opt_chain selects next available strike
+        self.assertEqual(opt_chain[11], opt_chain[12])
+        self.assertEqual(opt_chain[-11], opt_chain[-12])

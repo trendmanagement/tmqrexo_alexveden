@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from exobuilder.contracts.optioncontract import OptionContract
 from exobuilder.contracts.putcallpair import PutCallPair
+from exobuilder.data.exceptions import QuoteNotFoundException
 import numpy as np
 import bisect
 import warnings
@@ -73,10 +74,23 @@ class OptionsChain(object):
                 raise KeyError('Option pair with strike "{0}" not found'.format(item))
             return self._options[item]
         if isinstance(item, (int, np.int32, np.int64)):
-            if self.atmindex + item < 0 or self.atmindex + item > len(self._strike_array)-1:
-                raise IndexError("Strike offset is too low, [{0}, {1}] values allowed".format(-self.atmindex, len(self._strike_array)-self.atmindex-1))
-            strike = self._strike_array[self.atmindex + item]
-            return self._options[strike]
+            while True:
+                if self.atmindex + item < 0 or self.atmindex + item > len(self._strike_array)-1:
+                    raise IndexError("Strike offset is too low, [{0}, {1}] values allowed".format(-self.atmindex, len(self._strike_array)-self.atmindex-1))
+                strike = self._strike_array[self.atmindex + item]
+                pc_pair = self._options[strike]
+                try:
+                    # Getting Put/Call prices
+                    # To make sure that we have quotes available in the DB
+                    pc_pair.C.price
+                    pc_pair.P.price
+                    return pc_pair
+                except QuoteNotFoundException:
+                    # Searching next strike
+                    if item >= 0:
+                        item += 1
+                    else:
+                        item -= 1
         else:
             raise ValueError('Unexpected item type, must be float or int')
 
@@ -108,8 +122,12 @@ class OptionsChain(object):
             i = 1
             # Search for ITM put
             while i <= self.maxoffset:
-                if self[i].P.delta <= delta:
-                    return self[i].P
+                try:
+                    if self[i].P.delta <= delta:
+                        return self[i].P
+                except QuoteNotFoundException:
+                    # Catching data errors is the contract has custom strike
+                    pass
                 i += 1
 
             # Can't find suitable delta
@@ -122,8 +140,12 @@ class OptionsChain(object):
             # Search for OTM put
             i = -1
             while i >= self.minoffset:
-                if self[i].P.delta >= delta:
-                    return self[i].P
+                try:
+                    if self[i].P.delta >= delta:
+                        return self[i].P
+                except QuoteNotFoundException:
+                    # Catching data errors is the contract has custom strike
+                    pass
                 i -= 1
 
             # Can't find suitable delta
@@ -138,8 +160,13 @@ class OptionsChain(object):
             # Search for ITM call
             i = -1
             while i >= self.minoffset:
-                if self[i].C.delta >= delta:
-                    return self[i].C
+                try:
+                    if self[i].C.delta >= delta:
+                        return self[i].C
+                except QuoteNotFoundException:
+                    # Catching data errors is the contract has custom strike
+                    pass
+
                 i -= 1
 
             # Can't find suitable delta
@@ -153,8 +180,12 @@ class OptionsChain(object):
             i = 1
             # Search for OTM call
             while i <= self.maxoffset:
-                if self[i].C.delta <= delta:
-                    return self[i].C
+                try:
+                    if self[i].C.delta <= delta:
+                        return self[i].C
+                except QuoteNotFoundException:
+                    # Catching data errors is the contract has custom strike
+                    pass
                 i += 1
 
             # Can't find suitable delta

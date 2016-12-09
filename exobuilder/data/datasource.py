@@ -4,6 +4,7 @@ from exobuilder.contracts.optioncontract import OptionContract, OPT_HASH_ROOT
 
 HASH_ROOT_STEP = 100000000
 
+
 class DataSourceBase(object):
     def __init__(self, assetindex, futures_limit, options_limit, exostorage=None):
         self.assetindex = assetindex

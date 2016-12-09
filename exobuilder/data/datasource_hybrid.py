@@ -1,4 +1,5 @@
 from .datasource import DataSourceBase
+from .exceptions import QuoteNotFoundException
 from datetime import datetime
 import pymssql
 from pymongo import MongoClient
@@ -17,4 +18,4 @@ class DataSourceHybrid(DataSourceSQL):
         try:
             return self.db['futurebarcol'].find({'bartime': {'$lte': date}, 'idcontract': dbid, 'errorbar': False}).sort('bartime', pymongo.DESCENDING).next()
         except:
-            raise KeyError('Futures data not found contract id: {0} date: {1}'.format(dbid, date))
+            raise QuoteNotFoundException('Futures data not found contract id: {0} date: {1}'.format(dbid, date))

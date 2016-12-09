@@ -1,4 +1,5 @@
 from .datasource import DataSourceBase
+from .exceptions import QuoteNotFoundException
 from pymongo import MongoClient
 import pymongo
 from datetime import datetime
@@ -25,7 +26,7 @@ class DataSourceMongo(DataSourceBase):
         try:
             return self.db.futures_data.find({'datetime': date, 'idcontract': dbid}).next()
         except:
-            raise KeyError('Futures data not found contract id: {0} date: {1}'.format(dbid, date))
+            raise QuoteNotFoundException('Futures data not found contract id: {0} date: {1}'.format(dbid, date))
 
     def get_extra_data(self, key, date):
 
@@ -57,6 +58,6 @@ class DataSourceMongo(DataSourceBase):
                                               'datetime': {'$lt': self._shrink_datetime(date)}
                                               }).sort([('datetime', -1)]).limit(1).next()
         except:
-            raise KeyError('Option data not found contract id: {0} date: {1}'.format(dbid, date))
+            raise QuoteNotFoundException('Option data not found contract id: {0} date: {1}'.format(dbid, date))
 
 
