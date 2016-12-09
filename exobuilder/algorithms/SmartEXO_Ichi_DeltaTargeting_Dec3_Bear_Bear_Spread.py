@@ -21,9 +21,9 @@ import matplotlib.pyplot as plt
 from exobuilder.smartexo.smartexo_ichi import SmartEXOIchi
 
 
-class SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread(SmartEXOIchi):
+class SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread(SmartEXOIchi):
     # Change the EXO name to reflect SmartEXO behavior
-    EXO_NAME = 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread'
+    EXO_NAME = 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread'
 
     # select instruments list for SMART EXO calculation
     # ASSET_LIST  = ['CL', 'ES', 'NG', 'ZC', 'ZS', 'ZW', 'ZN']
@@ -78,9 +78,9 @@ class SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread(SmartEXOIchi):
             # Transaction(asset, date, qty, price=[MktPrice], leg_name=['' or unique name])
             #
             #
-            Transaction(opt_chain.get_by_delta(0.60), date, 1.0),
-            Transaction(opt_chain.get_by_delta(0.15), date, -1.0),
-            Transaction(opt_chain.get_by_delta(0.25), date, 0.0),
+            Transaction(opt_chain.get_by_delta(-0.90), date, 1.0),
+            Transaction(opt_chain.get_by_delta(-0.35), date, -1.0),
+            Transaction(opt_chain.get_by_delta(-0.05), date, 1.0),
             Transaction(opt_chain.get_by_delta(0.6), date, -0.0),
             Transaction(opt_chain.get_by_delta(0.20), date, 0.0),
             Transaction(opt_chain.get_by_delta(0.05), date, 0.0),
@@ -93,9 +93,9 @@ class SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread(SmartEXOIchi):
             # Transaction(asset, date, qty, price=[MktPrice], leg_name=['' or unique name])
             #
             #
-            Transaction(opt_chain.get_by_delta(-0.60), date, 1.0),
-            Transaction(opt_chain.get_by_delta(-0.15), date, -1.0),
-            Transaction(opt_chain.get_by_delta(0.25), date, 0.0),
+            Transaction(opt_chain.get_by_delta(-0.90), date, 1.0),
+            Transaction(opt_chain.get_by_delta(-0.35), date, -1.0),
+            Transaction(opt_chain.get_by_delta(-0.05), date, 1.0),
             Transaction(opt_chain.get_by_delta(0.6), date, -0.0),
             Transaction(opt_chain.get_by_delta(0.20), date, 0.0),
             Transaction(opt_chain.get_by_delta(0.05), date, 0.0),

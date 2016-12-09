@@ -6,7 +6,7 @@ from strategies.strategy_swingpoint import StrategySwingPoint
 
 STRATEGY_NAME = StrategySwingPoint.name
 
-STRATEGY_SUFFIX = 'swingpoint-12082016'
+STRATEGY_SUFFIX = 'swingpoint-s-12082016'
 
 STRATEGY_CONTEXT = {
     'strategy': {
@@ -14,12 +14,12 @@ STRATEGY_CONTEXT = {
         'exo_name': 'CL_PutSpread',        # <---- Select and paste EXO name from cell above
         'opt_params': [
                         #OptParam(name, default_value, min_value, max_value, step)
-                        OptParamArray('Direction', [1]),
-                        OptParam('sphTreshold', 2, 3, 3, 1),
-                        OptParam('splTreshold', 2, 2, 2, 1),
+                        OptParamArray('Direction', [-1]),
+                        OptParam('sphTreshold', 2, 1, 1, 1),
+                        OptParam('splTreshold', 2, 2, 5, 1),
             #bearish_breakout, bearish_failure, bullish_breakout, bullish_failure
-                        OptParamArray('RulesIndex', [0,1,3]),
-                        OptParam('MedianPeriod', 5, 29, 35, 2)
+                        OptParamArray('RulesIndex', [3]),
+                        OptParam('MedianPeriod', 5, 20, 35, 5)
             ],
     },
     'swarm': {
