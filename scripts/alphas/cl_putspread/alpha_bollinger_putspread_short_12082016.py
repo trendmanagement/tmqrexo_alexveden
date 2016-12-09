@@ -6,7 +6,7 @@ from strategies.strategy_bbands import StrategyBollingerBands
 
 STRATEGY_NAME = StrategyBollingerBands.name
 
-STRATEGY_SUFFIX = 'bollinger-12082016'
+STRATEGY_SUFFIX = 'bollinger-short-12082016'
 
 STRATEGY_CONTEXT = {
     'strategy': {

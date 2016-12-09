@@ -6,7 +6,7 @@ from strategies.strategy_swingpoint import StrategySwingPoint
 
 STRATEGY_NAME = StrategySwingPoint.name
 
-STRATEGY_SUFFIX = 'swingpoint-s-12082016'
+STRATEGY_SUFFIX = 'swingpoint-short-12082016'
 
 STRATEGY_CONTEXT = {
     'strategy': {
