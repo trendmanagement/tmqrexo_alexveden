@@ -1,4 +1,5 @@
 from .datasource import DataSourceBase
+from .exceptions import QuoteNotFoundException
 from datetime import datetime
 import pymssql
 
@@ -18,7 +19,7 @@ class DataSourceSQL(DataSourceBase):
                 dbid, date.isoformat()))
 
         if c2.rowcount == 0:
-            raise KeyError('Futures data not found contract id: {0} date: {1}'.format(dbid, date))
+            raise QuoteNotFoundException('Futures data not found contract id: {0} date: {1}'.format(dbid, date))
 
         for row in c2:
             return row
@@ -56,7 +57,7 @@ class DataSourceSQL(DataSourceBase):
                 dbid, date.date().isoformat()))
 
         if c2.rowcount == 0:
-            raise KeyError('Option data not found contract id: {0} date: {1}'.format(dbid, date))
+            raise QuoteNotFoundException('Option data not found contract id: {0} date: {1}'.format(dbid, date))
 
         for row in c2:
             return row

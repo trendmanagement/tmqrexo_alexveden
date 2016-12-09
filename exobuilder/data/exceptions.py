@@ -1,0 +1,2 @@
+class QuoteNotFoundException(Exception):
+    pass
