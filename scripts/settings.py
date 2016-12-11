@@ -59,28 +59,8 @@ EXO_LIST = [
 ALPHAS_GENERIC = ['alpha_exo']
 
 # Custom alpha EXO list
-ALPHAS_CUSTOM = [
-    'cl_callspread',
-    'cl_putspread',
-    'cl_bearishcollarbw',
-    'es_callspread',
-    'es_putspread',
-    'ng_callspread',
-    'ng_putspread',
-    'zn_callspread',
-    'zn_putspread',
-    'zc_callspread',
-    'zc_putspread',
-    'zs_callspread',
-    'zs_putspread',
-    'zw_callspread',
-    'zw_putspread',
-    'cl_smartexo_ichi_bearish_straddle_150delta',
-    'cl_smartexo_ichi_bullish_straddle_150delta_exphedged_nov22_2016',
-    'cl_contfut',
-    'cl_smartexo_bi',
-    'cl_smartexo_bull_bull'
-]
+# This setting is DEPRECATED
+# ALPHAS_CUSTOM = []
 
 # MongoDB credentials
 #

@@ -25,6 +25,45 @@ How custom alphas engine works
 4. Depending of type of the script the main *runner* script generates online signal or dumps information about current alphas state to the MongoDB.
 
 
+How to add custom alpha using GUI
+=================================
+.. note:: This will be general way of custom alpha deployment, manual instructions below could be used for debugging or if something going wrong. GUI is based on ``flexx`` project this is in early alpha state, it's working but sill not ideal.
+
+Launching GUI in notebook
+-------------------------
+1. Add 2 empty cells to the end of the notebook
+2. Initialize the notebook GUI engine (you should wait after cell execution 3-5 secs for connection)::
+
+    from flexx import app, ui, event
+    app.init_notebook()
+
+3. Launch deployment GUI::
+
+    # Set the strategy suffix
+    STRATEGY_SUFFIX = '-test'
+
+    from backtester.apps.alpha_deployment import AlphaDeployer
+    AlphaDeployer(strategy_context=STRATEGY_CONTEXT, strategy_suffix=STRATEGY_SUFFIX, flex=1)
+
+Deployment process
+------------------
+1. Set the ``STRATEGY_SUFFIX`` variable to add unique suffix to custom alpha
+2. Execute cell with AlphaDeployer() (you should re-execute it each time when you change ``STRATEGY_SUFFIX``)
+3. Press the button
+
+What is happening
+-----------------
+1. Checks for file name duplicates
+2. Checks for alpha name duplicates
+3. Checks ``STRATEGY_CONTEXT`` syntax
+4. Run ``alpha_rebalancer_single.py`` to make new custom alpha available in campaign notebook
+
+Problems with flexx
+-------------------
+Unfortunately flexx is in early alpha state, the main problem with notebook initialization after it been closed. If you
+faced with such kind of issues, you need to exec 'Kernel' -> 'Restart' and to rerun  the cells with ``STRATEGY_CONTEXT``
+and flexx and Alpha deployment GUI. You don't need to rerun entire notebook to deploy the alpha.
+
 How to add new custom alpha for **existing** EXO
 ================================================
 .. note:: Alphas scripts can be uploaded using common git procedure described in :ref:`server-code-deployment`, all changes could be made on local machine
@@ -93,15 +132,7 @@ How to add new custom alphas for **new** EXO
 2. Change to new directory ``cd zw_smart_exo_ichi_new``
 3. Create new empty __init__.py
 4. Add new alpha module as described in section above, do sanity checks.
-5. Edit ``scripts/settings.py`` locate ``ALPHAS_CUSTOM`` constant, and add new EXO name to the list::
-
-    # Custom alpha EXO list
-    ALPHAS_CUSTOM = [
-        'cl_callspread',
-        ....
-        'zn_putspread',  # <- check if last comma exists
-        'zw_smart_exo_ichi_new',    #<- new EXO product, don't forget leading comma
-    ]
+5. **DEPRECATED** Edit ``scripts/settings.py`` locate ``ALPHAS_CUSTOM`` constant, and add new EXO name to the list. Install script is automatically processing all folders in ``scripts/alphas`` directory without requirements of additional settings.
 6. Run the ``python3.5 scripts/settings.py`` for syntax errors checks (empty output means - **no** syntax errors)
 7. Commit and push changes to GitHub and log in to the server
 8. Run deployment process as described at :ref:`server-code-deployment` but without **service supervisor restart** step
