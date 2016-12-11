@@ -177,36 +177,35 @@ def install_alphas_custom():
     if not os.path.exists(os.path.join(current_path, 'logs', 'alphas', 'custom')):
         os.mkdir(os.path.join(current_path, 'logs', 'alphas', 'custom'))
 
-    for alpha_custom_exo_name in ALPHAS_CUSTOM:
+    for fn in os.listdir(os.path.join(TMQRPATH, 'scripts', 'alphas')):
         supervisor_conf_template = """[program:ALPHA_CUSTOM_{instrument}]
-command=python3.5 {script_file} -v {instrument}
-stderr_logfile={stderr_log}
-stderr_logfile_maxbytes=1MB
+        command=python3.5 {script_file} -v {instrument}
+        stderr_logfile={stderr_log}
+        stderr_logfile_maxbytes=1MB
 
-stdout_logfile={stdout_log}
-stdout_logfile_maxbytes=1MB
-directory={current_path}
-startsecs=30
-autostart=true
-startretries=5
-environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
-"""
+        stdout_logfile={stdout_log}
+        stdout_logfile_maxbytes=1MB
+        directory={current_path}
+        startsecs=30
+        autostart=true
+        startretries=5
+        environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
+        """
+        if os.path.isdir(os.path.join(TMQRPATH, 'scripts', 'alphas', fn)):
+            file_contents = supervisor_conf_template.format(**{
+                'instrument': fn,
+                'script_file': 'alpha_online_custom.py',
+                'stdout_log': os.path.join(current_path, 'logs', 'alphas', 'custom', 'custom_{0}_stdout.log'.format(alpha_custom_exo_name)),
+                'stderr_log': os.path.join(current_path, 'logs', 'alphas', 'custom', 'custom_{0}_stderr.log'.format(alpha_custom_exo_name)),
+                'current_path': current_path,
+                'tmqrpath': TMQRPATH,
+                'pythonpath': PYTHONPATH,
+            })
 
-
-        file_contents = supervisor_conf_template.format(**{
-            'instrument': alpha_custom_exo_name,
-            'script_file': 'alpha_online_custom.py',
-            'stdout_log': os.path.join(current_path, 'logs', 'alphas', 'custom', 'custom_{0}_stdout.log'.format(alpha_custom_exo_name)),
-            'stderr_log': os.path.join(current_path, 'logs', 'alphas', 'custom', 'custom_{0}_stderr.log'.format(alpha_custom_exo_name)),
-            'current_path': current_path,
-            'tmqrpath': TMQRPATH,
-            'pythonpath': PYTHONPATH,
-        })
-
-        file_name = 'alpha_custom_{0}.conf'.format(alpha_custom_exo_name).lower()
-        print('install_alphas_custom(): Writing '+file_name)
-        with open(os.path.join(current_path, supervisor_config_dir, file_name), 'w') as fh:
-            fh.write(file_contents)
+            file_name = 'alpha_custom_{0}.conf'.format(fn).lower()
+            print('install_alphas_custom(): Writing '+file_name)
+            with open(os.path.join(current_path, supervisor_config_dir, file_name), 'w') as fh:
+                fh.write(file_contents)
 
 def install_trading_script():
     if not os.path.exists(os.path.join(current_path, 'logs', 'trading')):
