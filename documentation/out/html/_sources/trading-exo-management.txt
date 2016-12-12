@@ -76,6 +76,7 @@ To add new SmartEXO
 7. Run steps 2 and 3 from EXO deployment manual above
 8. Commit and push changes to GitHub and log in to the server
 9. Run EXO batch backfill ``python3.5 ./exo_batch_update.py``. Refer to :ref:`server-code-deployment` to get information how to execute long-running tasks.
+10. Run ``python3.5 ./install.py`` to add new SmartEXO to online setup
 
 .. warning:: ``python3.5 ./exo_batch_update.py`` is an long running task it's better to run it overnight or over weekend using
 
