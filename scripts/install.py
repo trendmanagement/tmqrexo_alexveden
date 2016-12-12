@@ -178,6 +178,9 @@ def install_alphas_custom():
         os.mkdir(os.path.join(current_path, 'logs', 'alphas', 'custom'))
 
     for fn in os.listdir(os.path.join(TMQRPATH, 'scripts', 'alphas')):
+        if not os.path.isdir(os.path.join(TMQRPATH, 'scripts', 'alphas')):
+            continue
+
         supervisor_conf_template = """[program:ALPHA_CUSTOM_{instrument}]
         command=python3.5 {script_file} -v {instrument}
         stderr_logfile={stderr_log}
@@ -195,8 +198,8 @@ def install_alphas_custom():
             file_contents = supervisor_conf_template.format(**{
                 'instrument': fn,
                 'script_file': 'alpha_online_custom.py',
-                'stdout_log': os.path.join(current_path, 'logs', 'alphas', 'custom', 'custom_{0}_stdout.log'.format(alpha_custom_exo_name)),
-                'stderr_log': os.path.join(current_path, 'logs', 'alphas', 'custom', 'custom_{0}_stderr.log'.format(alpha_custom_exo_name)),
+                'stdout_log': os.path.join(current_path, 'logs', 'alphas', 'custom', 'custom_{0}_stdout.log'.format(fn)),
+                'stderr_log': os.path.join(current_path, 'logs', 'alphas', 'custom', 'custom_{0}_stderr.log'.format(fn)),
                 'current_path': current_path,
                 'tmqrpath': TMQRPATH,
                 'pythonpath': PYTHONPATH,

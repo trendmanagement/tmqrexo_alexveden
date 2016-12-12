@@ -50,6 +50,8 @@ Deployment process
 1. Set the ``STRATEGY_SUFFIX`` variable to add unique suffix to custom alpha
 2. Execute cell with AlphaDeployer() (you should re-execute it each time when you change ``STRATEGY_SUFFIX``)
 3. Press the button
+4. Run on the server ``cd /var/data/tmqrengine/scripts/`` and then ``python3.5 ./install.py``, this script will clear the logs and deploy new settings for online trading. Also ``supervisor service`` will be restarted.
+5. Make sure that new custom alpha script is present in ``supervisorctl status`` command output, otherwise try to restart it manually one more time ``service supervisor restart``
 
 What is happening
 -----------------
