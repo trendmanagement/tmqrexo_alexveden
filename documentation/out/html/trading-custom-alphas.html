@@ -136,14 +136,13 @@ and flexx and Alpha deployment GUI. You don&#8217;t need to rerun entire noteboo
 <p class="last">Alphas scripts can be uploaded using common git procedure described in <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a>, all changes could be made on local machine</p>
 </div>
 <ol class="arabic">
-<li><dl class="first docutils">
-<dt>Switch to required EXO subdirectory for example: <code class="docutils literal"><span class="pre">scripts/alphas/zw_callspread</span></code></dt>
-<dd><div class="first last admonition note">
+<li><p class="first">Switch to required EXO subdirectory for example: <code class="docutils literal"><span class="pre">scripts/alphas/zw_callspread</span></code></p>
+<blockquote>
+<div><div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Subdirectory must exactly reflect EXO or SmartEXO name, if <code class="docutils literal"><span class="pre">EXO_NAME</span> <span class="pre">=</span> <span class="pre">'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread'</span></code> then the subdirectory name should be &#8216;&lt;AssetSymbol&gt;_smartEXO_ichi_deltatargeting_dec3_bear_bear_spread&#8217;</p>
 </div>
-</dd>
-</dl>
+</div></blockquote>
 </li>
 <li><dl class="first docutils">
 <dt>Create new python file using next naming pattern: <code class="docutils literal"><span class="pre">alpha_&lt;strategy_class&gt;_&lt;long-short&gt;_&lt;suffix&gt;.py</span></code></dt>
@@ -215,16 +214,21 @@ and flexx and Alpha deployment GUI. You don&#8217;t need to rerun entire noteboo
 <ol class="arabic simple">
 <li><code class="docutils literal"><span class="pre">cd</span></code> to custom alphas directory and create new folder with new EXO name (in lower case!), for example: <code class="docutils literal"><span class="pre">mkdir</span> <span class="pre">zw_smart_exo_ichi_new</span></code></li>
 </ol>
-<p>2. Change to new directory <code class="docutils literal"><span class="pre">cd</span> <span class="pre">zw_smart_exo_ichi_new</span></code>
-.. note:: Subdirectory must exactly reflect EXO or SmartEXO name, if <code class="docutils literal"><span class="pre">EXO_NAME</span> <span class="pre">=</span> <span class="pre">'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread'</span></code> then the subdirectory name should be &#8216;&lt;AssetSymbol&gt;_smartEXO_ichi_deltatargeting_dec3_bear_bear_spread&#8217;
-3. Create new empty __init__.py
-4. Add new alpha module as described in section above, do sanity checks.
-5. <strong>DEPRECATED</strong> Edit <code class="docutils literal"><span class="pre">scripts/settings.py</span></code> locate <code class="docutils literal"><span class="pre">ALPHAS_CUSTOM</span></code> constant, and add new EXO name to the list. Install script is automatically processing all folders in <code class="docutils literal"><span class="pre">scripts/alphas</span></code> directory without requirements of additional settings.
-6. Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)
-7. Commit and push changes to GitHub and log in to the server
-8. Run deployment process as described at <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a> but without <strong>service supervisor restart</strong> step
-9. Run on the server <code class="docutils literal"><span class="pre">cd</span> <span class="pre">/var/data/tmqrengine/scripts/</span></code> and then <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./install.py</span></code>, this script will clear the logs and deploy new settings for online trading. Also <code class="docutils literal"><span class="pre">supervisor</span> <span class="pre">service</span></code> will be restarted.
-10. Make sure that new custom alpha script is present in <code class="docutils literal"><span class="pre">supervisorctl</span> <span class="pre">status</span></code> command output, otherwise try to restart it manually one more time <code class="docutils literal"><span class="pre">service</span> <span class="pre">supervisor</span> <span class="pre">restart</span></code></p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Subdirectory must exactly reflect EXO or SmartEXO name, if <code class="docutils literal"><span class="pre">EXO_NAME</span> <span class="pre">=</span> <span class="pre">'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread'</span></code> then the subdirectory name should be &#8216;&lt;AssetSymbol&gt;_smartEXO_ichi_deltatargeting_dec3_bear_bear_spread&#8217;</p>
+</div>
+<ol class="arabic simple" start="2">
+<li>Change to new directory <code class="docutils literal"><span class="pre">cd</span> <span class="pre">zw_smart_exo_ichi_new</span></code></li>
+<li>Create new empty __init__.py</li>
+<li>Add new alpha module as described in section above, do sanity checks.</li>
+<li><strong>DEPRECATED</strong> Edit <code class="docutils literal"><span class="pre">scripts/settings.py</span></code> locate <code class="docutils literal"><span class="pre">ALPHAS_CUSTOM</span></code> constant, and add new EXO name to the list. Install script is automatically processing all folders in <code class="docutils literal"><span class="pre">scripts/alphas</span></code> directory without requirements of additional settings.</li>
+<li>Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)</li>
+<li>Commit and push changes to GitHub and log in to the server</li>
+<li>Run deployment process as described at <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a> but without <strong>service supervisor restart</strong> step</li>
+<li>Run on the server <code class="docutils literal"><span class="pre">cd</span> <span class="pre">/var/data/tmqrengine/scripts/</span></code> and then <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./install.py</span></code>, this script will clear the logs and deploy new settings for online trading. Also <code class="docutils literal"><span class="pre">supervisor</span> <span class="pre">service</span></code> will be restarted.</li>
+<li>Make sure that new custom alpha script is present in <code class="docutils literal"><span class="pre">supervisorctl</span> <span class="pre">status</span></code> command output, otherwise try to restart it manually one more time <code class="docutils literal"><span class="pre">service</span> <span class="pre">supervisor</span> <span class="pre">restart</span></code></li>
+</ol>
 </div>
 <div class="section" id="custom-alpha-files-sanity-checks">
 <h2>Custom alpha files sanity checks<a class="headerlink" href="#custom-alpha-files-sanity-checks" title="Permalink to this headline">¶</a></h2>

@@ -70,7 +70,9 @@ How to add new custom alpha for **existing** EXO
 ================================================
 .. note:: Alphas scripts can be uploaded using common git procedure described in :ref:`server-code-deployment`, all changes could be made on local machine
 1. Switch to required EXO subdirectory for example: ``scripts/alphas/zw_callspread``
+
     .. note:: Subdirectory must exactly reflect EXO or SmartEXO name, if ``EXO_NAME = 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread'`` then the subdirectory name should be '<AssetSymbol>_smartEXO_ichi_deltatargeting_dec3_bear_bear_spread'
+
 2. Create new python file using next naming pattern: ``alpha_<strategy_class>_<long-short>_<suffix>.py``
     For example: ``alpha_ichimoku_short_bearish.py``, if file exist you can add some suffix to it.
 
@@ -132,8 +134,10 @@ File contents should reflect full ``STRATEGY_CONTEXT`` dictionary from prototype
 How to add new custom alphas for **new** EXO
 ============================================
 1. ``cd`` to custom alphas directory and create new folder with new EXO name (in lower case!), for example: ``mkdir zw_smart_exo_ichi_new``
-2. Change to new directory ``cd zw_smart_exo_ichi_new``
+
 .. note:: Subdirectory must exactly reflect EXO or SmartEXO name, if ``EXO_NAME = 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread'`` then the subdirectory name should be '<AssetSymbol>_smartEXO_ichi_deltatargeting_dec3_bear_bear_spread'
+
+2. Change to new directory ``cd zw_smart_exo_ichi_new``
 3. Create new empty __init__.py
 4. Add new alpha module as described in section above, do sanity checks.
 5. **DEPRECATED** Edit ``scripts/settings.py`` locate ``ALPHAS_CUSTOM`` constant, and add new EXO name to the list. Install script is automatically processing all folders in ``scripts/alphas`` directory without requirements of additional settings.
