@@ -11,7 +11,7 @@ from exobuilder.exo.exoenginebase import ExoEngineBase
 from exobuilder.exo.transaction import Transaction
 import time
 from exobuilder.algorithms.rollover_helper import RolloverHelper
-from exobuilder.smartexo.utils import SmartEXOUtils
+#from exobuilder.smartexo.utils import SmartEXOUtils
 
 import importlib
 import logging
