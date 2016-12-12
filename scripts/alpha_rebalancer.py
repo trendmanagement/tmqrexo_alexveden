@@ -22,14 +22,16 @@ except SystemError:
         pass
     pass
 
-
-import os, sys
 import importlib
-from backtester.swarms.swarm import Swarm
+import os
+
 from backtester.strategy import OptParamArray
+from backtester.swarms.swarm import Swarm
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
+from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.exostorage import EXOStorage
+from tradingcore.execution_manager import ExecutionManager
 from tradingcore.swarmonlinemanager import SwarmOnlineManager
-import traceback
 
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
@@ -176,6 +178,13 @@ def main(args, loglevel):
                         swmonline.save(swm)
                 except:
                     logging.exception('Exception occurred:')
+
+    logging.info("Processing accounts positions")
+    assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+    datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit=10, options_limit=10,
+                                 exostorage=exo_storage)
+    exmgr = ExecutionManager(MONGO_CONNSTR, datasource, dbname=MONGO_EXO_DB)
+    exmgr.account_positions_process(write_to_db=True)
 
     logging.info("Done.")
 
