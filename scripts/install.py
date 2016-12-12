@@ -180,6 +180,8 @@ def install_alphas_custom():
     for fn in os.listdir(os.path.join(TMQRPATH, 'scripts', 'alphas')):
         if not os.path.isdir(os.path.join(TMQRPATH, 'scripts', 'alphas')):
             continue
+        if fn == '__pycache__':
+            continue
 
         supervisor_conf_template = """[program:ALPHA_CUSTOM_{instrument}]
         command=python3.5 {script_file} -v {instrument}
