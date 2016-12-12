@@ -50,6 +50,8 @@ Deployment process
 1. Set the ``STRATEGY_SUFFIX`` variable to add unique suffix to custom alpha
 2. Execute cell with AlphaDeployer() (you should re-execute it each time when you change ``STRATEGY_SUFFIX``)
 3. Press the button
+4. Run on the server ``cd /var/data/tmqrengine/scripts/`` and then ``python3.5 ./install.py``, this script will clear the logs and deploy new settings for online trading. Also ``supervisor service`` will be restarted.
+5. Make sure that new custom alpha script is present in ``supervisorctl status`` command output, otherwise try to restart it manually one more time ``service supervisor restart``
 
 What is happening
 -----------------
@@ -68,6 +70,7 @@ How to add new custom alpha for **existing** EXO
 ================================================
 .. note:: Alphas scripts can be uploaded using common git procedure described in :ref:`server-code-deployment`, all changes could be made on local machine
 1. Switch to required EXO subdirectory for example: ``scripts/alphas/zw_callspread``
+    .. note:: Subdirectory must exactly reflect EXO or SmartEXO name, if ``EXO_NAME = 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread'`` then the subdirectory name should be '<AssetSymbol>_smartEXO_ichi_deltatargeting_dec3_bear_bear_spread'
 2. Create new python file using next naming pattern: ``alpha_<strategy_class>_<long-short>_<suffix>.py``
     For example: ``alpha_ichimoku_short_bearish.py``, if file exist you can add some suffix to it.
 
@@ -130,6 +133,7 @@ How to add new custom alphas for **new** EXO
 ============================================
 1. ``cd`` to custom alphas directory and create new folder with new EXO name (in lower case!), for example: ``mkdir zw_smart_exo_ichi_new``
 2. Change to new directory ``cd zw_smart_exo_ichi_new``
+.. note:: Subdirectory must exactly reflect EXO or SmartEXO name, if ``EXO_NAME = 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread'`` then the subdirectory name should be '<AssetSymbol>_smartEXO_ichi_deltatargeting_dec3_bear_bear_spread'
 3. Create new empty __init__.py
 4. Add new alpha module as described in section above, do sanity checks.
 5. **DEPRECATED** Edit ``scripts/settings.py`` locate ``ALPHAS_CUSTOM`` constant, and add new EXO name to the list. Install script is automatically processing all folders in ``scripts/alphas`` directory without requirements of additional settings.

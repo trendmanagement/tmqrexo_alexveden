@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Custom alphas management &mdash; TMQR framework 1.0 documentation</title>
+    <title>Custom alphas management &#8212; TMQR framework 1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,9 +24,12 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="top" title="TMQR framework 1.0 documentation" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -42,8 +45,6 @@
   <div class="section" id="custom-alphas-management">
 <span id="trading-custom-alphas"></span><h1>Custom alphas management<a class="headerlink" href="#custom-alphas-management" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="custom-alphas-files-location-and-content">
 <h2>Custom alphas files location and content<a class="headerlink" href="#custom-alphas-files-location-and-content" title="Permalink to this headline">¶</a></h2>
@@ -108,6 +109,8 @@
 <li>Set the <code class="docutils literal"><span class="pre">STRATEGY_SUFFIX</span></code> variable to add unique suffix to custom alpha</li>
 <li>Execute cell with AlphaDeployer() (you should re-execute it each time when you change <code class="docutils literal"><span class="pre">STRATEGY_SUFFIX</span></code>)</li>
 <li>Press the button</li>
+<li>Run on the server <code class="docutils literal"><span class="pre">cd</span> <span class="pre">/var/data/tmqrengine/scripts/</span></code> and then <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./install.py</span></code>, this script will clear the logs and deploy new settings for online trading. Also <code class="docutils literal"><span class="pre">supervisor</span> <span class="pre">service</span></code> will be restarted.</li>
+<li>Make sure that new custom alpha script is present in <code class="docutils literal"><span class="pre">supervisorctl</span> <span class="pre">status</span></code> command output, otherwise try to restart it manually one more time <code class="docutils literal"><span class="pre">service</span> <span class="pre">supervisor</span> <span class="pre">restart</span></code></li>
 </ol>
 </div>
 <div class="section" id="what-is-happening">
@@ -133,7 +136,14 @@ and flexx and Alpha deployment GUI. You don&#8217;t need to rerun entire noteboo
 <p class="last">Alphas scripts can be uploaded using common git procedure described in <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a>, all changes could be made on local machine</p>
 </div>
 <ol class="arabic">
-<li><p class="first">Switch to required EXO subdirectory for example: <code class="docutils literal"><span class="pre">scripts/alphas/zw_callspread</span></code></p>
+<li><dl class="first docutils">
+<dt>Switch to required EXO subdirectory for example: <code class="docutils literal"><span class="pre">scripts/alphas/zw_callspread</span></code></dt>
+<dd><div class="first last admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Subdirectory must exactly reflect EXO or SmartEXO name, if <code class="docutils literal"><span class="pre">EXO_NAME</span> <span class="pre">=</span> <span class="pre">'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread'</span></code> then the subdirectory name should be &#8216;&lt;AssetSymbol&gt;_smartEXO_ichi_deltatargeting_dec3_bear_bear_spread&#8217;</p>
+</div>
+</dd>
+</dl>
 </li>
 <li><dl class="first docutils">
 <dt>Create new python file using next naming pattern: <code class="docutils literal"><span class="pre">alpha_&lt;strategy_class&gt;_&lt;long-short&gt;_&lt;suffix&gt;.py</span></code></dt>
@@ -204,16 +214,17 @@ and flexx and Alpha deployment GUI. You don&#8217;t need to rerun entire noteboo
 <h2>How to add new custom alphas for <strong>new</strong> EXO<a class="headerlink" href="#how-to-add-new-custom-alphas-for-new-exo" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><code class="docutils literal"><span class="pre">cd</span></code> to custom alphas directory and create new folder with new EXO name (in lower case!), for example: <code class="docutils literal"><span class="pre">mkdir</span> <span class="pre">zw_smart_exo_ichi_new</span></code></li>
-<li>Change to new directory <code class="docutils literal"><span class="pre">cd</span> <span class="pre">zw_smart_exo_ichi_new</span></code></li>
-<li>Create new empty __init__.py</li>
-<li>Add new alpha module as described in section above, do sanity checks.</li>
-<li><strong>DEPRECATED</strong> Edit <code class="docutils literal"><span class="pre">scripts/settings.py</span></code> locate <code class="docutils literal"><span class="pre">ALPHAS_CUSTOM</span></code> constant, and add new EXO name to the list. Install script is automatically processing all folders in <code class="docutils literal"><span class="pre">scripts/alphas</span></code> directory without requirements of additional settings.</li>
-<li>Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)</li>
-<li>Commit and push changes to GitHub and log in to the server</li>
-<li>Run deployment process as described at <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a> but without <strong>service supervisor restart</strong> step</li>
-<li>Run on the server <code class="docutils literal"><span class="pre">cd</span> <span class="pre">/var/data/tmqrengine/scripts/</span></code> and then <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./install.py</span></code>, this script will clear the logs and deploy new settings for online trading. Also <code class="docutils literal"><span class="pre">supervisor</span> <span class="pre">service</span></code> will be restarted.</li>
-<li>Make sure that new custom alpha script is present in <code class="docutils literal"><span class="pre">supervisorctl</span> <span class="pre">status</span></code> command output, otherwise try to restart it manually one more time <code class="docutils literal"><span class="pre">service</span> <span class="pre">supervisor</span> <span class="pre">restart</span></code></li>
 </ol>
+<p>2. Change to new directory <code class="docutils literal"><span class="pre">cd</span> <span class="pre">zw_smart_exo_ichi_new</span></code>
+.. note:: Subdirectory must exactly reflect EXO or SmartEXO name, if <code class="docutils literal"><span class="pre">EXO_NAME</span> <span class="pre">=</span> <span class="pre">'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread'</span></code> then the subdirectory name should be &#8216;&lt;AssetSymbol&gt;_smartEXO_ichi_deltatargeting_dec3_bear_bear_spread&#8217;
+3. Create new empty __init__.py
+4. Add new alpha module as described in section above, do sanity checks.
+5. <strong>DEPRECATED</strong> Edit <code class="docutils literal"><span class="pre">scripts/settings.py</span></code> locate <code class="docutils literal"><span class="pre">ALPHAS_CUSTOM</span></code> constant, and add new EXO name to the list. Install script is automatically processing all folders in <code class="docutils literal"><span class="pre">scripts/alphas</span></code> directory without requirements of additional settings.
+6. Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)
+7. Commit and push changes to GitHub and log in to the server
+8. Run deployment process as described at <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a> but without <strong>service supervisor restart</strong> step
+9. Run on the server <code class="docutils literal"><span class="pre">cd</span> <span class="pre">/var/data/tmqrengine/scripts/</span></code> and then <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./install.py</span></code>, this script will clear the logs and deploy new settings for online trading. Also <code class="docutils literal"><span class="pre">supervisor</span> <span class="pre">service</span></code> will be restarted.
+10. Make sure that new custom alpha script is present in <code class="docutils literal"><span class="pre">supervisorctl</span> <span class="pre">status</span></code> command output, otherwise try to restart it manually one more time <code class="docutils literal"><span class="pre">service</span> <span class="pre">supervisor</span> <span class="pre">restart</span></code></p>
 </div>
 <div class="section" id="custom-alpha-files-sanity-checks">
 <h2>Custom alpha files sanity checks<a class="headerlink" href="#custom-alpha-files-sanity-checks" title="Permalink to this headline">¶</a></h2>
@@ -278,8 +289,8 @@ and flexx and Alpha deployment GUI. You don&#8217;t need to rerun entire noteboo
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -293,8 +304,8 @@ and flexx and Alpha deployment GUI. You don&#8217;t need to rerun entire noteboo
       &copy;2016, TMQR.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.8</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
       |
       <a href="_sources/trading-custom-alphas.txt"
