@@ -183,18 +183,19 @@ def install_alphas_custom():
         if fn == '__pycache__':
             continue
 
-        supervisor_conf_template = """[program:ALPHA_CUSTOM_{instrument}]
-        command=python3.5 {script_file} -v {instrument}
-        stderr_logfile={stderr_log}
-        stderr_logfile_maxbytes=1MB
+        supervisor_conf_template = """
+[program:ALPHA_CUSTOM_{instrument}]
+command=python3.5 {script_file} -v {instrument}
+stderr_logfile={stderr_log}
+stderr_logfile_maxbytes=1MB
 
-        stdout_logfile={stdout_log}
-        stdout_logfile_maxbytes=1MB
-        directory={current_path}
-        startsecs=30
-        autostart=true
-        startretries=5
-        environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
+stdout_logfile={stdout_log}
+stdout_logfile_maxbytes=1MB
+directory={current_path}
+startsecs=30
+autostart=true
+startretries=5
+environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
         """
         if os.path.isdir(os.path.join(TMQRPATH, 'scripts', 'alphas', fn)):
             file_contents = supervisor_conf_template.format(**{
