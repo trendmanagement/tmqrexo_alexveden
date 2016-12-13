@@ -60,6 +60,21 @@ class OptionContract(object):
         return self.instrument.date
 
     @property
+    def option_code(self):
+        """
+        There is a field optioncode in tbloptions that is filled with
+        EOM: EW
+        WEEKLY: EW1, EW2, EW3, EW4
+        WED: E1C, E2C, E3C, E4C, E5C
+        The quarterly american options are just filled with ' '
+        :return:
+        """
+        if 'optioncode' not in self._data:
+            return ''
+        else:
+            return self._data['optioncode'].strip()
+
+    @property
     def to_expiration_years(self):
         return (self.expiration.date() - self.date.date()).total_seconds() / 31536000.0 # == (365.0 * 24 * 60 * 60)
 

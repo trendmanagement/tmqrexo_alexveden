@@ -21,6 +21,8 @@ class OptionsChain(object):
             atm_index = np.argmin(np.abs(all_strikes - self.underlying.price))
             all_strikes = all_strikes[max(0, atm_index - options_limit):min(len(self._data['chain']), atm_index + options_limit + 1)]
 
+        self._option_code = None
+
         for opt_dic in self._data['chain']:
             if options_limit > 0:
                 if opt_dic['strikeprice'] not in all_strikes:
@@ -28,6 +30,14 @@ class OptionsChain(object):
             option = OptionContract(opt_dic, self._fut)
             pc_pair = self._options.setdefault(option.strike, PutCallPair())
             pc_pair.addoption(option)
+
+            if self._option_code is None:
+                self._option_code = option.option_code
+            else:
+                if self._option_code != option.option_code:
+                    raise ValueError("Option chain must contain options with the same option_code values, mixing "
+                                     "weeklys with monthly options is not allowed. Check the Asset index DB granularity.")
+
         self._strike_array = np.array(list(self._options.keys()))
 
     @property
@@ -54,6 +64,10 @@ class OptionsChain(object):
     def strikes(self):
         return self._strike_array
 
+    @property
+    def option_code(self):
+        return self._option_code
+
     def __len__(self):
         return len(self._strike_array)
 
@@ -76,7 +90,8 @@ class OptionsChain(object):
         if isinstance(item, (int, np.int32, np.int64)):
             while True:
                 if self.atmindex + item < 0 or self.atmindex + item > len(self._strike_array)-1:
-                    raise IndexError("Strike offset is too low, [{0}, {1}] values allowed".format(-self.atmindex, len(self._strike_array)-self.atmindex-1))
+                    raise IndexError("Strike offset is too low, [{0}, {1}] values allowed".format(-self.atmindex,
+                                                                                                  len(self._strike_array)-self.atmindex-1))
                 strike = self._strike_array[self.atmindex + item]
                 pc_pair = self._options[strike]
                 try:
