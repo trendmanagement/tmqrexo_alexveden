@@ -20,6 +20,8 @@ try:
 except SystemError:
     from scripts.settings import *
 
+from scripts.settings_exo import *
+
 
 supervisor_config_dir = 'supervisor_include'
 current_path = sys.path[0]

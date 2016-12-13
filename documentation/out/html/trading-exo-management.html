@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXO management &mdash; TMQR framework 1.0 documentation</title>
+    <title>EXO management &#8212; TMQR framework 1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,9 +24,12 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="top" title="TMQR framework 1.0 documentation" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -42,8 +45,6 @@
   <div class="section" id="exo-management">
 <span id="trading-exo-management"></span><h1>EXO management<a class="headerlink" href="#exo-management" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="module-scripts.exo_builder">
 <span id="how-exo-scripts-work"></span><h2>How EXO scripts work<a class="headerlink" href="#module-scripts.exo_builder" title="Permalink to this headline">¶</a></h2>
@@ -112,7 +113,7 @@ line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39
 <h3>To add new product<a class="headerlink" href="#to-add-new-product" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li>Type in new <code class="docutils literal"><span class="pre">exchangesymbol</span></code> name to the <code class="docutils literal"><span class="pre">INSTRUMENTS_LIST</span></code></li>
-<li>Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)</li>
+<li>Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings_exo.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)</li>
 <li>Commit and push changes to GitHub and log in to the server</li>
 <li>Run deployment process as described at <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a> but without <strong>service supervisor restart</strong> step</li>
 <li>Run on the server <code class="docutils literal"><span class="pre">cd</span> <span class="pre">/var/data/tmqrengine/scripts/</span></code> and then <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./install.py</span></code>, this script will clear the logs and deploy new settings for online trading. Also <code class="docutils literal"><span class="pre">supervisor</span> <span class="pre">service</span></code> will be restarted.</li>
@@ -129,7 +130,7 @@ line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39
 <li><p class="first">Add new tested EXO python file to <code class="docutils literal"><span class="pre">exobuilder/algorithms</span></code></p>
 </li>
 <li><dl class="first docutils">
-<dt>Edit <code class="docutils literal"><span class="pre">scripts/settings.py</span></code> file</dt>
+<dt>Edit <code class="docutils literal"><span class="pre">scripts/settings_exo.py</span></code> file</dt>
 <dd><ul class="first last">
 <li><dl class="first docutils">
 <dt>Add new import statement to the header of the file</dt>
@@ -164,7 +165,7 @@ line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39
 </dd>
 </dl>
 </li>
-<li><p class="first">Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)</p>
+<li><p class="first">Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings_exo.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)</p>
 </li>
 <li><p class="first">Commit and push changes to GitHub and log in to the server</p>
 </li>
@@ -277,8 +278,8 @@ line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -292,8 +293,8 @@ line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39
       &copy;2016, TMQR.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.8</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
       |
       <a href="_sources/trading-exo-management.txt"

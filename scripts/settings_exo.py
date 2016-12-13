@@ -11,7 +11,7 @@ from exobuilder.algorithms.SmartEXO_Ichi_DeltaTargeting_Dec3_Bull_Bull_Spread im
 #
 # Instruments list
 #
-INSTRUMENTS_LIST = ['ES', 'CL', 'NG', 'ZN', 'ZS', 'ZW', 'ZC']
+INSTRUMENTS_LIST = ['ES', 'CL', 'NG', 'ZN', 'ZS', 'ZW', 'ZC', '6E']
 
 # Alphas list (generic)
 ALPHAS_GENERIC = ['alpha_exo']
