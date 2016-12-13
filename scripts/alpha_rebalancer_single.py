@@ -29,6 +29,7 @@ from backtester.swarms.swarm import Swarm
 from backtester.strategy import OptParamArray
 from exobuilder.data.exostorage import EXOStorage
 from tradingcore.swarmonlinemanager import SwarmOnlineManager
+from scripts.settings_exo import *
 
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging

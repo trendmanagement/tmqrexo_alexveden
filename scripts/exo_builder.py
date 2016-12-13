@@ -63,6 +63,7 @@ from exobuilder.data.exostorage import EXOStorage
 from tradingcore.messages import *
 from tradingcore.signalapp import SignalApp, APPCLASS_DATA, APPCLASS_EXO
 import warnings
+from scripts.settings_exo import *
 
 try:
     from .settings import *

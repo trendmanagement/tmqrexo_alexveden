@@ -22,6 +22,7 @@ except SystemError:
         pass
     pass
 
+from scripts.settings_exo import *
 import importlib
 import os
 
