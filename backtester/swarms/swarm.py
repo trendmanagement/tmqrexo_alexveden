@@ -44,6 +44,7 @@ class Swarm:
         self._last_members_list = None
         self._last_rebalance_date = None
         self._last_delta = None
+        self._last_prev_exposure = None
         self._max_exposure = None
 
         self._swarm_series = None
@@ -54,6 +55,10 @@ class Swarm:
         strategy_settings = self.context['strategy']
         # Initialize strategy class
         self.strategy = strategy_settings['class'](self.context)
+
+        self._swarm_avg = None
+        self._swarm = None
+        self._swarm_exposure = None
 
 
 
@@ -322,17 +327,29 @@ class Swarm:
         """
         direction_param = strategy_context['strategy']['opt_params'][0]
 
+        if 'direction' in strategy_context['strategy']:
+            warnings.warn("'direction' parameter in strategy_context['strategy']['direction'] is obsolete, "
+                          "please remove it to suppress this warning")
+
         if direction_param.name.lower() != 'direction':
             raise ValueError('First OptParam of strategy must be Direction')
 
-        if len(direction_param.array) == 2:
-            return 0, 'Bidir'
-        else:
+        for dir_value in direction_param.array:
+            if dir_value != -1 and dir_value != 1:
+                raise ValueError("Direction OptParam value must be -1 or 1")
+
+        if len(direction_param.array) == 1:
             if direction_param.array[0] == 1:
                 return 1, 'Long'
             elif direction_param.array[0] == -1:
                 return -1, 'Short'
-            raise ValueError("Unexpected direction parameter value")
+
+        elif len(direction_param.array) == 2:
+            return 0, 'Bidir'
+        else:
+            raise ValueError("Direction OptParam must contain 1 or 2 elements")
+
+
 
     @staticmethod
     def get_name(strategy_context, suffix=''):
@@ -521,14 +538,11 @@ class Swarm:
             # Return cached value if applicable
             return self._max_exposure
 
-        if self._picked_exposure is None:
-            raise ValueError("Run pick() method before access this property")
-
         self._max_exposure = self.picked_exposure.sum(axis=1).abs().max()
         return self._max_exposure
 
 
-    def laststate_update(self, exo_dataframe, swarm_exposure, costs=None):
+    def _laststate_update(self, exo_dataframe, swarm_exposure, costs=None):
         """
         Updates last equity, exposure, exo_quote (used for real time run)
         :param exo_dataframe: price series of EXO
@@ -537,8 +551,11 @@ class Swarm:
         :return: None
         """
         if self._swarm_series is None or len(self._swarm_series) <= 1:
-            raise ValueError("Improperly initiated error: self._equity is None or len(self._equity) <= 1")
+            raise ValueError("Improperly initiated error: self._swarm_series is None "
+                             "or len(self._equity) <= 1 ")
 
+        if len(swarm_exposure) == 0:
+            warnings.warn("Swarm exposure is zero-length, seems that no members picked after rebalancing.")
 
         # 1. Filter exo_price and swarm_exposure >= self.last_date
         _exo_price_array = exo_dataframe['exo'][exo_dataframe.index >= self.last_date]
@@ -547,67 +564,76 @@ class Swarm:
             _exo_delta_array = exo_dataframe['delta'][exo_dataframe.index >= self.last_date]
         _swarm_exposure = swarm_exposure[swarm_exposure.index >= self.last_date]
 
-        if len(_exo_price_array) != len(_swarm_exposure):
-            raise ValueError("len(_exo_price_array) != len(_swarm_exposure)")
+        if len(_swarm_exposure) > 0 and len(_exo_price_array) != len(_swarm_exposure):
+            raise ValueError("len(_swarm_exposure) > 0 and len(_exo_price_array) != len(_swarm_exposure)")
 
 
         for i in range(len(_exo_price_array)):
             # Do sanity checks
             # Check that date index matches
             _costs_value = 0.0
-            if _exo_price_array.index[i] != _swarm_exposure.index[i]:
-                raise ValueError("_exo_price_array.index[i] != _swarm_exposure.index[i]")
+            delta_value = 0.0
+            _exposure = 0.0
 
-            # Check that exo_quote is matching in history
-            # To avoid calculation mistakes
-            if _exo_price_array.index[i] == self.last_date:
-                if _exo_price_array.values[i] != self.last_exoquote:
-                    pp = pprint.PrettyPrinter(indent=4)
-                    warnings.warn("New historical EXO price doesn't match the last_exoquote on same day! Is EXO recalculated?\nLast state info:\n{0}\n\nExo Price series (last 5 days):\n {1}".format(
-                        pp.pformat(self.laststate_to_dict()),
-                        exo_dataframe.iloc[-5:],
-                    ))
+            if len(_swarm_exposure) > 0:
+                if _exo_price_array.index[i] != _swarm_exposure.index[i]:
+                    raise ValueError("_exo_price_array.index[i] != _swarm_exposure.index[i]")
+                _exposure = _swarm_exposure.values[i]
             else:
-                # We have new quote data
-                # Update equity series with (exo_price[i] - self.last_exoquote) * self.last_exposure
+                if self._last_date == _exo_price_array.index[i]:
+                    _exposure = self.last_prev_exposure
 
-                # Similar to backtester_fast.stats_exposure() backtesting algorithm
-                profit = (_exo_price_array.values[i] - self.last_exoquote) * self.last_exposure
-                if costs is not None:
-                    _costs_value += calc_costs(costs['transaction_costs'].values[i],
-                                               costs['rollover_costs'].values[i],
-                                               self.last_exposure,         # Prev Exposure
-                                               _swarm_exposure.values[i])  # Current Exposure
+            # We have new quote data
+            # Similar to backtester_fast.stats_exposure() backtesting algorithm
+            if i == 0:
+                profit = (_exo_price_array.values[i] - self.last_exoquote) * self._last_prev_exposure
+            else:
+                profit = (_exo_price_array.values[i] - _exo_price_array.values[i-1]) * self._last_exposure
+            if costs is not None:
+                _costs_value = calc_costs(costs['transaction_costs'].values[i],
+                                          costs['rollover_costs'].values[i],
+                                          self.last_exposure,           # Prev Exposure
+                                          _exposure)                    # Current Exposure
+                profit += _costs_value
 
-                # Updating swarm delta value if it exists in EXO dataframe
-                delta_value = float('nan')
-                if _exo_delta_array is not None:
-                    delta_value = _exo_delta_array.values[i] * self.last_exposure
+            # Updating swarm delta value if it exists in EXO dataframe
+
+            if _exo_delta_array is not None:
+                delta_value = _exo_delta_array.values[i] * _exposure
 
 
-                # Use previous exposure to calculate quotes
-                self._swarm_series.at[_exo_price_array.index[i], 'equity'] = self._swarm_series['equity'].values[-1] + profit
-                self._swarm_series.at[_exo_price_array.index[i], 'delta'] = delta_value
-                self._swarm_series.at[_exo_price_array.index[i], 'exposure'] = _swarm_exposure.values[i]
-                self._swarm_series.at[_exo_price_array.index[i], 'costs'] = _costs_value
+            # Use previous exposure to calculate quotes
+            self._swarm_series.at[_exo_price_array.index[i], 'equity'] = self._swarm_series['equity'].values[-1] + profit
+            self._swarm_series.at[_exo_price_array.index[i], 'delta'] = delta_value
+            self._swarm_series.at[_exo_price_array.index[i], 'exposure'] = _exposure
+            self._swarm_series.at[_exo_price_array.index[i], 'costs'] = _costs_value
 
-                # Update self.last_* properties for next loop step
-                self._last_exoquote = _exo_price_array.values[i]
-                self._last_date = _exo_price_array.index[i]
+            # Update self.last_* properties for next loop step
+            if self._last_date != _exo_price_array.index[i]:
+                #
+                # Suppress last_exposure overwriting if we recalculating swarm on current date
+                #
                 self._last_prev_exposure = self._last_exposure
-                self._last_exposure = _swarm_exposure.values[i]
-                self._last_delta = delta_value
+                self._last_exposure = _exposure
+            self._last_exoquote = _exo_price_array.values[i]
+            self._last_date = _exo_price_array.index[i]
+            self._last_delta = delta_value
 
     def update(self):
         if not self._islast_state:
             raise Exception("update() method only applicable to swarms loaded from online last state dict")
 
+        # Setting preset of swarm members to update
+        self.context['strategy']['opt_preset'] = self._parse_params(self.last_members_list)
+
         # Run predefined swarm parameters
         self.run_swarm()
 
+        # We are using self.raw_exposure instead of self.picked_exposure
+        # because in self.update() we are running predefined (i.e. already picked) swarms
         if len(self.raw_exposure) > 0:
             # Update equity and another last state values
-            self.laststate_update(self.strategy.data, self.raw_exposure.sum(axis=1), self.strategy.costs)
+            self._laststate_update(self.strategy.data, self.raw_exposure.sum(axis=1), self.strategy.costs)
         else:
             raise NotImplementedError("if len(self.raw_exposure) <= 0: decide if it is unexpected case when no systems picked in some reasons?")
 
