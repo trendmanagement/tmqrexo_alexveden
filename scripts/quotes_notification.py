@@ -18,6 +18,8 @@ from tradingcore.signalapp import SignalApp, APPCLASS_DATA
 from tradingcore.messages import *
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
 import pprint
+import holidays
+import bdateutil
 
 try:
     from .settings import *
@@ -40,17 +42,29 @@ class QuotesNotifyScript:
         self.asset_info = None
         self.args = args
         self.loglevel = loglevel
-        self.last_quote_date = date(2000, 1, 1)
+        self.last_quote_date = None
         self.last_minute = -1
         logging.getLogger("pika").setLevel(logging.WARNING)
         logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=loglevel)
+        self.pprinter = pprint.PrettyPrinter(indent=4)
 
-    def get_last_bar_time(self, db):
-        last_bar_time = db['futurebarcol'].find({'errorbar': False}).sort('bartime', pymongo.DESCENDING).limit(1).next()['bartime']
+
+
+    def get_last_quote_date(self):
+        raise NotImplementedError()
+
+    def set_last_quote_state(self, context):
+        raise NotImplementedError()
+
+    def get_last_bar_time(self):
+        last_bar_time = self.db['futurebarcol'].find({'errorbar': False}).sort('bartime', pymongo.DESCENDING).limit(1).next()['bartime']
         return last_bar_time
 
+    def date_now(self):
+        return datetime.now()
+
     def main(self):
-        logging.info("Initiating EXO building engine")
+        logging.info("Initiating data notification script")
 
         # Initialize EXO engine SignalApp (report first status)
         self.signalapp = SignalApp(self.args.instrument, APPCLASS_DATA, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
@@ -60,65 +74,88 @@ class QuotesNotifyScript:
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         self.asset_info = assetindex.get_instrument_info(args.instrument)
 
-
         # TODO: replace DB name after release
         mongo_db_name = 'tmldb_test'
         tmp_mongo_connstr = 'mongodb://tml:tml@10.0.1.2/tmldb_test?authMechanism=SCRAM-SHA-1'
         client = MongoClient(tmp_mongo_connstr)
-        db = client[mongo_db_name]
-        pp = pprint.PrettyPrinter(indent=4)
-
-        #
+        self.db = client[mongo_db_name]
         # Creating index for 'bartime'
-        #
-        db['futurebarcol'].create_index([('bartime', pymongo.DESCENDING)], background=True)
+        self.db['futurebarcol'].create_index([('bartime', pymongo.DESCENDING)], background=True)
 
+        last_minute = 0
         while True:
             # Getting last bar time from DB
-            last_bar_time = self.get_last_bar_time(db)
-            exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
-
-
-
-            # Fire new quote notification if last_bar_time > decision_time
-            if self.last_quote_date != last_bar_time.date() and last_bar_time > decision_time:
-                # Reporting current status
-                self.signalapp.send(MsgStatus('RUN', 'Processing new bar {0}'.format(last_bar_time)))
-                logging.info('Running new bar. Bar time: {0}'.format(last_bar_time))
-
-                context = {
-                    'last_bar_time': last_bar_time,
-                    'now': datetime.now(),
-                    'last_run_date': self.last_quote_date,
-                    'decision_time': decision_time,
-                    'execution_time': exec_time,
-                    'instrument': self.args.instrument,
-                }
-                logging.debug('Current context:\n {0}'.format(pp.pformat(context)))
-                self.signalapp.send(MsgQuoteNotification(self.args.instrument, last_bar_time, context))
-                self.last_quote_date = last_bar_time.date()
-            else:
-                dtnow = datetime.now()
-                context = {
-                    'last_bar_time': last_bar_time,
-                    'now': dtnow,
-                    'last_run_date': self.last_quote_date,
-                    'decision_time': decision_time,
-                    'execution_time': exec_time,
-                    'instrument': self.args.instrument,
-                }
-
-                # Log initial information:
-                if self.last_minute == -1:
-                    logging.debug('Current context:\n {0}'.format(pp.pformat(context)))
-                elif self.last_minute != dtnow.minute:
-                    logging.debug('Last bar time {0}'.format(last_bar_time))
-
-                self.last_minute = dtnow.minute
-                self.signalapp.send(MsgStatus('IDLE', 'Last bar time {0}'.format(last_bar_time), context))
+            last_bar_time = self.get_last_bar_time()
+            self.process_quote(last_bar_time)
             time.sleep(15)
 
+    def is_quote_delayed(self, last_bar_time):
+        dtnow = self.date_now()
+        if bdateutil.isbday(dtnow, holidays=holidays.US()) and dtnow.hour > 8 and dtnow.hour < 13:
+            if int(abs((dtnow-last_bar_time).total_seconds() / 60.0)) > self.args.delay:
+                return True
 
+        return False
+
+    def process_quote(self, last_bar_time):
+        dtnow = self.date_now()
+
+        exec_time, decision_time = AssetIndexMongo.get_exec_time(dtnow, self.asset_info)
+        if self.last_quote_date is None:
+            self.last_quote_date = self.get_last_quote_date()
+
+        if self.is_quote_delayed(last_bar_time):
+            if self.last_minute != dtnow.minute:
+                logging.info('Quote delayed more than {0} minutes '
+                             'for {1} LastBarTimeDB: {2} Now: {3}'.format(self.args.delay,
+                                                                          self.args.instrument,
+                                                                          last_bar_time,
+                                                                          dtnow))
+
+                self.signalapp.send(MsgStatus('DELAY',
+                                              'Quote delayed more than {0} minutes '
+                                              'for {1} LastBarTimeDB: {2} Now: {3}'.format(self.args.delay,
+                                                                                           self.args.instrument,
+                                                                                           last_bar_time,
+                                                                                           dtnow)))
+        logging.info('Running new bar. Bar time: {0}'.format(last_bar_time))
+
+        # Fire new quote notification if last_bar_time > decision_time
+        if self.last_quote_date.date() != last_bar_time.date() and last_bar_time > decision_time:
+            # Reporting current status
+            self.signalapp.send(MsgStatus('RUN', 'Processing new bar {0}'.format(last_bar_time)))
+            logging.info('Running new bar. Bar time: {0}'.format(last_bar_time))
+            self.last_quote_date = last_bar_time
+            context = {
+                'last_bar_time': last_bar_time,
+                'now': dtnow,
+                'last_run_date': self.last_quote_date.date(),
+                'decision_time': decision_time,
+                'execution_time': exec_time,
+                'instrument': self.args.instrument,
+            }
+            logging.debug('Current context:\n {0}'.format(self.pprinter.pformat(context)))
+            self.signalapp.send(MsgQuoteNotification(self.args.instrument, last_bar_time, context))
+            self.set_last_quote_state(context)
+
+        else:
+            context = {
+                'last_bar_time': last_bar_time,
+                'now': dtnow,
+                'last_run_date': self.last_quote_date.date(),
+                'decision_time': decision_time,
+                'execution_time': exec_time,
+                'instrument': self.args.instrument,
+            }
+
+            # Log initial information:
+            if self.last_minute == -1:
+                logging.debug('Current context:\n {0}'.format(self.pprinter.pformat(context)))
+            elif self.last_minute != dtnow.minute:
+                logging.debug('Last bar time {0}'.format(last_bar_time))
+
+            self.last_minute = dtnow.minute
+            self.signalapp.send(MsgStatus('IDLE', 'Last bar time {0}'.format(last_bar_time), context))
 
 
 # Standard boilerplate to call the main() function to begin
@@ -134,6 +171,13 @@ if __name__ == '__main__':
         "--verbose",
         help="increase output verbosity",
         action="store_true")
+
+    parser.add_argument(
+        "-D",
+        "--delay",
+        help="Delay warning interval in minutes default: %(default)s minutes",
+        action="store",
+        default=3)
 
 
     parser.add_argument('instrument', type=str,
