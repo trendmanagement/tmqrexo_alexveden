@@ -35,7 +35,7 @@ except SystemError:
         pass
     pass
 
-STATUS_COLLECTION = 'status_quotes'
+
 NULL_DATE = datetime(1900, 1, 1, 0, 0, 0)
 
 
@@ -54,7 +54,7 @@ class QuotesNotifyScript:
 
 
     def get_last_quote_date(self):
-        document = self.status_db[STATUS_COLLECTION].find_one({'instrument': self.args.instrument})
+        document = self.status_db[STATUS_QUOTES_COLLECTION].find_one({'instrument': self.args.instrument})
         if document is not None and 'last_bar_time' in document:
             return document['last_bar_time']
         else:
@@ -63,12 +63,13 @@ class QuotesNotifyScript:
 
     def set_last_quote_state(self, context, update):
         if not update:
-            self.status_db[STATUS_COLLECTION].replace_one({'instrument': context['instrument']}, context, upsert=True)
+            self.status_db[STATUS_QUOTES_COLLECTION].replace_one({'instrument': context['instrument']}, context, upsert=True)
         else:
-            self.status_db[STATUS_COLLECTION].update_one({'instrument': context['instrument']}, {
+            self.status_db[STATUS_QUOTES_COLLECTION].update_one({'instrument': context['instrument']}, {
                 '$set': {
                     'last_bar_time': context['last_bar_time'],
                     'now': context['now'],
+                    'quote_status': context['quote_status']
                 }
             })
 
@@ -101,7 +102,7 @@ class QuotesNotifyScript:
 
         status_client = MongoClient(MONGO_CONNSTR)
         self.status_db = status_client[MONGO_EXO_DB]
-        self.status_db[STATUS_COLLECTION].create_index([('instrument', pymongo.DESCENDING)], background=True)
+        self.status_db[STATUS_QUOTES_COLLECTION].create_index([('instrument', pymongo.DESCENDING)], background=True)
 
         last_minute = 0
         while True:
@@ -125,6 +126,8 @@ class QuotesNotifyScript:
         if self.last_quote_date is None:
             self.last_quote_date = self.get_last_quote_date()
 
+        quote_status = 'IDLE'
+
         if self.is_quote_delayed(last_bar_time):
             if self.last_minute != dtnow.minute:
                 logging.info('Quote delayed more than {0} minutes '
@@ -139,10 +142,13 @@ class QuotesNotifyScript:
                                                                                            self.args.instrument,
                                                                                            last_bar_time,
                                                                                            dtnow)))
+                quote_status = 'DELAY'
         logging.info('Running new bar. Bar time: {0}'.format(last_bar_time))
 
         # Fire new quote notification if last_bar_time > decision_time
         if self.last_quote_date.date() != last_bar_time.date() and last_bar_time > decision_time:
+            if quote_status != 'DELAY':
+                quote_status = 'RUN'
             # Reporting current status
             self.signalapp.send(MsgStatus('RUN', 'Processing new bar {0}'.format(last_bar_time)))
             logging.info('Running new bar. Bar time: {0}'.format(last_bar_time))
@@ -154,6 +160,7 @@ class QuotesNotifyScript:
                 'decision_time': decision_time,
                 'execution_time': exec_time,
                 'instrument': self.args.instrument,
+                'quote_status': quote_status,
             }
             logging.debug('Current context:\n {0}'.format(self.pprinter.pformat(context)))
             self.signalapp.send(MsgQuoteNotification(self.args.instrument, last_bar_time, context))
@@ -167,6 +174,7 @@ class QuotesNotifyScript:
                 'decision_time': decision_time,
                 'execution_time': exec_time,
                 'instrument': self.args.instrument,
+                'quote_status': quote_status,
             }
 
             if self.last_quote_date == NULL_DATE:

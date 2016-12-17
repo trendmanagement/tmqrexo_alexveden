@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 from pymongo import MongoClient
 
-from scripts.quotes_notification import QuotesNotifyScript, STATUS_COLLECTION
+from scripts.quotes_notification import QuotesNotifyScript, STATUS_QUOTES_COLLECTION
 from scripts.settings import *
 from scripts.settings_local import *
 from tradingcore.messages import *
@@ -224,10 +224,11 @@ class QuotesNotificationTestCase(unittest.TestCase):
                 'decision_time': datetime.datetime(2016, 2, 1, 12, 47, 00),
                 'execution_time': datetime.datetime(2016, 2, 1, 12, 47, 00),
                 'instrument': qn.args.instrument,
+                'quote_status': 'RUN',
             }
             qn.set_last_quote_state(context, update=False)
 
-            d = qn.status_db[STATUS_COLLECTION].find_one({'instrument': qn.args.instrument})
+            d = qn.status_db[STATUS_QUOTES_COLLECTION].find_one({'instrument': qn.args.instrument})
             del d['_id']
 
             context_update = {
@@ -237,9 +238,10 @@ class QuotesNotificationTestCase(unittest.TestCase):
                 'decision_time': datetime.datetime(2016, 2, 1, 12, 48, 00),
                 'execution_time': datetime.datetime(2016, 2, 1, 12, 48, 00),
                 'instrument': qn.args.instrument,
+                'quote_status': 'IDLE',
             }
             qn.set_last_quote_state(context_update, update=True)
-            d = qn.status_db[STATUS_COLLECTION].find_one({'instrument': qn.args.instrument})
+            d = qn.status_db[STATUS_QUOTES_COLLECTION].find_one({'instrument': qn.args.instrument})
             self.assertEqual(d['last_bar_time'], datetime.datetime(2016, 2, 1, 12, 48, 00))
             self.assertEqual(d['now'], datetime.datetime(2016, 2, 1, 12, 48, 00))
             self.assertEqual(d['last_run_date'], datetime.datetime(2016, 2, 1, 12, 47, 00))
