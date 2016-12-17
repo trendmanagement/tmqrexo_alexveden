@@ -35,6 +35,9 @@ except SystemError:
         pass
     pass
 
+STATUS_COLLECTION = 'status_quotes'
+NULL_DATE = datetime(1900, 1, 1, 0, 0, 0)
+
 
 class QuotesNotifyScript:
     def __init__(self, args, loglevel):
@@ -51,10 +54,24 @@ class QuotesNotifyScript:
 
 
     def get_last_quote_date(self):
-        raise NotImplementedError()
+        document = self.status_db[STATUS_COLLECTION].find_one({'instrument': self.args.instrument})
+        if document is not None and 'last_bar_time' in document:
+            return document['last_bar_time']
+        else:
+            return NULL_DATE
 
-    def set_last_quote_state(self, context):
-        raise NotImplementedError()
+
+    def set_last_quote_state(self, context, update):
+        if not update:
+            self.status_db[STATUS_COLLECTION].replace_one({'instrument': context['instrument']}, context, upsert=True)
+        else:
+            self.status_db[STATUS_COLLECTION].update_one({'instrument': context['instrument']}, {
+                '$set': {
+                    'last_bar_time': context['last_bar_time'],
+                    'now': context['now'],
+                }
+            })
+
 
     def get_last_bar_time(self):
         last_bar_time = self.db['futurebarcol'].find({'errorbar': False}).sort('bartime', pymongo.DESCENDING).limit(1).next()['bartime']
@@ -81,6 +98,10 @@ class QuotesNotifyScript:
         self.db = client[mongo_db_name]
         # Creating index for 'bartime'
         self.db['futurebarcol'].create_index([('bartime', pymongo.DESCENDING)], background=True)
+
+        status_client = MongoClient(MONGO_CONNSTR)
+        self.status_db = status_client[MONGO_EXO_DB]
+        self.status_db[STATUS_COLLECTION].create_index([('instrument', pymongo.DESCENDING)], background=True)
 
         last_minute = 0
         while True:
@@ -129,24 +150,30 @@ class QuotesNotifyScript:
             context = {
                 'last_bar_time': last_bar_time,
                 'now': dtnow,
-                'last_run_date': self.last_quote_date.date(),
+                'last_run_date': self.last_quote_date,
                 'decision_time': decision_time,
                 'execution_time': exec_time,
                 'instrument': self.args.instrument,
             }
             logging.debug('Current context:\n {0}'.format(self.pprinter.pformat(context)))
             self.signalapp.send(MsgQuoteNotification(self.args.instrument, last_bar_time, context))
-            self.set_last_quote_state(context)
+            self.set_last_quote_state(context, update=False)
 
         else:
             context = {
                 'last_bar_time': last_bar_time,
                 'now': dtnow,
-                'last_run_date': self.last_quote_date.date(),
+                'last_run_date': self.last_quote_date,
                 'decision_time': decision_time,
                 'execution_time': exec_time,
                 'instrument': self.args.instrument,
             }
+
+            if self.last_quote_date == NULL_DATE:
+                # If quote is absent is status_quotes collection, insert new
+                self.set_last_quote_state(context, update=False)
+            else:
+                self.set_last_quote_state(context, update=True)
 
             # Log initial information:
             if self.last_minute == -1:

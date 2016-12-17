@@ -1,10 +1,16 @@
-import unittest
-from scripts.quotes_notification import QuotesNotifyScript
 import logging
-import datetime
 import pprint
+import unittest
 from unittest.mock import Mock, patch
+
+from pymongo import MongoClient
+
+from scripts.quotes_notification import QuotesNotifyScript, STATUS_COLLECTION
+from scripts.settings import *
+from scripts.settings_local import *
+from tradingcore.messages import *
 from tradingcore.signalapp import SignalApp
+import datetime
 
 class QuotesNotificationTestCase(unittest.TestCase):
     def test_init(self):
@@ -52,7 +58,7 @@ class QuotesNotificationTestCase(unittest.TestCase):
             self.assertEqual(msg.context['execution_time'], mock_get_exec_time.return_value[0])
             self.assertEqual(msg.context['instrument'], mock_args.instrument)
             self.assertEqual(msg.context['last_bar_time'], last_bt)
-            self.assertEqual(msg.context['last_run_date'], mock_now.return_value.date())
+            self.assertEqual(msg.context['last_run_date'], last_bt)
             self.assertEqual(msg.context['now'], mock_now.return_value)
 
 
@@ -201,6 +207,44 @@ class QuotesNotificationTestCase(unittest.TestCase):
 
             mock_now.return_value = datetime.datetime(2016, 2, 1, 13, 0, 0)
             self.assertEqual(qn.is_quote_delayed(datetime.datetime(2016, 2, 1, 12, 47, 00)), False)
+
+    def test_set_last_quote_state_real(self):
+            mock_args = Mock()
+            mock_args.instrument = 'TEST'
+            mock_args.delay = 3
+
+            qn = QuotesNotifyScript(mock_args, logging.DEBUG)
+            status_client = MongoClient(MONGO_CONNSTR)
+            qn.status_db = status_client[MONGO_EXO_DB]
+
+            context = {
+                'last_bar_time': datetime.datetime(2016, 2, 1, 12, 47, 00),
+                'now': datetime.datetime(2016, 2, 1, 12, 47, 00),
+                'last_run_date': datetime.datetime(2016, 2, 1, 12, 47, 00),
+                'decision_time': datetime.datetime(2016, 2, 1, 12, 47, 00),
+                'execution_time': datetime.datetime(2016, 2, 1, 12, 47, 00),
+                'instrument': qn.args.instrument,
+            }
+            qn.set_last_quote_state(context, update=False)
+
+            d = qn.status_db[STATUS_COLLECTION].find_one({'instrument': qn.args.instrument})
+            del d['_id']
+
+            context_update = {
+                'last_bar_time': datetime.datetime(2016, 2, 1, 12, 48, 00),
+                'now': datetime.datetime(2016, 2, 1, 12, 48, 00),
+                'last_run_date': datetime.datetime(2016, 2, 1, 12, 48, 00),
+                'decision_time': datetime.datetime(2016, 2, 1, 12, 48, 00),
+                'execution_time': datetime.datetime(2016, 2, 1, 12, 48, 00),
+                'instrument': qn.args.instrument,
+            }
+            qn.set_last_quote_state(context_update, update=True)
+            d = qn.status_db[STATUS_COLLECTION].find_one({'instrument': qn.args.instrument})
+            self.assertEqual(d['last_bar_time'], datetime.datetime(2016, 2, 1, 12, 48, 00))
+            self.assertEqual(d['now'], datetime.datetime(2016, 2, 1, 12, 48, 00))
+            self.assertEqual(d['last_run_date'], datetime.datetime(2016, 2, 1, 12, 47, 00))
+            self.assertEqual(d['decision_time'], datetime.datetime(2016, 2, 1, 12, 47, 00))
+            self.assertEqual(d['decision_time'], datetime.datetime(2016, 2, 1, 12, 47, 00))
 
 
 if __name__ == '__main__':
