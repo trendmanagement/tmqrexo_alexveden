@@ -385,6 +385,7 @@ if __name__ == '__main__':
     install_trading_script()
 
     # Install WatchdogBot
+    install_watchdog_bot()
 
     # Setting up CRON scripts
     install_cron_alpha_rebalancer()
