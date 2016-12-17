@@ -327,6 +327,36 @@ python3.5 {current_path}/{script_file} -v --logfile={log_file}
 
     os.system('chmod +x {0}'.format(file_name))
 
+def install_watchdog_bot():
+
+    supervisor_conf_template = """[program:WATCHDOG_BOT]
+command=python3.5 {script_file} -v
+stderr_logfile={stderr_log}
+stderr_logfile_maxbytes=1MB
+
+stdout_logfile={stdout_log}
+stdout_logfile_maxbytes=1MB
+directory={current_path}
+startsecs=30
+autostart=true
+startretries=5
+environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
+"""
+
+
+    file_contents = supervisor_conf_template.format(**{
+        'script_file': 'watchdogbot.py',
+        'stdout_log': os.path.join(current_path, 'logs', 'trading', 'watchdogbot_stdout.log'),
+        'stderr_log': os.path.join(current_path, 'logs', 'trading', 'watchdogbot_stderr.log'),
+        'current_path': current_path,
+        'tmqrpath': TMQRPATH,
+        'pythonpath': PYTHONPATH,
+    })
+
+    file_name = 'watchdog_bot.conf'
+    print('install_watchdog_bot(): Writing '+file_name)
+    with open(os.path.join(current_path, supervisor_config_dir, file_name), 'w') as fh:
+        fh.write(file_contents)
 
 
 if __name__ == '__main__':
@@ -353,6 +383,8 @@ if __name__ == '__main__':
     install_alphas_online()
     install_alphas_custom()
     install_trading_script()
+
+    # Install WatchdogBot
 
     # Setting up CRON scripts
     install_cron_alpha_rebalancer()
