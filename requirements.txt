@@ -1,3 +1,4 @@
 pymongo
 pika
 slackclient
+tqdm
