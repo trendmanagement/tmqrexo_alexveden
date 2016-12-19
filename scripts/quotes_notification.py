@@ -143,7 +143,6 @@ class QuotesNotifyScript:
                                                                                            last_bar_time,
                                                                                            dtnow)))
                 quote_status = 'DELAY'
-        logging.info('Running new bar. Bar time: {0}'.format(last_bar_time))
 
         # Fire new quote notification if last_bar_time > decision_time
         if self.last_quote_date.date() != last_bar_time.date() and last_bar_time > decision_time:
