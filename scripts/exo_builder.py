@@ -143,6 +143,9 @@ class EXOScript:
 
 
     def on_new_quote(self, appclass, appname, data):
+        if data.mtype != MsgQuoteNotification.mtype:
+            return
+
         # Check data integrity
         if not self.check_quote_data(appname, appclass, data):
             return

@@ -5,6 +5,8 @@ import sys
 from pika.credentials import PlainCredentials
 from datetime import datetime
 from tradingcore.messages import MsgBase
+import json
+from bson import json_util
 
 RABBIT_EXCHANGE = "TMQR_SIGNALS"
 
@@ -263,37 +265,7 @@ class SignalApp(object):
         if self._channel:
             self._channel.close()
 
-    def on_message(self, unused_channel, method, properties, body):
-        """Invoked by pika when a message is delivered from RabbitMQ. The
-        channel is passed for your convenience. The basic_deliver object that
-        is passed in carries the exchange, routing key, delivery tag and
-        a redelivered flag for the message. The properties passed in is an
-        instance of BasicProperties with the message properties and the body
-        is the message that was sent.
 
-        :param pika.channel.Channel unused_channel: The channel object
-        :param pika.Spec.Basic.Deliver: basic_deliver method
-        :param pika.Spec.BasicProperties: properties
-        :param str|unicode body: The message body
-
-        """
-        LOGGER.info('Received message # %s from %s: %s',
-                    method.delivery_tag, properties.app_id, body)
-
-        if '.' not in method.routing_key:
-            raise ValueError('Bad routing key format: {0}'.format(method.routing_key))
-
-        tok = method.routing_key.split('.')
-        if len(tok) != 2:
-            raise ValueError('Bad routing key format: {0}'.format(method.routing_key))
-
-        data_object = pickle.loads(body)
-        appclass = tok[0]
-        appname = tok[1]
-        if self.listen_callback is not None:
-            self.listen_callback(appclass, appname, data_object)
-
-        self.acknowledge_message(method.delivery_tag)
 
     def acknowledge_message(self, delivery_tag):
         """Acknowledge the message delivery from RabbitMQ by sending a
@@ -334,14 +306,6 @@ class SignalApp(object):
         LOGGER.info('Closing the channel')
         self._channel.close()
 
-    def listen(self, callback):
-        """Run the example consumer by connecting to RabbitMQ and then
-        starting the IOLoop to block and allow the SelectConnection to operate.
-
-        """
-        self.listen_callback = callback
-        self._connection = self.connect()
-        self._connection.ioloop.start()
 
     def stop(self):
         """Cleanly shutdown the connection to RabbitMQ by stopping the consumer
@@ -357,7 +321,7 @@ class SignalApp(object):
         LOGGER.info('Stopping')
         self._closing = True
         self.stop_consuming()
-        self._connection.ioloop.start()
+        self._connection.ioloop.stop()
         LOGGER.info('Stopped')
 
     def close_connection(self):
@@ -402,6 +366,61 @@ class SignalApp(object):
                                   routing_key='{0}.{1}'.format(appclass, appname),
                                   body=pickle.dumps(data))
         connection.close()
+
+    def listen(self, callback):
+        """Run the example consumer by connecting to RabbitMQ and then
+        starting the IOLoop to block and allow the SelectConnection to operate.
+
+        """
+        self.listen_callback = callback
+        self._connection = self.connect()
+        self._connection.ioloop.start()
+
+    def on_message(self, unused_channel, method, properties, body):
+        """Invoked by pika when a message is delivered from RabbitMQ. The
+        channel is passed for your convenience. The basic_deliver object that
+        is passed in carries the exchange, routing key, delivery tag and
+        a redelivered flag for the message. The properties passed in is an
+        instance of BasicProperties with the message properties and the body
+        is the message that was sent.
+
+        :param pika.channel.Channel unused_channel: The channel object
+        :param pika.Spec.Basic.Deliver: basic_deliver method
+        :param pika.Spec.BasicProperties: properties
+        :param str|unicode body: The message body
+
+        """
+        LOGGER.info('Received message # %s from %s: %s',
+                    method.delivery_tag, properties.app_id, body)
+
+        self.acknowledge_message(method.delivery_tag)
+
+        if '.' not in method.routing_key:
+            LOGGER.error('Bad routing key format: {0}'.format(method.routing_key))
+            return
+
+        tok = method.routing_key.split('.')
+        if len(tok) != 2:
+            LOGGER.error('Bad routing key format: {0}'.format(method.routing_key))
+            return
+
+        appclass = tok[0]
+        appname = tok[1]
+
+        try:
+            # This is pickled dictionary
+            data_object = MsgBase(pickle.loads(body))
+        except TypeError:
+            try:
+                data_object = MsgBase(json.loads(body, object_hook=json_util.object_hook))
+            except:
+                LOGGER.error('Failed to load JSON from {0}'.format(body))
+                return
+
+        if self.listen_callback is not None:
+            self.listen_callback(appclass, appname, data_object)
+
+
 
 
 

@@ -70,8 +70,7 @@ class AlphaOnlineScript:
 
         self.signal_app.send(MsgAlphaState(swm))
 
-    def on_exo_quote_callback(self, appclass, appname, data_object):
-        msg = MsgBase(data_object)
+    def on_exo_quote_callback(self, appclass, appname, msg):
 
         # Make sure that is valid EXO quote message
         if msg.mtype == MsgEXOQuote.mtype:

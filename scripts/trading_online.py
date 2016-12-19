@@ -67,12 +67,11 @@ class TradingOnlineScript:
 
 
 
-    def on_alpha_state_callback(self, appclass, appname, data_object):
-        msg = MsgBase(data_object)
+    def on_alpha_state_callback(self, appclass, appname, msg):
 
         # Make sure that is valid EXO quote message
         if msg.mtype == MsgAlphaState.mtype:
-            self.log.debug('on_alpha_signal_callback: {0}.{1} Data: {2}'.format(appname, appclass, data_object))
+            self.log.debug('on_alpha_signal_callback: {0}.{1} Data: {2}'.format(appname, appclass, msg))
             self.log.info('Processing Alpha state of: {0} at {1}'.format(msg.swarm_name, msg.last_date))
             try:
                 # Processing positions for each campaign/account

@@ -1,8 +1,10 @@
 from slackclient import SlackClient
 import time
-import asyncio
 from pymongo import MongoClient
 from io import StringIO
+from tradingcore.signalapp import SignalApp
+from tradingcore.messages import *
+from concurrent.futures import  ThreadPoolExecutor, thread
 
 try:
     from .settings import *
@@ -55,7 +57,6 @@ class WatchdogBot:
         `help` - displays this message
 
         *Status information:*
-        `status` - brief status of the system
         `status quotes` - quotes status per product
         """)
 
@@ -76,8 +77,20 @@ class WatchdogBot:
         else:
             self.command_default()
 
-    @asyncio.coroutine
+    def listen_apps(self):
+        print("Listening for events")
+        app = SignalApp('*', '*')
+
+        def callback(appclass, appname, msg):
+            if msg.mtype == MsgStatus.mtype:
+                if msg.notify:
+                    self.send_message("{0}.{1}: {2}".format(appclass, appname, msg))
+                print("{0}.{1}: {2}".format(appclass, appname, msg))
+
+        app.listen(callback)
+
     def run_bot(self):
+        print("Launching bot")
         if self.client.rtm_connect():
             while True:
                 data = self.client.rtm_read()
@@ -93,5 +106,14 @@ class WatchdogBot:
 
 if __name__ == '__main__':
     wd = WatchdogBot(SLACK_CHANNEL)
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(wd.run_bot())
+
+    with ThreadPoolExecutor(max_workers=4) as e:
+        try:
+            e.submit(wd.run_bot)
+            e.submit(wd.listen_apps)
+        except KeyboardInterrupt:
+            e.shutdown(wait=False)
+            e._threads.clear()
+            thread._threads_queues.clear()
+            raise
+

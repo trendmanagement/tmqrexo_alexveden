@@ -18,15 +18,19 @@ class MsgBase:
         self.__dict__['mtype'] = self.mtype
         return self.__dict__
 
+    def __str__(self):
+        return str(self.as_dict())
+
 
 class MsgStatus(MsgBase):
     mtype = 'status'
 
-    def __init__(self, status, message, context={}):
+    def __init__(self, status, message, context={}, notify=False):
         super().__init__()
         self.message = message
         self.status = status
         self.context = context
+        self.notify = notify
 
 class MsgQuoteNotification(MsgBase):
     mtype = 'quote'
