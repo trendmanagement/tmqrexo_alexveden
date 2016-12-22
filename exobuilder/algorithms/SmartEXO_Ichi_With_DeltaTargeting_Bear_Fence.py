@@ -26,7 +26,7 @@ class SmartEXO_Ichi_Bearish_Fence(SmartEXOIchi):
     EXO_NAME = 'SmartEXO_Ichi_Class_Based_Bearish_Fence_Dec19'
 
     # select instruments list for SMART EXO calculation
-    # ASSET_LIST  = [ 'ZS', 'ZW', 'ZN']
+
 
     def __init__(self, symbol, direction, date, datasource, **kwargs):
         super().__init__(symbol, direction, date, datasource,
