@@ -8,6 +8,7 @@ EXO start date: 2011-06-01
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
 import os
+from scripts.settings_exo import INSTRUMENTS_LIST
 
 try:
     from .settings import *
