@@ -105,7 +105,7 @@ class EXOScript:
             self.logger.error("Unexpected APP class message: {0}".format(data))
             return False
 
-        if data is None or len(data) == 0:
+        if data is None:
             self.logger.error("Empty message")
             return False
         else:
