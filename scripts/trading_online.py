@@ -71,6 +71,8 @@ class TradingOnlineScript:
 
         # Make sure that is valid EXO quote message
         if msg.mtype == MsgAlphaState.mtype:
+            self.signal_app.send(MsgStatus("RUN", "Processing account positions"))
+
             self.log.debug('on_alpha_signal_callback: {0}.{1} Data: {2}'.format(appname, appclass, msg))
             self.log.info('Processing Alpha state of: {0} at {1}'.format(msg.swarm_name, msg.last_date))
             try:
@@ -83,6 +85,9 @@ class TradingOnlineScript:
                 self.signal_app.send(MsgAlphaSignal(msg, pos_list))
             except:
                 self.log.exception("Error in processing account positions")
+                self.signal_app.send(MsgStatus("ERROR",
+                                               "Error while processing account positions",
+                                               notify=True) )
 
 
     def main(self):

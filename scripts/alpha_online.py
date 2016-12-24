@@ -91,6 +91,7 @@ class AlphaOnlineScript:
                 swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, context)
                 # Update and save swarm with new day data (and run callback)
                 swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
+                self.signal_app.send(MsgStatus("RUN", 'Processing generic alpha'))
             except:
                 self.log.exception("Error in processing EXO quote: {0}".format(msg.exo_name))
                 self.signal_app.send(MsgStatus("ERROR",
