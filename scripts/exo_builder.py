@@ -181,7 +181,14 @@ class EXOScript:
             self.run_exo_calc(datasource, decision_time, symbol, backfill_dict=None)
 
             end_time = time.time()
-            self.signalapp.send(MsgStatus('OK', 'EXO Processed', context={'instrument': symbol, 'date': quote_date, 'exec_time': end_time-start_time}))
+            self.signalapp.send(MsgStatus('OK',
+                                          'EXO processed for {0} at {1}'.format(symbol, quote_date),
+                                          context={'instrument': symbol,
+                                                   'date': quote_date,
+                                                   'exec_time': end_time-start_time},
+                                          notify=True
+                                          )
+                                )
 
         else:
             self.logger.debug("Waiting next decision time")
@@ -234,6 +241,10 @@ class EXOScript:
                                 self.signalapp.send(MsgEXOQuote(exo_engine.exo_name, decision_time))
                     except:
                         self.logger.exception("Failed processing EXO: {0} on {1}".format(ExoClass, symbol))
+                        self.signalapp.send(MsgStatus("ERROR",
+                                                      "Failed processing EXO: {0} on {1}".format(ExoClass, symbol),
+                                                      notify=True)
+                                            )
 
 
 
@@ -295,6 +306,10 @@ class EXOScript:
         if self.args.backfill is not None:
             # Backfill mode enabled
             self.do_backfill()
+            self.signalapp.send(MsgStatus("OK",
+                                          "EXO backfill for {0} has been finished.".format(self.args.instrument),
+                                          notify=True)
+                                )
         else:
             # Online mode
 

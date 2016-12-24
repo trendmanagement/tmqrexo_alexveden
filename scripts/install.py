@@ -390,7 +390,7 @@ if __name__ == '__main__':
     # Setting up CRON scripts
     install_cron_alpha_rebalancer()
     install_cron_assetindex_updater()
-    install_cron_trading_positions_archive()
+    #install_cron_trading_positions_archive()
 
     # Starting services
     time.sleep(3)

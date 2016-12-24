@@ -74,7 +74,7 @@ class AlphaOnlineScript:
 
         # Make sure that is valid EXO quote message
         if msg.mtype == MsgEXOQuote.mtype:
-            self.log.debug('on_exo_quote_callback: {0}.{1} Data: {2}'.format(appname, appclass, data_object))
+            self.log.debug('on_exo_quote_callback: {0}.{1} Data: {2}'.format(appname, appclass, msg))
 
             self.log.info('Processing EXO quote: {0} at {1}'.format(msg.exo_name, msg.exo_date))
             try:
@@ -93,6 +93,11 @@ class AlphaOnlineScript:
                 swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
             except:
                 self.log.exception("Error in processing EXO quote: {0}".format(msg.exo_name))
+                self.signal_app.send(MsgStatus("ERROR",
+                                               "Error while processing EXO quote: {0} for alpha {1}".format(msg.exo_name, self.alpha_name),
+                                               notify=True,
+                                               )
+                                     )
 
     def main(self):
         """

@@ -29,6 +29,8 @@ from tradingcore.execution_manager import ExecutionManager
 from tradingcore.messages import *
 import pprint
 import datetime
+import holidays
+import bdateutil
 
 class TradingPositionsArchiveScript:
     def __init__(self, args, loglevel):
@@ -66,12 +68,15 @@ class TradingPositionsArchiveScript:
         self.mongo_client = MongoClient(MONGO_CONNSTR)
         self.mongo_db = self.mongo_client[MONGO_EXO_DB]
 
-
     def run(self):
         """
         Application main()
         :return:
         """
+        if not bdateutil.isbday(datetime.datetime.now(), holidays=holidays.US()):
+            self.log.info("Run is skipped due to non business day")
+            return
+
         # Populating account positions
         operations = []
         update_date = 'N/A'
@@ -96,8 +101,19 @@ class TradingPositionsArchiveScript:
         try:
             bulk_result = self.mongo_db['accounts_positions_archive'].bulk_write(operations, ordered=False)
             self.log.info("Bulk write result succeed: \n{0}".format(pp.pformat(bulk_result.bulk_api_result)))
+
+            self.signal_app.send(MsgStatus("OK",
+                                           "Positions archive created",
+                                           notify=True,
+                                           )
+                                 )
         except BulkWriteError as exc:
             self.log.error("Bulk write error occured: {0}".format(pp.pformat(exc.details)))
+            self.signal_app.send(MsgStatus("ERROR",
+                                           "Positions archive error while writing to MongoDB",
+                                           notify=True,
+                                           )
+                                 )
 
 
 if __name__ == '__main__':

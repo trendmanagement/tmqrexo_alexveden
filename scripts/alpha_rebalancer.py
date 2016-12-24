@@ -36,6 +36,8 @@ from tradingcore.swarmonlinemanager import SwarmOnlineManager
 
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
+from tradingcore.messages import *
+from tradingcore.signalapp import SignalApp, APPCLASS_ALPHA
 
 
 TMQRPATH = os.getenv("TMQRPATH", '')
@@ -104,6 +106,8 @@ def main(args, loglevel):
     else:
         logging.basicConfig(filename=args.logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                             level=loglevel)
+    signalapp = SignalApp("AlphaRebalancerSingle", APPCLASS_ALPHA, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
+    signalapp.send(MsgStatus('INIT', 'Initiating alpha rebalancer script'))
 
     #exo_names = get_exo_names_mat()
     logging.getLogger("pika").setLevel(logging.WARNING)
@@ -153,6 +157,10 @@ def main(args, loglevel):
                             swmonline.save(swm)
                         except:
                             logging.exception('Exception occurred:')
+                            signalapp.send(MsgStatus('ERROR',
+                                                     'Exception in {0}'.format(
+                                                         Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX)),
+                                                     notify=True))
 
             elif 'alpha_' in module and '.py' in module:
                 logging.debug('Processing generic module: ' + module)
@@ -179,6 +187,10 @@ def main(args, loglevel):
                         swmonline.save(swm)
                 except:
                     logging.exception('Exception occurred:')
+                    signalapp.send(MsgStatus('ERROR',
+                                             'Exception in {0}'.format(
+                                                 Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX)),
+                                             notify=True))
 
     logging.info("Processing accounts positions")
     assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
@@ -187,6 +199,7 @@ def main(args, loglevel):
     exmgr = ExecutionManager(MONGO_CONNSTR, datasource, dbname=MONGO_EXO_DB)
     exmgr.account_positions_process(write_to_db=True)
 
+    signalapp.send(MsgStatus('DONE', 'Alpha rebalancer script ', notify=True))
     logging.info("Done.")
 
 if __name__ == '__main__':
