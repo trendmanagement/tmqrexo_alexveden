@@ -12,7 +12,10 @@ import subprocess
 import re
 import bdateutil
 import holidays
-from scripts.event_logger import EVENTS_STATUS, EVENTS_LOG
+
+EVENTS_STATUS = 'events_status'
+EVENTS_LOG = 'events_log'
+
 
 try:
     from .settings import *
