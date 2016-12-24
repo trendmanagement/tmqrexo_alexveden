@@ -87,21 +87,13 @@ class WatchdogBot:
         if self.check_antiflood(appclass, appname, msg, datetime.now()):
             self.send_message("{0}.{1}: [{2}] {3}".format(appclass, appname, msg.status,  msg.message))
 
-    def send_message(self, msg_text, attachments=None):
+    def send_message(self, msg_text):
         if self.client is not None:
-            if attachments is None:
-                self.client.api_call(
-                    "chat.postMessage",
-                    channel=self.channelid,
-                    text=msg_text
-                )
-            else:
-                self.client.api_call(
-                    "chat.postMessage",
-                    channel=self.channelid,
-                    text=msg_text,
-                    attachments=attachments
-                )
+            self.client.api_call(
+                "chat.postMessage",
+                channel=self.channelid,
+                text=msg_text
+            )
         else:
             logging.info("Trying to send message to null client: {0}".format(msg_text))
 

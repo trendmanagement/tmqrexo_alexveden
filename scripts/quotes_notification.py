@@ -141,7 +141,7 @@ class QuotesNotifyScript:
                                               'for {1} LastBarTimeDB: {2} Now: {3}'.format(self.args.delay,
                                                                                            self.args.instrument,
                                                                                            last_bar_time,
-                                                                                           dtnow)))
+                                                                                           dtnow), notify=True))
                 quote_status = 'DELAY'
 
         # Fire new quote notification if last_bar_time > decision_time
@@ -187,9 +187,10 @@ class QuotesNotifyScript:
                 logging.debug('Current context:\n {0}'.format(self.pprinter.pformat(context)))
             elif self.last_minute != dtnow.minute:
                 logging.debug('Last bar time {0}'.format(last_bar_time))
+                #self.signalapp.send(MsgStatus('IDLE', 'Last bar time {0}'.format(last_bar_time), context))
 
             self.last_minute = dtnow.minute
-            self.signalapp.send(MsgStatus('IDLE', 'Last bar time {0}'.format(last_bar_time), context))
+
 
 
 # Standard boilerplate to call the main() function to begin
