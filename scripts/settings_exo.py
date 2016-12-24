@@ -8,8 +8,8 @@ from exobuilder.algorithms.SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread im
 from exobuilder.algorithms.SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread import SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread
 from exobuilder.algorithms.SmartEXO_Ichi_DeltaTargeting_Dec3_Bull_Bull_Spread import SmartEXO_Ichi_DeltaTargeting_Dec3_Bull_Bull_Spread
 
-#from exobuilder.algorithms.smartexo_ichi_with_deltatargeting_bull_fence_v2 import SmartEXO_Ichi_Bullish_Fence
-#from exobuilder.algorithms.smartexo_ichi_with_deltatargeting_bear_fence_v2 import SmartEXO_Ichi_Bearish_Fence
+from exobuilder.algorithms.smartexo_ichi_with_deltatargeting_bull_fence_v2 import SmartEXO_Ichi_Bullish_Fence
+from exobuilder.algorithms.smartexo_ichi_with_deltatargeting_bear_fence_v2 import SmartEXO_Ichi_Bearish_Fence
 
 #
 # Instruments list
@@ -59,12 +59,12 @@ EXO_LIST = [
         'name': 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bull_Bull_Spread',
         'class': SmartEXO_Ichi_DeltaTargeting_Dec3_Bull_Bull_Spread,
     },
-    # {
-    #     'name': 'SmartEXO_Ichi_Class_Based_Bullish_Fence_Dec19',
-    #     'class': SmartEXO_Ichi_Bullish_Fence,
-    # },
-    # {
-    #     'name': 'SmartEXO_Ichi_Class_Based_Bearish_Fence_Dec19',
-    #     'class': SmartEXO_Ichi_Bearish_Fence,
-    # },
+    {
+        'name': 'SmartEXO_Ichi_Class_Based_Bullish_Fence_Dec19',
+        'class': SmartEXO_Ichi_Bullish_Fence,
+    },
+    {
+        'name': 'SmartEXO_Ichi_Class_Based_Bearish_Fence_Dec19',
+        'class': SmartEXO_Ichi_Bearish_Fence,
+    },
 ]
