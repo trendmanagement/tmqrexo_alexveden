@@ -384,7 +384,7 @@ environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
         'pythonpath': PYTHONPATH,
     })
 
-    file_name = 'watchdog_bot.conf'
+    file_name = 'event_logger.conf'
     print('install_event_logger(): Writing '+file_name)
     with open(os.path.join(current_path, supervisor_config_dir, file_name), 'w') as fh:
         fh.write(file_contents)
