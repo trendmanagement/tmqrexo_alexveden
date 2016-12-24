@@ -75,7 +75,7 @@ class AlphaOnlineScript:
         if msg.mtype == MsgEXOQuote.mtype:
             module = msg.exo_name.lower()
             if module == self.args.exoname.lower():
-                self.log.debug('on_exo_quote_callback: {0}.{1} Data: {2}'.format(appname, appclass, data_object))
+                self.log.debug('on_exo_quote_callback: {0}.{1} Data: {2}'.format(appname, appclass, msg))
                 if os.path.isdir(os.path.join('alphas', module)):
                     self.log.info('Processing EXO quote: {0} at {1}'.format(msg.exo_name, msg.exo_date))
                     for custom_file in os.listdir(os.path.join('alphas', module)):
@@ -95,8 +95,15 @@ class AlphaOnlineScript:
                                 swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, context)
                                 # Update and save swarm with new day data (and run callback)
                                 swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
+                                self.signal_app.send(MsgStatus("RUN", 'Processing custom alpha'))
                             except:
                                 self.log.exception("Failed to process EXO quote: {0}".format(msg.exo_name))
+                                self.signal_app.send(MsgStatus("ERROR",
+                                                               "Error while processing EXO quote: {0} for alpha {1}".format(
+                                                                   msg.exo_name, module + '.' + custom_file),
+                                                               notify=True,
+                                                               )
+                                                     )
 
     def main(self):
         """

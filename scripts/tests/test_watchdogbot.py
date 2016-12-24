@@ -11,10 +11,10 @@ class WatchBotTestCase(unittest.TestCase):
             wdb = WatchdogBot('')
 
             mock_cmd_output.return_value = None
-            self.assertEqual('N/A', wdb.check_status_apps())
+            self.assertEqual('N/A', wdb.check_supervisor_apps())
 
             mock_cmd_output.return_value = ''
-            self.assertEqual('N/A', wdb.check_status_apps())
+            self.assertEqual('N/A', wdb.check_supervisor_apps())
 
             mock_cmd_output.return_value = """
 QUOTES_ZW                                                                      FATAL     Exited too quickly (process log may have details)
@@ -24,7 +24,7 @@ gunicorn_webui                                                                 R
 jupyter_notebook                                                               RUNNING   pid 6080, uptime 4:20:35
 
             """
-            self.assertEqual('FATAL:2 RUNNING:3 ', wdb.check_status_apps())
+            self.assertEqual('FATAL:2 RUNNING:3 ', wdb.check_supervisor_apps())
 
 
     def test_antiflood(self):

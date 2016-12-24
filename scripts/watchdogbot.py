@@ -13,6 +13,9 @@ import re
 import bdateutil
 import holidays
 
+EVENTS_STATUS = 'events_status'
+EVENTS_LOG = 'events_log'
+
 
 try:
     from .settings import *
@@ -106,7 +109,7 @@ class WatchdogBot:
             self.log.error("Failed to run command {0} output:\n {1}".format(cmd_args, exc.output))
             return None
 
-    def check_status_apps(self):
+    def check_supervisor_apps(self):
         """
         Process 'supervisorctl status' output and get statistict
         :return:
@@ -138,18 +141,32 @@ class WatchdogBot:
                     buff.write("{0}:{1} ".format(k, v))
                 return buff.getvalue()
 
+    def check_current_scripts_status(self):
+        statuses = OrderedDict()
+        for status_rec in self.status_db[EVENTS_STATUS].find({}):
+            status = status_rec['status']
+            statuses.setdefault(status, 0)
+            statuses[status] += 1
+
+        with StringIO() as buff:
+            for k, v in statuses.items():
+                buff.write("{0}:{1} ".format(k, v))
+            return buff.getvalue()
+
 
 
     def command_status(self):
         with StringIO() as buff:
             buff.write("System status summary:\n")
             buff.write("```")
-            buff.write("Supervisor scripts status: {0}\n".format(self.check_status_apps()))
+            buff.write("Supervisor scripts status: {0}\n".format(self.check_supervisor_apps()))
+            buff.write("Apps status: {0}\n".format(self.check_current_scripts_status()))
             buff.write("```")
             self.send_message(buff.getvalue())
 
 
-    def command_status_apps(self):
+
+    def command_status_supervisor(self):
         output = self.get_shell_command_output(['supervisorctl', 'status'])
         if output is None:
             self.send_message("`supervisorctl status` execution failed, look into log for more information")
@@ -160,6 +177,7 @@ class WatchdogBot:
                 buff.write(output)
                 buff.write("```")
                 self.send_message(buff.getvalue())
+
 
 
     def command_status_quotes(self):
@@ -185,11 +203,55 @@ class WatchdogBot:
         *Status information:*
         `status` - System status summary
         `status quotes` - Quotes status per product
-        `status apps` - Status of running applications
+        `status apps` - Last internal status of scripts
+        `status supervisor` - Status of running applications inside Supervisor daemon
+
+        *Events log information:*
+        `events log <count>` - returns <count> records of last occurred events
         """)
 
     def command_default(self):
         self.send_message("Type `help` to get commands description")
+
+    def command_status_apps(self):
+
+        with StringIO() as buff:
+            buff.write("Last status:\n")
+            buff.write("```")
+            for status_rec in self.status_db[EVENTS_STATUS].find({}).sort([("appclass", 1), ("appname", 1)]):
+                status = status_rec['status']
+                msg = status_rec['text']
+
+                buff.write("{0:<15}{1:<30}{2:>10}   {3}\n".format(
+                    status_rec['date'].strftime('%d-%b %H:%M'),
+                    status_rec['appclass'] + '.' + status_rec['appname'],
+                    status,
+                    msg
+                ))
+            buff.write("```")
+            return self.send_message(buff.getvalue())
+
+    def command_events_log(self, msg):
+        try:
+            count = int(msg.split()[2])
+        except:
+            return self.send_message("Bad syntax, try to type `events log 20`")
+
+        with StringIO() as buff:
+            buff.write("Last events:\n")
+            buff.write("```")
+            for status_rec in self.status_db[EVENTS_LOG].find({}).sort([("date", -1)]).limit(count):
+                msg = status_rec['text']
+
+                buff.write("{0:<15}{1:<50}{2:>15}   {3}\n".format(
+                    status_rec['date'].strftime('%d-%b %H:%M'),
+                    status_rec['appclass'] + '.' + status_rec['appname'],
+                    status_rec['msgtype'],
+                    msg
+                ))
+            buff.write("```")
+            return self.send_message(buff.getvalue())
+
 
     def process_message(self, msg_data):
         msg = msg_data['text'].lower().strip()
@@ -206,6 +268,10 @@ class WatchdogBot:
             self.command_status_quotes()
         elif msg == 'status apps':
             self.command_status_apps()
+        elif msg == 'status supervisor':
+            self.command_status_supervisor()
+        elif 'events log' in msg:
+            self.command_events_log(msg)
         else:
             self.command_default()
 

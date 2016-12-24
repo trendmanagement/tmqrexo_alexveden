@@ -16,7 +16,7 @@ APPCLASS_DATA = 'DataFeed'
 APPCLASS_EXO = "ExoEngine"
 APPCLASS_ALPHA = "AlphaStrategy"
 APPCLASS_SIGNALS = "Signals"
-APPCLASS_MISC  = 'Misc'
+APPCLASS_UTILS  = 'Utils'
 
 import logging
 import pika

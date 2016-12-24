@@ -95,8 +95,12 @@ class ExecutionManager:
         # Get MoneyManagement class from pre-defined list (by name)
         mmclass = MM_CLASSES[acc_dict['mmclass_name']]
 
+        isactive = True
+        if 'isactive' in acc_dict:
+            isactive = acc_dict['isactive']
+
         # Return new Account class instance
-        return Account(acc_dict, acc_campaign, mmclass(acc_dict['info']))
+        return Account(acc_dict, acc_campaign, mmclass(acc_dict['info']), isactive)
 
     def account_positions_process(self, write_to_db=False):
         """
@@ -120,6 +124,8 @@ class ExecutionManager:
         for acc_dict in acc_list:
             # Create new account instance
             acc = self.account_process(acc_dict)
+            if not acc.isactive:
+                continue
             # Get account positions processed by MM algorithm
             acc_pos = acc.positions
 
