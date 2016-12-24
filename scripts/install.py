@@ -358,6 +358,36 @@ environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
     with open(os.path.join(current_path, supervisor_config_dir, file_name), 'w') as fh:
         fh.write(file_contents)
 
+def install_events_logger():
+
+    supervisor_conf_template = """[program:EVENT_LOGGER]
+command=python3.5 {script_file} -v
+stderr_logfile={stderr_log}
+stderr_logfile_maxbytes=1MB
+
+stdout_logfile={stdout_log}
+stdout_logfile_maxbytes=1MB
+directory={current_path}
+startsecs=10
+autostart=true
+startretries=5
+environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
+"""
+
+
+    file_contents = supervisor_conf_template.format(**{
+        'script_file': 'event_logger.py',
+        'stdout_log': os.path.join(current_path, 'logs', 'trading', 'event_logger_stdout.log'),
+        'stderr_log': os.path.join(current_path, 'logs', 'trading', 'event_logger_stderr.log'),
+        'current_path': current_path,
+        'tmqrpath': TMQRPATH,
+        'pythonpath': PYTHONPATH,
+    })
+
+    file_name = 'watchdog_bot.conf'
+    print('install_event_logger(): Writing '+file_name)
+    with open(os.path.join(current_path, supervisor_config_dir, file_name), 'w') as fh:
+        fh.write(file_contents)
 
 if __name__ == '__main__':
     print('TMQR Execution layer installation script')
@@ -384,8 +414,10 @@ if __name__ == '__main__':
     install_alphas_custom()
     install_trading_script()
 
-    # Install WatchdogBot
+    # Install watcher scripts
     install_watchdog_bot()
+    install_events_logger()
+
 
     # Setting up CRON scripts
     install_cron_alpha_rebalancer()

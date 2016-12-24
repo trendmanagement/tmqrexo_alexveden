@@ -5,7 +5,7 @@ Scheduled script for account positions archiving
 """
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
-from tradingcore.signalapp import SignalApp, APPCLASS_MISC
+from tradingcore.signalapp import SignalApp, APPCLASS_UTILS
 from pymongo import MongoClient
 from pymongo import ReplaceOne
 from pymongo.errors import BulkWriteError
@@ -62,7 +62,7 @@ class TradingPositionsArchiveScript:
 
         self.log.info('Init TradingPositionsArchive')
 
-        self.signal_app = SignalApp('TradingPositionsArchive', APPCLASS_MISC, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
+        self.signal_app = SignalApp('TradingPositionsArchive', APPCLASS_UTILS, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
         self.signal_app.send(MsgStatus("INIT", 'Initiating TradingPositionsArchive'))
 
         self.mongo_client = MongoClient(MONGO_CONNSTR)

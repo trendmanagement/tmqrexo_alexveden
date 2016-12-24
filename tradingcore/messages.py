@@ -64,6 +64,7 @@ class MsgAlphaState(MsgBase):
         self.prev_exposure = swarm.last_prev_exposure
         self.rebalamce_date = swarm.last_rebalance_date
         self.last_date = swarm.last_date
+        self.context = context
 
 class MsgAlphaSignal(MsgBase):
     mtype = 'alphasignal'
@@ -75,6 +76,7 @@ class MsgAlphaSignal(MsgBase):
         self.instrument = alphastate_msg.instrument
         self.exposure = alphastate_msg.exposure
         self.positions = pos_list
+        self.context = context
 
 
 
