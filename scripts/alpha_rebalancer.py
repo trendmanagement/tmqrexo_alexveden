@@ -106,7 +106,7 @@ def main(args, loglevel):
     else:
         logging.basicConfig(filename=args.logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                             level=loglevel)
-    signalapp = SignalApp("AlphaRebalancerSingle", APPCLASS_ALPHA, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
+    signalapp = SignalApp("AlphaRebalancer", APPCLASS_ALPHA, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
     signalapp.send(MsgStatus('INIT', 'Initiating alpha rebalancer script'))
 
     #exo_names = get_exo_names_mat()
