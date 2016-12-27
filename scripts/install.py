@@ -80,6 +80,7 @@ stdout_logfile_maxbytes=1MB
 startsecs=30
 autostart=true
 startretries=5
+stopasgroup=true
 directory={current_path}
 environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
 """
@@ -117,6 +118,7 @@ directory={current_path}
 startsecs=30
 autostart=true
 startretries=5
+stopasgroup=true
 environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
 """
 
@@ -152,6 +154,7 @@ directory={current_path}
 startsecs=30
 autostart=true
 startretries=5
+stopasgroup=true
 environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
 """
 
@@ -197,6 +200,7 @@ directory={current_path}
 startsecs=30
 autostart=true
 startretries=5
+stopasgroup=true
 environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
         """
         if os.path.isdir(os.path.join(TMQRPATH, 'scripts', 'alphas', fn)):
@@ -230,6 +234,7 @@ directory={current_path}
 startsecs=30
 autostart=true
 startretries=5
+stopasgroup=true
 environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
 """
 
@@ -340,6 +345,7 @@ directory={current_path}
 startsecs=30
 autostart=true
 startretries=5
+stopasgroup=true
 environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
 """
 
@@ -371,6 +377,7 @@ directory={current_path}
 startsecs=10
 autostart=true
 startretries=5
+stopasgroup=true
 environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
 """
 
