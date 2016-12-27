@@ -45,6 +45,25 @@ Useful server paths
 * ``/var/data/mongodb`` - MongoDB storage files
 * ``/etc/`` - settings directory for entire system
 
+Logs path
+---------
+* ``/var/log/syslog`` - generic system log file
+* ``/var/log/supervisor`` - generic Supervisor service logs
+* ``/var/log/rabbitmq`` - RabbitMQ logs
+* ``/var/log/mongodb`` - MongoDB logs
+* ``/var/data/tmqrengine/scripts/logs`` - TMQR Framework logs, also available via ``http://10.0.1.2:8080/``
+
+
+Basic service management commands
+---------------------------------
+Following commands should be executed by ``root`` or via ``sudo <command>``
+
+* ``service rabbitmq-server start|stop|restart`` - Start/stop of RabbitMQ service (used for inter-script communication)
+* ``service mongod start|stop|restart`` - Start/stop of MongoDB service
+* ``service supervisor start|stop|restart`` - Start/stop of Supervisor service which is managing all trading scripts
+* ``reboot`` - restarts the server
+
+
 
 
 

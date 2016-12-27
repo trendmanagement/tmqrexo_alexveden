@@ -105,6 +105,26 @@
 <li><code class="docutils literal"><span class="pre">/etc/</span></code> - settings directory for entire system</li>
 </ul>
 </div>
+<div class="section" id="logs-path">
+<h3>Logs path<a class="headerlink" href="#logs-path" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">/var/log/syslog</span></code> - generic system log file</li>
+<li><code class="docutils literal"><span class="pre">/var/log/supervisor</span></code> - generic Supervisor service logs</li>
+<li><code class="docutils literal"><span class="pre">/var/log/rabbitmq</span></code> - RabbitMQ logs</li>
+<li><code class="docutils literal"><span class="pre">/var/log/mongodb</span></code> - MongoDB logs</li>
+<li><code class="docutils literal"><span class="pre">/var/data/tmqrengine/scripts/logs</span></code> - TMQR Framework logs, also available via <code class="docutils literal"><span class="pre">http://10.0.1.2:8080/</span></code></li>
+</ul>
+</div>
+<div class="section" id="basic-service-management-commands">
+<h3>Basic service management commands<a class="headerlink" href="#basic-service-management-commands" title="Permalink to this headline">¶</a></h3>
+<p>Following commands should be executed by <code class="docutils literal"><span class="pre">root</span></code> or via <code class="docutils literal"><span class="pre">sudo</span> <span class="pre">&lt;command&gt;</span></code></p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">service</span> <span class="pre">rabbitmq-server</span> <span class="pre">start|stop|restart</span></code> - Start/stop of RabbitMQ service (used for inter-script communication)</li>
+<li><code class="docutils literal"><span class="pre">service</span> <span class="pre">mongod</span> <span class="pre">start|stop|restart</span></code> - Start/stop of MongoDB service</li>
+<li><code class="docutils literal"><span class="pre">service</span> <span class="pre">supervisor</span> <span class="pre">start|stop|restart</span></code> - Start/stop of Supervisor service which is managing all trading scripts</li>
+<li><code class="docutils literal"><span class="pre">reboot</span></code> - restarts the server</li>
+</ul>
+</div>
 </div>
 <div class="section" id="indices-and-tables">
 <h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
@@ -128,6 +148,8 @@
 <li><a class="reference internal" href="#common-commands">Common commands</a></li>
 <li><a class="reference internal" href="#server-diagnostics-commands">Server diagnostics commands</a></li>
 <li><a class="reference internal" href="#useful-server-paths">Useful server paths</a></li>
+<li><a class="reference internal" href="#logs-path">Logs path</a></li>
+<li><a class="reference internal" href="#basic-service-management-commands">Basic service management commands</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
