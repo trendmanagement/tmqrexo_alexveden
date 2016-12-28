@@ -18,15 +18,14 @@ class StrategyBollingerBands(StrategyBase):
             ser = pd.Series(array)
             return ser.rank(pct=True)[len(ser) - 1]
 
-
         df = pd.DataFrame()
 
         df = self.data
+        
         if rules_index >= 14:
-
             for i in range(10, 100, 10):
                 bb_period = i
-                bb_k = 2
+                bb_k = bb_k
                 df['bb_central_line' + str(i)] = df.exo.rolling(bb_period).mean()
                 df['bb_upperband' + str(i)] = df['bb_central_line' + str(i)] + (
                     bb_k * df['bb_central_line' + str(i)].rolling(bb_period).std())

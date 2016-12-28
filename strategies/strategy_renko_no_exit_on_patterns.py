@@ -1,7 +1,3 @@
-import sys, os
-
-sys.path.append('..')
-from backtester import matlab, backtester
 from backtester.analysis import *
 from backtester.strategy import StrategyBase, OptParam
 
@@ -11,23 +7,14 @@ import scipy
 
 
 class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
-    def __init__(self, strategy_context):
+    name = 'RenkoPatternsNoExits'
+	
+	def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
 
         # Define system's name
-        self.name = 'RenkoPatterns_no_exit_on_patterns'
-
-        self.check_context()
-
-        # Define optimized params
-        self.opts = strategy_context['strategy']['opt_params']
-
-    def check_context(self):
-        #
-        # Do strategy specific checks
-        #
-        pass
+        
 
     def calc_entry_rules(self, box_size, move_count, rules_index):
 

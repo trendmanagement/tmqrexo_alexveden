@@ -1,11 +1,3 @@
-# coding: utf-8
-
-# In[2]:
-
-import sys, os
-
-sys.path.append('..')
-from backtester import matlab, backtester
 from backtester.analysis import *
 from backtester.strategy import StrategyBase, OptParam
 
@@ -15,23 +7,14 @@ import scipy
 
 
 class StrategyPointAndFigurePatterns(StrategyBase):
+    # Define system's name
+       
+    name = 'PointAndFigurePatterns'
+
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
 
-        # Define system's name
-        self.name = 'PointAndFigurePatterns'
-
-        self.check_context()
-
-        # Define optimized params
-        self.opts = strategy_context['strategy']['opt_params']
-
-    def check_context(self):
-        #
-        # Do strategy specific checks
-        #
-        pass
 
     def calc_entry_rules(self, box_size, reversal_multiplier, column_consec_move_count, window_percent, rules_index):
 
@@ -571,15 +554,3 @@ class StrategyPointAndFigurePatterns(StrategyBase):
             calc_info = {'trailing_stop': trailing_stop}
 
         return swarm_member_name, entry_rule, exit_rule, calc_info
-
-
-if __name__ == "__main__":
-    #
-    #   Run this code only from direct shell execution
-    #
-    # strategy = StrategyMACrossTrail()
-    # equity, stats = strategy.calculate()
-
-    # Do some work
-    data, info = matlab.loaddata('../mat/strategy_270225.mat')
-    # data.plot()
