@@ -63,19 +63,28 @@ def get_sql_data(sql_conn, mongo_db, colname):
     idname = ''
     if colname == 'options':
         idname = 'idoption'
-        last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
-        lastid = last_data[idname]
-        logging.info('Updating Options from ID:{0}'.format(lastid))
+        try:
+            last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
+            lastid = last_data[idname]
+            logging.info('Updating Options from ID:{0}'.format(lastid))
+        except:
+            logging.info("Can't find lastID for 'options' collection")
     elif colname == 'contracts':
-        idname = 'idcontract'
-        last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
-        lastid = last_data[idname]
-        logging.info('Updating Futures from ID:{0}'.format(lastid))
+        try:
+            idname = 'idcontract'
+            last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
+            lastid = last_data[idname]
+            logging.info('Updating Futures from ID:{0}'.format(lastid))
+        except:
+            logging.info("Can't find lastID for 'futures' collection")
     elif colname == 'instruments':
-        idname = 'idinstrument'
-        last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
-        lastid = last_data[idname]
-        logging.info('Updating Instruments from ID:{0}'.format(lastid))
+        try:
+            idname = 'idinstrument'
+            last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
+            lastid = last_data[idname]
+            logging.info('Updating Instruments from ID:{0}'.format(lastid))
+        except:
+            logging.info("Can't find lastID for 'instruments' collection")
 
     qry = 'SELECT * FROM cqgdb.tbl{0} WHERE {1} > {2}'.format(colname, idname, lastid)
     logging.debug(qry)
