@@ -149,7 +149,7 @@ class QuotesNotifyScript:
             if quote_status != 'DELAY':
                 quote_status = 'RUN'
             # Reporting current status
-            self.signalapp.send(MsgStatus('RUN', 'Processing new bar {0}'.format(last_bar_time)))
+            self.signalapp.send(MsgStatus('RUN', 'New bar {0}'.format(last_bar_time), notify=True))
             logging.info('Running new bar. Bar time: {0}'.format(last_bar_time))
             self.last_quote_date = last_bar_time
             context = {

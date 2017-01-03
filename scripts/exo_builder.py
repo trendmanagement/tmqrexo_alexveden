@@ -109,15 +109,13 @@ class EXOScript:
             self.logger.error("Empty message")
             return False
         else:
-            if 'date' not in data:
-                self.logger.error("Bad message format")
-                return False
-            if 'mtype' not in data:
-                self.logger.error("Bad message format, no 'mtype'")
-                return False
-            else:
-                if data['mtype'] != 'quote':
+            try:
+                if data.mtype != MsgQuoteNotification.mtype:
+                    self.logger.error("Wrong message type '{0}' but MsgQuoteNotification.mtype expected".format(data.mtype))
                     return False
+            except:
+                self.logger.exception("Exception in integrity checks")
+                return False
 
         return True
 
@@ -143,20 +141,25 @@ class EXOScript:
 
 
     def on_new_quote(self, appclass, appname, data):
-        if data.mtype != MsgQuoteNotification.mtype:
-            return
-
         # Check data integrity
         if not self.check_quote_data(appname, appclass, data):
+            self.logger.warning("Quote signal message integrity checks failed")
+            self.logger.warning("AppName: {0} AppClass: {1} MsgData: {2}".format(appname, appclass, data))
+
+            self.signalapp.send(MsgStatus('ERROR',
+                                          'Quote signal message integrity checks failed. Check logs...',
+                                          notify=True
+                                          )
+                                )
             return
 
         exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
         start_time = time.time()
 
-        quote_date = data['date']
+        quote_date = data.date
         symbol = appname
 
-        if quote_date > decision_time:
+        if quote_date >= decision_time:
             # TODO: Check to avoid dupe launch
             # Run first EXO calculation for this day
             self.logger.info("Run EXO calculation, at decision time: {0}".format(decision_time))
@@ -165,7 +168,7 @@ class EXOScript:
             exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
             futures_limit = 3
-            options_limit = 10
+            options_limit = 20
 
             #datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
             #datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
@@ -182,7 +185,7 @@ class EXOScript:
 
             end_time = time.time()
             self.signalapp.send(MsgStatus('OK',
-                                          'EXO processed for {0} at {1}'.format(symbol, quote_date),
+                                          'EXOs processed for {0} at {1} (CalcTime: {2:0.2f}s)'.format(symbol, quote_date, end_time-start_time),
                                           context={'instrument': symbol,
                                                    'date': quote_date,
                                                    'exec_time': end_time-start_time},
@@ -191,6 +194,11 @@ class EXOScript:
                                 )
 
         else:
+            self.signalapp.send(MsgStatus('SKIPPED',
+                                          'EXO calculation skipped for {0} at {1}, quote date < decision_time'.format(symbol, quote_date),
+                                          notify=True
+                                          )
+                                )
             self.logger.debug("Waiting next decision time")
 
 
