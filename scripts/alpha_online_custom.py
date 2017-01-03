@@ -113,7 +113,7 @@ class AlphaOnlineScript:
                                                      )
                                 alphas_failed += 1
                 self.signal_app.send(MsgStatus("RUN",
-                                               "Processing CUSTOM alphas for {0} Succeed: {1} Failed: {2} Calctime: {3:0.2f}s".format(
+                                               "Status: Succeed {1} Failed {2} Calctime {3:0.2f}s".format(
                                                    msg.exo_name, alphas_processed, alphas_failed, time.time() - time_begin),
                                                notify=True,
                                                ))

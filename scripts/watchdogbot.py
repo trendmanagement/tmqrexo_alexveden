@@ -54,7 +54,7 @@ class WatchdogBot:
         self.status_db = status_client[MONGO_EXO_DB]
 
         self.antiflood_status = {}
-        self.antiflood_delay_minutes = 30
+        self.antiflood_delay_minutes = 5
 
     def check_antiflood(self, appclass, appname, status_msg, dtnow):
         key = "{0}.{1}".format(appclass, appname)
@@ -85,7 +85,7 @@ class WatchdogBot:
         :return:
         """
         if self.check_antiflood(appclass, appname, msg, datetime.now()):
-            self.send_message("{0}.{1}: [{2}] {3}".format(appclass, appname, msg.status,  msg.message))
+            self.send_message("{0}: [{1}] {2} `{0}.{3}`".format(appclass, msg.status,  msg.message, appname))
 
     def send_message(self, msg_text):
         if self.client is not None:
