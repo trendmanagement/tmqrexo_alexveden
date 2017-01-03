@@ -35,6 +35,8 @@ To add new product
 
 .. note:: Name of the product **must** reflect ``exchangesymbol`` field of ``instruments`` MongoDB collection
 
+.. note:: If you've forgot to run ``python3.5 ./exo_batch_update.py``, and EXO series already filled by online data, first of all you need manually remove EXO series from DB and then restart ``exo_batch_update.py`` script.
+
 To add new EXO
 --------------
 1. Add new tested EXO python file to ``exobuilder/algorithms``
