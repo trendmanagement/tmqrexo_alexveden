@@ -26,6 +26,7 @@ import importlib
 from tradingcore.swarmonlinemanager import SwarmOnlineManager
 from tradingcore.messages import *
 import pprint
+import time
 
 
 class AlphaOnlineScript:
@@ -76,6 +77,11 @@ class AlphaOnlineScript:
             module = msg.exo_name.lower()
             if module == self.args.exoname.lower():
                 self.log.debug('on_exo_quote_callback: {0}.{1} Data: {2}'.format(appname, appclass, msg))
+
+                alphas_processed = 0
+                alphas_failed = 0
+                time_begin = time.time()
+
                 if os.path.isdir(os.path.join('alphas', module)):
                     self.log.info('Processing EXO quote: {0} at {1}'.format(msg.exo_name, msg.exo_date))
                     for custom_file in os.listdir(os.path.join('alphas', module)):
@@ -96,6 +102,7 @@ class AlphaOnlineScript:
                                 # Update and save swarm with new day data (and run callback)
                                 swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
                                 self.signal_app.send(MsgStatus("RUN", 'Processing custom alpha'))
+                                alphas_processed += 1
                             except:
                                 self.log.exception("Failed to process EXO quote: {0}".format(msg.exo_name))
                                 self.signal_app.send(MsgStatus("ERROR",
@@ -104,6 +111,12 @@ class AlphaOnlineScript:
                                                                notify=True,
                                                                )
                                                      )
+                                alphas_failed += 1
+                self.signal_app.send(MsgStatus("RUN",
+                                               "Processing CUSTOM alphas for {0} Succeed: {1} Failed: {2} Calctime: {3:0.2f}s".format(
+                                                   msg.exo_name, alphas_processed, alphas_failed, time.time() - time_begin),
+                                               notify=True,
+                                               ))
 
     def main(self):
         """

@@ -83,11 +83,15 @@ class TradingOnlineScript:
 
                 # Send position information to real-time software via RabbitMQ
                 self.signal_app.send(MsgAlphaSignal(msg, pos_list))
+
+                self.signal_app.send(MsgStatus("RUN",
+                                               "Processing alpha signals.",
+                                               notify=True))
             except:
                 self.log.exception("Error in processing account positions")
                 self.signal_app.send(MsgStatus("ERROR",
                                                "Error while processing account positions",
-                                               notify=True) )
+                                               notify=True))
 
 
     def main(self):

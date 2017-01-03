@@ -75,6 +75,11 @@ class TradingPositionsArchiveScript:
         """
         if not bdateutil.isbday(datetime.datetime.now(), holidays=holidays.US()):
             self.log.info("Run is skipped due to non business day")
+            self.signal_app.send(MsgStatus("SKIPPED",
+                                           "Run is skipped due to non business day",
+                                           notify=False,
+                                           )
+                                 )
             return
 
         # Populating account positions
