@@ -31,6 +31,7 @@ To add new product
 4. Run deployment process as described at :ref:`server-code-deployment` but without **service supervisor restart** step
 5. Run on the server ``cd /var/data/tmqrengine/scripts/`` and then ``python3.5 ./install.py``, this script will clear the logs and deploy new settings for online trading. Also ``supervisor service`` will be restarted.
 6. Make sure that new product is present in ``supervisorctl status`` command output, otherwise try to restart it manually one more time ``service supervisor restart``
+7. Run EXO batch backfill ``python3.5 ./exo_batch_update.py``
 
 .. note:: Name of the product **must** reflect ``exchangesymbol`` field of ``instruments`` MongoDB collection
 
