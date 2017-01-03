@@ -71,7 +71,7 @@ def install_exo_online():
             os.mkdir(os.path.join(current_path, 'logs', 'exo', instr))
 
         supervisor_conf_template = """[program:EXO_{instrument}]
-command=python3.5 {script_file} -v --debug={debug_logdir} {instrument}
+command=bash -c 'sleep 5 && python3.5 {script_file} -v --debug={debug_logdir} {instrument}'
 stderr_logfile={stderr_log}
 stderr_logfile_maxbytes=1MB
 
@@ -108,7 +108,7 @@ def install_quotes_notifications():
 
     for instr in INSTRUMENTS_LIST:
         supervisor_conf_template = """[program:QUOTES_{instrument}]
-command=python3.5 {script_file} -v {instrument}
+command=bash -c 'sleep 15 && python3.5 {script_file} -v {instrument}'
 stderr_logfile={stderr_log}
 stderr_logfile_maxbytes=1MB
 
@@ -144,7 +144,7 @@ def install_alphas_online():
 
     for alpha_name in ALPHAS_GENERIC:
         supervisor_conf_template = """[program:ALPHA_GENERIC_{instrument}]
-command=python3.5 {script_file} -v {instrument}
+command=bash -c 'sleep 2 && python3.5 {script_file} -v {instrument}'
 stderr_logfile={stderr_log}
 stderr_logfile_maxbytes=1MB
 
@@ -190,7 +190,7 @@ def install_alphas_custom():
 
         supervisor_conf_template = """
 [program:ALPHA_CUSTOM_{instrument}]
-command=python3.5 {script_file} -v {instrument}
+command=bash -c 'sleep 2 && python3.5 {script_file} -v {instrument}'
 stderr_logfile={stderr_log}
 stderr_logfile_maxbytes=1MB
 
