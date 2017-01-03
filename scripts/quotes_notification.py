@@ -55,8 +55,8 @@ class QuotesNotifyScript:
 
     def get_last_quote_date(self):
         document = self.status_db[STATUS_QUOTES_COLLECTION].find_one({'instrument': self.args.instrument})
-        if document is not None and 'last_bar_time' in document:
-            return document['last_bar_time']
+        if document is not None and 'last_run_date' in document:
+            return document['last_run_date']
         else:
             return NULL_DATE
 
@@ -153,7 +153,7 @@ class QuotesNotifyScript:
             logging.info('Running new bar. Bar time: {0}'.format(last_bar_time))
             self.last_quote_date = last_bar_time
             context = {
-                'last_bar_time': last_bar_time,
+                'last_bar_time': self.last_quote_date,
                 'now': dtnow,
                 'last_run_date': self.last_quote_date,
                 'decision_time': decision_time,
