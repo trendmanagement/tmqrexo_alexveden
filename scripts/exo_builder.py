@@ -108,14 +108,7 @@ class EXOScript:
         if data is None:
             self.logger.error("Empty message")
             return False
-        else:
-            try:
-                if data.mtype != MsgQuoteNotification.mtype:
-                    self.logger.error("Wrong message type '{0}' but MsgQuoteNotification.mtype expected".format(data.mtype))
-                    return False
-            except:
-                self.logger.exception("Exception in integrity checks")
-                return False
+
 
         return True
 
@@ -141,6 +134,9 @@ class EXOScript:
 
 
     def on_new_quote(self, appclass, appname, data):
+        if data.mtype != MsgQuoteNotification.mtype:
+            return
+
         # Check data integrity
         if not self.check_quote_data(appname, appclass, data):
             self.logger.warning("Quote signal message integrity checks failed")
