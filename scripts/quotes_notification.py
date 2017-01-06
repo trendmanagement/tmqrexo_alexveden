@@ -137,11 +137,9 @@ class QuotesNotifyScript:
                                                                           dtnow))
 
                 self.signalapp.send(MsgStatus('DELAY',
-                                              'Quote delayed more than {0} minutes '
-                                              'for {1} LastBarTimeDB: {2} Now: {3}'.format(self.args.delay,
-                                                                                           self.args.instrument,
-                                                                                           last_bar_time,
-                                                                                           dtnow), notify=True))
+                                              'Quote delayed more than {0} minutes for {1}'.format(self.args.delay,
+                                                                                                   self.args.instrument),
+                                              notify=True))
                 quote_status = 'DELAY'
 
         # Fire new quote notification if last_bar_time > decision_time

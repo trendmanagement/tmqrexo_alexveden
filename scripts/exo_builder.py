@@ -180,7 +180,7 @@ class EXOScript:
             self.run_exo_calc(datasource, decision_time, symbol, backfill_dict=None)
 
             end_time = time.time()
-            self.signalapp.send(MsgStatus('OK',
+            self.signalapp.send(MsgStatus('RUN',
                                           'EXOs processed for {0} at {1} (CalcTime: {2:0.2f}s)'.format(symbol, quote_date, end_time-start_time),
                                           context={'instrument': symbol,
                                                    'date': quote_date,
@@ -310,7 +310,7 @@ class EXOScript:
         if self.args.backfill is not None:
             # Backfill mode enabled
             self.do_backfill()
-            self.signalapp.send(MsgStatus("OK",
+            self.signalapp.send(MsgStatus("RUN",
                                           "EXO backfill for {0} has been finished.".format(self.args.instrument),
                                           notify=True)
                                 )
