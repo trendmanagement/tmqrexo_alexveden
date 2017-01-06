@@ -1,12 +1,14 @@
-
-
-
-
-
+import re
 
 class RolloverHelper:
-    def __init__(self, instrument, roll_regime_name='default'):
+    def __init__(self, instrument, **kwargs):
         self.instrument = instrument
+
+        re_include = kwargs.get('option_code_include', [])
+
+        self.re_option_code_include = []
+        for pattern in re_include:
+            self.re_option_code_include.append(re.compile(pattern))
 
         if self.instrument.name.upper() == "ZC":
             # Corn custom rollover options
@@ -56,7 +58,14 @@ class RolloverHelper:
             """
             self.rollover_months = [1, 3, 5, 7, 8, 9, 11]
             self.days_before_expiration = 5
-
+        if self.instrument.name.upper() == "ES":
+            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            self.days_before_expiration = 2
+            if len(self.re_option_code_include) == 0:
+                self.re_option_code_include = [
+                    re.compile('^EW$'),       # Matches end-of-month option
+                    re.compile('^$'),         # Matches '' empty option code
+                ]
         else:
             # Default
             # Roll every month
@@ -75,7 +84,8 @@ class RolloverHelper:
 
         for opt in fut.options:
             if opt.to_expiration_days > self.days_before_expiration:
-                return opt
+                if self.check_option_code_included(opt.option_code):
+                    return opt
         return None
 
     def _get_next_future(self, start_idx=-1):
@@ -94,8 +104,23 @@ class RolloverHelper:
     def is_rollover(self, asset):
         if asset.to_expiration_days <= self.days_before_expiration:
             return True
+        return False
+
+    def check_option_code_included(self, option_code):
+        """
+        Checks regular expressions passed by 'option_code_include' kwarg in constructor,
+        if option code doesn't match just ignore, if 'option_code_include' always return True
+        :return:
+        """
+        if len(self.re_option_code_include) == 0:
+            return True
+
+        for re_include in self.re_option_code_include:
+            if re_include.fullmatch(option_code) is not None:
+                return True
 
         return False
+
 
 
     def get_active_chains(self):
