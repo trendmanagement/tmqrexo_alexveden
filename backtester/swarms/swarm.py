@@ -555,7 +555,7 @@ class Swarm:
                              "or len(self._equity) <= 1 ")
 
         if len(swarm_exposure) == 0:
-            warnings.warn("Swarm exposure is zero-length, seems that no members picked after rebalancing.")
+            warnings.warn("Swarm ({0}) exposure is zero-length, seems that no members picked after rebalancing.".format(self.name))
 
         # 1. Filter exo_price and swarm_exposure >= self.last_date
         _exo_price_array = exo_dataframe['exo'][exo_dataframe.index >= self.last_date]
@@ -631,11 +631,8 @@ class Swarm:
 
         # We are using self.raw_exposure instead of self.picked_exposure
         # because in self.update() we are running predefined (i.e. already picked) swarms
-        if len(self.raw_exposure) > 0:
-            # Update equity and another last state values
-            self._laststate_update(self.strategy.data, self.raw_exposure.sum(axis=1), self.strategy.costs)
-        else:
-            raise NotImplementedError("if len(self.raw_exposure) <= 0: decide if it is unexpected case when no systems picked in some reasons?")
+        # Update equity and another last state values
+        self._laststate_update(self.strategy.data, self.raw_exposure.sum(axis=1), self.strategy.costs)
 
     @staticmethod
     def _parse_params(members_list):
