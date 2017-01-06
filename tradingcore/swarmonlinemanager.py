@@ -3,7 +3,7 @@ from backtester.swarms.swarm import Swarm
 import pymongo
 from pymongo import MongoClient
 from datetime import datetime
-
+from backtester.strategy import OptParamArray
 
 
 class SwarmOnlineManager:
@@ -57,6 +57,7 @@ class SwarmOnlineManager:
             context = self.strategy_context
             context['strategy']['exo_storage'] = exo_storage
             context['strategy']['exo_name'] = exo_name
+            context['strategy']['opt_params'][0] = OptParamArray('Direction', swm_dict['direction'])
 
             # Restoring swarms last state from dict
             swm = Swarm.laststate_from_dict(swm_dict, context)
