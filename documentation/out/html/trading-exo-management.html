@@ -113,11 +113,13 @@ line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39
 <ol class="arabic simple">
 <li>Type in new <code class="docutils literal"><span class="pre">exchangesymbol</span></code> name to the <code class="docutils literal"><span class="pre">INSTRUMENTS_LIST</span></code></li>
 <li>Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings_exo.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)</li>
+<li>Check or add new rollover regime for new asset if it is necessary in <code class="docutils literal"><span class="pre">exobuilder/algorithms/rollover_helper.py</span></code> (default regime is rollover each month)</li>
 <li>Commit and push changes to GitHub and log in to the server</li>
 <li>Run deployment process as described at <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a> but without <strong>service supervisor restart</strong> step</li>
+<li>Run EXO batch backfill <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./exo_batch_update.py</span></code> (<strong>important</strong> you need to wait until backfill process is finished)</li>
 <li>Run on the server <code class="docutils literal"><span class="pre">cd</span> <span class="pre">/var/data/tmqrengine/scripts/</span></code> and then <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./install.py</span></code>, this script will clear the logs and deploy new settings for online trading. Also <code class="docutils literal"><span class="pre">supervisor</span> <span class="pre">service</span></code> will be restarted.</li>
 <li>Make sure that new product is present in <code class="docutils literal"><span class="pre">supervisorctl</span> <span class="pre">status</span></code> command output, otherwise try to restart it manually one more time <code class="docutils literal"><span class="pre">service</span> <span class="pre">supervisor</span> <span class="pre">restart</span></code></li>
-<li>Run EXO batch backfill <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./exo_batch_update.py</span></code></li>
+<li>Plot EXO graphs in <a class="reference external" href="https://10.0.1.2:8888/notebooks/tools/EXO%20viewer.ipynb">https://10.0.1.2:8888/notebooks/tools/EXO%20viewer.ipynb</a> notebook to make sure that all EXOs have enough historical data and backfilled properly.</li>
 </ol>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
