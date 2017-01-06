@@ -199,7 +199,7 @@ def main(args, loglevel):
     exmgr = ExecutionManager(MONGO_CONNSTR, datasource, dbname=MONGO_EXO_DB)
     exmgr.account_positions_process(write_to_db=True)
 
-    signalapp.send(MsgStatus('DONE', 'Alpha rebalancer script', notify=True))
+    signalapp.send(MsgStatus('RUN', 'Alpha rebalancer script', notify=True))
     logging.info("Done.")
 
 if __name__ == '__main__':

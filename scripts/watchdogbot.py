@@ -60,12 +60,18 @@ class WatchdogBot:
         key = "{0}.{1}".format(appclass, appname)
 
         if key not in self.antiflood_status:
-            self.antiflood_status[key] = {'status': status_msg.status, 'last_message': dtnow}
+            self.antiflood_status[key] = {'status': status_msg.status,
+                                          'last_message': dtnow,
+                                          'last_text': status_msg.message}
             return True
         else:
             afld = self.antiflood_status[key]
             if afld['status'] != status_msg.status:
                 afld['status'] = status_msg.status
+                afld['last_text'] = status_msg.message
+                return True
+            if afld['last_text'] != status_msg.message:
+                afld['last_text'] = status_msg.message
                 return True
             if (dtnow-afld['last_message']).total_seconds()/60 > self.antiflood_delay_minutes:
                 afld['last_message'] = dtnow
@@ -85,7 +91,13 @@ class WatchdogBot:
         :return:
         """
         if self.check_antiflood(appclass, appname, msg, datetime.now()):
-            self.send_message("{0}: [{1}] {2} `{0}.{3}`".format(appclass, msg.status,  msg.message, appname))
+
+            if msg.status == "ERROR" or msg.status == "WARNING":
+                status_text = '[*{0}*]'.format(msg.status)
+            else:
+                status_text = '[{0}]'.format(msg.status)
+
+            self.send_message("{0}: {1} {2} `{0}.{3}`".format(appclass, status_text,  msg.message, appname))
 
     def send_message(self, msg_text):
         if self.client is not None:
