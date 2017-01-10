@@ -107,7 +107,7 @@ class TradingPositionsArchiveScript:
             bulk_result = self.mongo_db['accounts_positions_archive'].bulk_write(operations, ordered=False)
             self.log.info("Bulk write result succeed: \n{0}".format(pp.pformat(bulk_result.bulk_api_result)))
 
-            self.signal_app.send(MsgStatus("OK",
+            self.signal_app.send(MsgStatus("RUN",
                                            "Positions archive created",
                                            notify=True,
                                            )
