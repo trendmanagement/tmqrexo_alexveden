@@ -9,7 +9,7 @@ import scipy
 class StrategyPointAndFigurePatterns(StrategyBase):
     # Define system's name
        
-    name = 'PointAndFigurePatterns'
+    name = 'PointAndFigure'
 
     def __init__(self, strategy_context):
         # Initialize parent class
