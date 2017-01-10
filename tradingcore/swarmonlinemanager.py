@@ -57,7 +57,12 @@ class SwarmOnlineManager:
             context = self.strategy_context
             context['strategy']['exo_storage'] = exo_storage
             context['strategy']['exo_name'] = exo_name
-            context['strategy']['opt_params'][0] = OptParamArray('Direction', [swm_dict['direction']])
+            direction = swm_dict['direction']
+            if direction == 0:
+                dir_array = [-1, 1]
+            else:
+                dir_array = [direction]
+            context['strategy']['opt_params'][0] = OptParamArray('Direction', dir_array)
 
             # Restoring swarms last state from dict
             swm = Swarm.laststate_from_dict(swm_dict, context)
