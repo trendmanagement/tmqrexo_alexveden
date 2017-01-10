@@ -101,7 +101,9 @@ class AlphaOnlineScript:
                                 swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, context)
                                 # Update and save swarm with new day data (and run callback)
                                 swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
-                                self.signal_app.send(MsgStatus("RUN", 'Processing custom alpha'))
+                                self.signal_app.send_to("Custom_{0}".format(exo_name.split('_')[0]),
+                                                        APPCLASS_ALPHA,
+                                                        MsgStatus("RUN", 'Processing custom alpha', notify=True))
                                 alphas_processed += 1
                             except:
                                 self.log.exception("Failed to process EXO quote: {0}".format(msg.exo_name))
@@ -115,7 +117,7 @@ class AlphaOnlineScript:
                 self.signal_app.send(MsgStatus("RUN",
                                                "Status: Succeed {1} Failed {2} Calctime {3:0.2f}s".format(
                                                    msg.exo_name, alphas_processed, alphas_failed, time.time() - time_begin),
-                                               notify=True,
+                                               notify=False,
                                                ))
 
     def main(self):
