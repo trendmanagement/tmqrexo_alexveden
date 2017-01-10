@@ -1,18 +1,20 @@
-# coding: utf-8
-
-# In[2]:
-
 from backtester.analysis import *
-from backtester.strategy import StrategyBase
+from backtester.strategy import StrategyBase, OptParam
+
 import pandas as pd
 import numpy as np
+import scipy
+
 
 class StrategyPointAndFigurePatterns(StrategyBase):
+    # Define system's name
+       
     name = 'PointAndFigure'
 
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
+
 
     def calc_entry_rules(self, box_size, reversal_multiplier, column_consec_move_count, window_percent, rules_index):
 
@@ -187,12 +189,14 @@ class StrategyPointAndFigurePatterns(StrategyBase):
         if rules_index == 0:
             pnf_df['new_x_col'] = (pnf_df.type == 'x') & (pnf_df.type.shift(1) == 'o')
             signals_df = px.join(pnf_df.set_index('date')[['new_x_col']])
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.new_x_col == True
 
         if rules_index == 1:
             pnf_df['new_o_col'] = (pnf_df.type == 'o') & (pnf_df.type.shift(1) == 'x')
             signals_df = px.join(pnf_df.set_index('date')[['new_o_col']])
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.new_o_col == True
 
@@ -219,6 +223,7 @@ class StrategyPointAndFigurePatterns(StrategyBase):
                     tripple_top_breakout_dup[tripple_top_breakout_dup == True].index].replace(True, False)
 
             signals_df = px.join(pnf_df.set_index('date')[['tripple_top_breakout']])
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.tripple_top_breakout == True
 
@@ -245,6 +250,7 @@ class StrategyPointAndFigurePatterns(StrategyBase):
                     tripple_bot_breakout_dup[tripple_bot_breakout_dup == True].index].replace(True, False)
 
             signals_df = px.join(pnf_df.set_index('date')[['tripple_bot_breakout']])
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.tripple_bot_breakout == True
 
@@ -276,7 +282,9 @@ class StrategyPointAndFigurePatterns(StrategyBase):
             pnf_df['x_col_upmove_count'] = pd.Series(up_move_count, index=x_col_upmove.index)
 
             signals_df = px.join(pnf_df.set_index('date')[['x_col_upmove_count']])
-            return signals_df.x_col_upmove_count == True
+            signals_df = signals_df.ffill().groupby(signals_df.index).last()
+
+            return signals_df.x_col_upmove_count == column_consec_move_count
 
         if rules_index == 5:
             down_move_count = [0]
@@ -304,13 +312,15 @@ class StrategyPointAndFigurePatterns(StrategyBase):
 
             pnf_df['x_col_downmove_count'] = pd.Series(down_move_count, index=x_col_downmove.index)
             signals_df = px.join(pnf_df.set_index('date')[['x_col_downmove_count']])
-            return signals_df.x_col_downmove_count == True
+            signals_df = signals_df.ffill().groupby(signals_df.index).last()
+
+            return signals_df.x_col_downmove_count == column_consec_move_count
 
         if rules_index == 6:
             same_move_count = [0]
             same_move_counter = 0
 
-            x_col_samemove = pnf_last_column_value_df[pnf_last_column_value_df.type == 'x'].close < \
+            x_col_samemove = pnf_last_column_value_df[pnf_last_column_value_df.type == 'x'].close == \
                              pnf_last_column_value_df[pnf_last_column_value_df.type == 'x'].close.shift(1)
 
             for i in x_col_samemove.index.unique():
@@ -332,7 +342,9 @@ class StrategyPointAndFigurePatterns(StrategyBase):
 
             pnf_df['x_col_samemove_count'] = pd.Series(same_move_count, index=x_col_samemove.index)
             signals_df = px.join(pnf_df.set_index('date')[['x_col_samemove_count']])
-            return signals_df.x_col_samemove_count == True
+            signals_df = signals_df.ffill().groupby(signals_df.index).last()
+
+            return signals_df.x_col_samemove_count == column_consec_move_count
 
         if rules_index == 7:
             up_move_count = [0]
@@ -361,7 +373,9 @@ class StrategyPointAndFigurePatterns(StrategyBase):
             pnf_df['o_col_upmove_count'] = pd.Series(up_move_count, index=o_col_upmove.index)
 
             signals_df = px.join(pnf_df.set_index('date')[['o_col_upmove_count']])
-            return signals_df.o_col_upmove_count == True
+            signals_df = signals_df.ffill().groupby(signals_df.index).last()
+
+            return signals_df.o_col_upmove_count == column_consec_move_count
 
         if rules_index == 8:
 
@@ -391,13 +405,15 @@ class StrategyPointAndFigurePatterns(StrategyBase):
             pnf_df['o_col_downmove_count'] = pd.Series(down_move_count, index=o_col_downmove.index)
 
             signals_df = px.join(pnf_df.set_index('date')[['o_col_downmove_count']])
-            return signals_df.o_col_downmove_count == True
+            signals_df = signals_df.ffill().groupby(signals_df.index).last()
+
+            return signals_df.o_col_downmove_count == column_consec_move_count
 
         if rules_index == 9:
             same_move_count = [0]
             same_move_counter = 0
 
-            o_col_samemove = pnf_last_column_value_df[pnf_last_column_value_df.type == 'o'].close < \
+            o_col_samemove = pnf_last_column_value_df[pnf_last_column_value_df.type == 'o'].close == \
                              pnf_last_column_value_df[pnf_last_column_value_df.type == 'o'].close.shift(1)
 
             for i in o_col_samemove.index.unique():
@@ -420,7 +436,9 @@ class StrategyPointAndFigurePatterns(StrategyBase):
             pnf_df['o_col_samemove_count'] = pd.Series(same_move_count, index=o_col_samemove.index)
 
             signals_df = px.join(pnf_df.set_index('date')[['o_col_samemove_count']])
-            return signals_df.o_col_samemove_count == True
+            signals_df = signals_df.ffill().groupby(signals_df.index).last()
+
+            return signals_df.o_col_samemove_count == column_consec_move_count
 
         if rules_index == 10:
             for i in pnf_df.index.unique():
@@ -459,27 +477,27 @@ class StrategyPointAndFigurePatterns(StrategyBase):
 
             signals_df = px.join(pnf_first_column_value_df.set_index('date')[
                                      ['bearish_failure']])
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.bearish_failure == True
 
         if rules_index == 12:
             pnf_first_column_value_df['local_high'] = (pnf_last_column_value_df.close == pnf_last_column_value_df.close.rolling(len(
-                                                                  pnf_last_column_value_df.close) * window_percent).max()).shift(
-                1) == True
+                                                                  pnf_last_column_value_df.close) * window_percent).max()).shift(1) == True
 
             signals_df = px.join(pnf_first_column_value_df.set_index('date')[
                                      ['local_high']])
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.local_high == True
 
         if rules_index == 13:
             pnf_first_column_value_df['local_low'] = (pnf_last_column_value_df.close == pnf_last_column_value_df.close.rolling(
-                                                             len(
-                                                                 pnf_last_column_value_df.close) * window_percent).min()).shift(
-                1) == True
+                                                             len(pnf_last_column_value_df.close) * window_percent).min()).shift(1) == True
 
             signals_df = px.join(pnf_first_column_value_df.set_index('date')[
                                      ['local_low']])
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.local_low == True
 
@@ -536,4 +554,3 @@ class StrategyPointAndFigurePatterns(StrategyBase):
             calc_info = {'trailing_stop': trailing_stop}
 
         return swarm_member_name, entry_rule, exit_rule, calc_info
-
