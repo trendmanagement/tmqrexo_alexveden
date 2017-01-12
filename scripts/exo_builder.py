@@ -64,6 +64,8 @@ from tradingcore.messages import *
 from tradingcore.signalapp import SignalApp, APPCLASS_DATA, APPCLASS_EXO
 import warnings
 from scripts.settings_exo import *
+import bdateutil
+import holidays
 
 try:
     from .settings import *
@@ -108,7 +110,13 @@ class EXOScript:
         if data is None:
             self.logger.error("Empty message")
             return False
+        return True
 
+    def check_bday_or_holiday(self, date):
+        if date.weekday() >= 5 or bdateutil.isbday(date, holidays=holidays.US()):
+            # Skipping weekends and US holidays
+            # date.weekday() >= 5 - 5 is Saturday!
+            return False
 
         return True
 
@@ -149,8 +157,19 @@ class EXOScript:
                                 )
             return
 
+
         exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
         start_time = time.time()
+
+        if not self.check_bday_or_holiday(exec_time):
+            self.logger.warning("Skipping EXO quote calculation due to weekend or holiday")
+
+            self.signalapp.send(MsgStatus('SKIPPED',
+                                          'Skipping EXO quote calculation due to weekend or holiday',
+                                          notify=True
+                                          )
+                                )
+            return
 
         quote_date = data.date
         symbol = appname
@@ -289,7 +308,8 @@ class EXOScript:
         while current_time <= decision_time_end:
             self.logger.info("Backfilling: {0}".format(current_time))
 
-            self.run_exo_calc(datasource, current_time, args.instrument, backfill_dict=exo_start_dates)
+            if self.check_bday_or_holiday(current_time):
+                self.run_exo_calc(datasource, current_time, args.instrument, backfill_dict=exo_start_dates)
 
             current_time += timedelta(days=1)
             exec_time += timedelta(days=1)
