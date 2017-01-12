@@ -8,13 +8,10 @@ import scipy
 
 class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
     name = 'RenkoPatternsNoExits'
-	
-	def __init__(self, strategy_context):
+
+    def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
-
-        # Define system's name
-        
 
     def calc_entry_rules(self, box_size, move_count, rules_index):
 
