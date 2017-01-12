@@ -113,7 +113,7 @@ class EXOScript:
         return True
 
     def check_bday_or_holiday(self, date):
-        if date.weekday() >= 5 or bdateutil.isbday(date, holidays=holidays.US()):
+        if date.weekday() >= 5 or not bdateutil.isbday(date, holidays=holidays.US()):
             # Skipping weekends and US holidays
             # date.weekday() >= 5 - 5 is Saturday!
             return False
