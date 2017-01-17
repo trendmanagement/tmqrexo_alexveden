@@ -103,7 +103,7 @@ class EXOScript:
         self.logger.addHandler(ch)
 
         if self.args.logfile != '':
-            if os.path.exists(self.args.logfile):
+            if os.path.exists(os.path.dirname(self.args.logfile)):
                 fh = logging.FileHandler(self.args.logfile, mode='w')
                 fh.setFormatter(formatter)
                 fh.setLevel(loglevel)
