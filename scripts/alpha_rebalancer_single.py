@@ -71,7 +71,7 @@ def run_custom(args, exo_storage):
     try:
         m = importlib.import_module(package_path)
     except:
-        logging.error("Module not found: "+package_path)
+        logging.exception("Module error during import: "+package_path)
         sys.exit(2)
 
     logging.info('Running CUSTOM alpha: ' + Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX))
