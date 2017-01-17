@@ -66,6 +66,7 @@ import warnings
 from scripts.settings_exo import *
 import bdateutil
 import holidays
+import os
 
 try:
     from .settings import *
@@ -91,16 +92,25 @@ class EXOScript:
         logging.getLogger("pika").setLevel(logging.WARNING)
 
         self.logger = logging.getLogger('EXOBuilder')
-        self.logger.setLevel(loglevel)
-
-        # create console handler with a higher log level
-        ch = logging.StreamHandler(sys.stdout)
-        ch.setLevel(loglevel)
 
         # create formatter and add it to the handlers
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        # create console handler with a higher log level
+        ch = logging.StreamHandler(sys.stdout)
         ch.setFormatter(formatter)
+        ch.setLevel(loglevel)
         self.logger.addHandler(ch)
+
+        if self.args.logfile != '':
+            if os.path.exists(self.args.logfile):
+                fh = logging.FileHandler(self.args.logfile, mode='w')
+                fh.setFormatter(formatter)
+                fh.setLevel(loglevel)
+                self.logger.addHandler(fh)
+            else:
+                self.logger.error("Can't find logfile path in {0}".format(self.args.logfile))
+
 
     def check_quote_data(self, appname, appclass, data):
         if appclass != APPCLASS_DATA:
@@ -387,6 +397,14 @@ if __name__ == '__main__':
         '-D',
         '--debug',
         help="Debug log files folder path if set",
+        action="store",
+        default=''
+    )
+
+    parser.add_argument(
+        '-L',
+        '--logfile',
+        help="Log file for EXO builder script output",
         action="store",
         default=''
     )
