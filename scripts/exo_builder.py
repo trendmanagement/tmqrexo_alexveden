@@ -182,6 +182,8 @@ class EXOScript:
             assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
             exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
+
+
             futures_limit = 3
             options_limit = 20
 
@@ -258,6 +260,18 @@ class EXOScript:
                             self.logger.debug("Running EXO instance: " + exo_engine.name)
                             # Load EXO information from mongo
                             exo_engine.load()
+                            if backfill_dict is None:
+                                #
+                                # Check quotes lengths in Online mode (prevent filling by recent quotes unbackfilled EXOs)
+                                #
+                                if len(exo_engine.series) == 0 or (datetime.now() - exo_engine.series.index[-1]).days > 7:
+                                    self.logger.exception("EXO backfill required: {0} on {1}".format(ExoClass, symbol))
+                                    self.signalapp.send(MsgStatus("ERROR",
+                                                                  "EXO backfill required: {0}".format(exo_engine.name),
+                                                                  notify=True)
+                                                        )
+                                    continue
+
                             exo_engine.calculate()
                             if backfill_dict is None:
                                 # Sending signal to alphas that EXO price is ready
