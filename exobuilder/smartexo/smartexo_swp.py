@@ -9,6 +9,9 @@ class SmartEXOSwingpoint(SmartEXOBase):
     EXO_NAME = 'SmartEXOSwingpointBase'
 
     def __init__(self, symbol, direction, date, datasource, **kwargs):
+        self.sphthreshold = kwargs.pop('sphthreshold', 2)
+        self.splthreshold = kwargs.pop('splthreshold', 2)
+
         super().__init__(symbol, direction, date, datasource, **kwargs)
 
     def calculate_regime(self, date, exo_df):
@@ -24,7 +27,7 @@ class SmartEXOSwingpoint(SmartEXOBase):
             +1 - for bullish zone
             None - for unknown
         """
-        swp_df = swingpoints(2, 2, exo_df)
+        swp_df = swingpoints(self.sphthreshold, self.splthreshold, exo_df)
 
         #
         # Rules calculation
