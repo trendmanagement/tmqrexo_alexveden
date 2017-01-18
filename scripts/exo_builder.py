@@ -92,6 +92,7 @@ class EXOScript:
         logging.getLogger("pika").setLevel(logging.WARNING)
 
         self.logger = logging.getLogger('EXOBuilder')
+        self.logger.setLevel(loglevel)
 
         # create formatter and add it to the handlers
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -99,14 +100,12 @@ class EXOScript:
         # create console handler with a higher log level
         ch = logging.StreamHandler(sys.stdout)
         ch.setFormatter(formatter)
-        ch.setLevel(loglevel)
         self.logger.addHandler(ch)
 
         if self.args.logfile != '':
             if os.path.exists(os.path.dirname(self.args.logfile)):
                 fh = logging.FileHandler(self.args.logfile, mode='w')
                 fh.setFormatter(formatter)
-                fh.setLevel(loglevel)
                 self.logger.addHandler(fh)
             else:
                 self.logger.error("Can't find logfile path in {0}".format(self.args.logfile))
