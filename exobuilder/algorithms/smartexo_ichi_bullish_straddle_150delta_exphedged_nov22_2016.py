@@ -184,7 +184,6 @@ def new_position_neutral_zone(date, fut, opt_chain):
         Transaction(opt_chain[1].p, date, -2.0),
 
         Transaction(opt_chain[2].p, date, 1.0),
-        Transaction(opt_chain[3].c, date, 0.0),
     ]
     log_transactions(trans_list, 'New neutral zone position')
     return trans_list
