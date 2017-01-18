@@ -80,10 +80,6 @@ class SmartEXO_Bullish_Ichi__Dynamic_Wrangle_1short_3Long_Jan11(SmartEXOIchi):
                 #
             Transaction(opt_chain.get_by_delta(0.10), date, 3.0),
             Transaction(opt_chain.get_by_delta(0.35), date, -1.0),
-            Transaction(opt_chain.get_by_delta(0.25), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.6), date, -0.0),
-            Transaction(opt_chain.get_by_delta(0.20), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.05), date, 0.0),
                 ]
         return trans_list
 
@@ -95,10 +91,6 @@ class SmartEXO_Bullish_Ichi__Dynamic_Wrangle_1short_3Long_Jan11(SmartEXOIchi):
                 #
             Transaction(opt_chain.get_by_delta(0.10), date, 3.0),
             Transaction(opt_chain.get_by_delta(0.35), date, -1.0),
-            Transaction(opt_chain.get_by_delta(0.25), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.6), date, -0.0),
-            Transaction(opt_chain.get_by_delta(0.20), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.05), date, 0.0),
                 ]
 
         return trans_list
@@ -112,15 +104,11 @@ class SmartEXO_Bullish_Ichi__Dynamic_Wrangle_1short_3Long_Jan11(SmartEXOIchi):
                 #
             Transaction(opt_chain.get_by_delta(0.10), date, 3.0),
             Transaction(opt_chain.get_by_delta(0.35), date, -1.0),
-            Transaction(opt_chain.get_by_delta(-0.6), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.6), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.20), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.05), date, 0.0),
         ]
         return trans_list
 
-
-    def manage_opened_position(self, date, fut, opt_chain, regime, opened_position):
+    @staticmethod
+    def manage_opened_position(date, fut, opt_chain, regime, opened_position):
         logging.debug('Current position delta: {0}'.format(opened_position.delta))
 
         delta = opened_position.delta

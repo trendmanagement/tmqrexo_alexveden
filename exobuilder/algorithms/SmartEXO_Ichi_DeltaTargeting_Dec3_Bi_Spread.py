@@ -80,10 +80,6 @@ class SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread(SmartEXOIchi):
             #
             Transaction(opt_chain.get_by_delta(0.60), date, 1.0),
             Transaction(opt_chain.get_by_delta(0.15), date, -1.0),
-            Transaction(opt_chain.get_by_delta(0.25), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.6), date, -0.0),
-            Transaction(opt_chain.get_by_delta(0.20), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.05), date, 0.0),
         ]
         return trans_list
 
@@ -95,10 +91,6 @@ class SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread(SmartEXOIchi):
             #
             Transaction(opt_chain.get_by_delta(-0.60), date, 1.0),
             Transaction(opt_chain.get_by_delta(-0.15), date, -1.0),
-            Transaction(opt_chain.get_by_delta(0.25), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.6), date, -0.0),
-            Transaction(opt_chain.get_by_delta(0.20), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.05), date, 0.0),
 
         ]
 
@@ -111,12 +103,10 @@ class SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread(SmartEXOIchi):
             # Transaction(asset, date, qty, price=[MktPrice], leg_name=['' or unique name])
             #
             #
-            Transaction(opt_chain.get_by_delta(-0.05), date, 0.0),
             Transaction(opt_chain.get_by_delta(-0.20), date, 1.0),
             Transaction(opt_chain.get_by_delta(-0.6), date, -1.0),
             Transaction(opt_chain.get_by_delta(0.6), date, -1.0),
             Transaction(opt_chain.get_by_delta(0.20), date, 1.0),
-            Transaction(opt_chain.get_by_delta(0.05), date, 0.0),
         ]
         return trans_list
 
