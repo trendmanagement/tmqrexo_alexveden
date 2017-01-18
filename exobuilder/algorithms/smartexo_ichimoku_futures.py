@@ -1,16 +1,14 @@
-from exobuilder.contracts.futureschain import FuturesChain
-from exobuilder.contracts.futurecontract import FutureContract
-from exobuilder.tests.assetindexdict import AssetIndexDicts
-from datetime import datetime, date, timedelta, time as dttime
-from exobuilder.contracts.instrument import Instrument
+import time
+from datetime import datetime, timedelta, time as dttime
+
+from exobuilder.algorithms.rollover_helper import RolloverHelper
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.datasource_sql import DataSourceSQL
-from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.exostorage import EXOStorage
 from exobuilder.exo.exoenginebase import ExoEngineBase
 from exobuilder.exo.transaction import Transaction
-import time
-from exobuilder.algorithms.rollover_helper import RolloverHelper
+
 
 class SmartEXOichimokuFutures(ExoEngineBase):
     def __init__(self, symbol, direction, date, datasource, log_file_path=''):

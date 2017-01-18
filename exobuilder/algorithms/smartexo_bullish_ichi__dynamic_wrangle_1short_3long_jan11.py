@@ -1,22 +1,9 @@
-from exobuilder.contracts.futureschain import FuturesChain
-from exobuilder.contracts.futurecontract import FutureContract
-from exobuilder.tests.assetindexdict import AssetIndexDicts
-from datetime import datetime, date, timedelta, time as dttime
-from exobuilder.contracts.instrument import Instrument
-from exobuilder.data.datasource_mongo import DataSourceMongo
-from exobuilder.data.datasource_sql import DataSourceSQL
-from exobuilder.data.assetindex_mongo import AssetIndexMongo
-from exobuilder.data.exostorage import EXOStorage
-from exobuilder.exo.exoenginebase import ExoEngineBase
-from exobuilder.exo.transaction import Transaction
-import time
-from exobuilder.algorithms.rollover_helper import RolloverHelper
-#from exobuilder.smartexo.utils import SmartEXOUtils
-
 import importlib
 import logging
+
+from exobuilder.exo.transaction import Transaction
+
 importlib.reload(logging);
-#import matplotlib.pyplot as plt
 
 from exobuilder.smartexo.smartexo_ichi import SmartEXOIchi
 
@@ -107,8 +94,7 @@ class SmartEXO_Bullish_Ichi__Dynamic_Wrangle_1short_3Long_Jan11(SmartEXOIchi):
         ]
         return trans_list
 
-    @staticmethod
-    def manage_opened_position(date, fut, opt_chain, regime, opened_position):
+    def manage_opened_position(self, date, fut, opt_chain, regime, opened_position):
         logging.debug('Current position delta: {0}'.format(opened_position.delta))
 
         delta = opened_position.delta

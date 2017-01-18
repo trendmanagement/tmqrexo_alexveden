@@ -1,18 +1,8 @@
-from exobuilder.contracts.futureschain import FuturesChain
-from exobuilder.contracts.futurecontract import FutureContract
-from exobuilder.tests.assetindexdict import AssetIndexDicts
-from datetime import datetime, date, timedelta, time as dttime
-from exobuilder.contracts.instrument import Instrument
-from exobuilder.data.datasource_mongo import DataSourceMongo
-from exobuilder.data.datasource_sql import DataSourceSQL
-from exobuilder.data.assetindex_mongo import AssetIndexMongo
-from exobuilder.data.exostorage import EXOStorage
-from exobuilder.exo.exoenginebase import ExoEngineBase
-from exobuilder.exo.transaction import Transaction
-import time
-from exobuilder.algorithms.rollover_helper import RolloverHelper
 import logging
 
+from exobuilder.algorithms.rollover_helper import RolloverHelper
+from exobuilder.exo.exoenginebase import ExoEngineBase
+from exobuilder.exo.transaction import Transaction
 
 EXO_NAME = 'SmartEXO_Ichi_Bullish_Straddle_150Delta_ExpHedged_Nov22_2016'
 

@@ -100,8 +100,7 @@ class SmartEXOBase(ExoEngineBase):
         return []
 
 
-    @staticmethod
-    def manage_opened_position(date, fut, opt_chain, regime, opened_position):
+    def manage_opened_position(self, date, fut, opt_chain, regime, opened_position):
         """
         Return transactions list to manage opened positions, it could be used for delta rebalancing or dynamic delta hedging
 
