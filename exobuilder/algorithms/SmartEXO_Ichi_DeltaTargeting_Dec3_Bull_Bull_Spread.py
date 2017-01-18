@@ -91,7 +91,6 @@ class SmartEXO_Ichi_DeltaTargeting_Dec3_Bull_Bull_Spread(SmartEXOIchi):
             #
             Transaction(opt_chain.get_by_delta(-0.60), date, -1.0),
             Transaction(opt_chain.get_by_delta(-0.15), date, 1.0),
-
         ]
 
         return trans_list

@@ -93,7 +93,6 @@ class SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread(SmartEXOIchi):
             Transaction(opt_chain.get_by_delta(-0.90), date, 1.0),
             Transaction(opt_chain.get_by_delta(-0.35), date, -1.0),
             Transaction(opt_chain.get_by_delta(-0.05), date, 1.0),
-
         ]
 
         return trans_list
@@ -109,7 +108,6 @@ class SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread(SmartEXOIchi):
             Transaction(opt_chain.get_by_delta(-0.6), date, -1.0),
             Transaction(opt_chain.get_by_delta(0.6), date, -1.0),
             Transaction(opt_chain.get_by_delta(0.20), date, 1.0),
-
         ]
         return trans_list
 
