@@ -90,6 +90,7 @@ class SmartEXO_Ichi_Bearish_Fence(SmartEXOIchi):
             #
             Transaction(opt_chain.get_by_delta(0.15), date, 1.0),
             Transaction(opt_chain.get_by_delta(-0.25), date, -1.0),
+
         ]
 
         return trans_list

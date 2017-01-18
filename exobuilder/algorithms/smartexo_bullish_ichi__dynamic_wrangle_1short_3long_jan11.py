@@ -21,22 +21,22 @@ importlib.reload(logging);
 from exobuilder.smartexo.smartexo_ichi import SmartEXOIchi
 
 
-class SmartEXO_Ichi_Bullish_Fence(SmartEXOIchi):
+class SmartEXO_Bullish_Ichi__Dynamic_Wrangle_1short_3Long_Jan11(SmartEXOIchi):
 
     # Change the EXO name to reflect SmartEXO behavior
-    EXO_NAME = 'SmartEXO_Ichi_Class_Based_Bullish_Fence_Dec19'
+    EXO_NAME = 'SmartEXO_Bullish_Ichi__Dynamic_Wrangle_1short_3Long_Jan11'
 
     # select instruments list for SMART EXO calculation
-    #ASSET_LIST  = ['ZS', 'ZW', 'ZN']
+    ASSET_LIST = None
 
     def __init__(self, symbol, direction, date, datasource, **kwargs):
         super().__init__(symbol, direction, date, datasource,
                          #
                          # Change following values if you need to customize Ichimoku settings
                          #
-                         conversion_line_period = 9,
+                         conversion_line_period=9,
                          base_line_period=26,
-                         leading_spans_lookahead_period=26,
+                         leading_spans_lookahead_period=52,
                          leading_span_b_period=52
                         )
 
@@ -75,23 +75,22 @@ class SmartEXO_Ichi_Bullish_Fence(SmartEXOIchi):
 
         # Edit transactions to trade
         trans_list = [
-                #Transaction(asset, date, qty, price=[MktPrice], leg_name=['' or unique name])
+                # Transaction(asset, date, qty, price=[MktPrice], leg_name=['' or unique name])
                 #
                 #
-                Transaction(opt_chain.get_by_delta(-0.15), date, 1.0),
-                Transaction(opt_chain.get_by_delta(0.35), date, -1.0),
+            Transaction(opt_chain.get_by_delta(0.10), date, 3.0),
+            Transaction(opt_chain.get_by_delta(0.35), date, -1.0),
                 ]
         return trans_list
 
     @staticmethod
     def new_position_bearish_zone(date, fut, opt_chain):
         trans_list = [
-                #Transaction(asset, date, qty, price=[MktPrice], leg_name=['' or unique name])
+                # Transaction(asset, date, qty, price=[MktPrice], leg_name=['' or unique name])
                 #
                 #
-                Transaction(opt_chain.get_by_delta(-0.15), date, 1.0),
-                Transaction(opt_chain.get_by_delta(0.35), date, -1.0),
-
+            Transaction(opt_chain.get_by_delta(0.10), date, 3.0),
+            Transaction(opt_chain.get_by_delta(0.35), date, -1.0),
                 ]
 
         return trans_list
@@ -100,16 +99,16 @@ class SmartEXO_Ichi_Bullish_Fence(SmartEXOIchi):
     def new_position_neutral_zone(date, fut, opt_chain):
         # Edit transactions to trade
         trans_list = [
-                #Transaction(asset, date, qty, price=[MktPrice], leg_name=['' or unique name])
+                # Transaction(asset, date, qty, price=[MktPrice], leg_name=['' or unique name])
                 #
                 #
-                Transaction(opt_chain.get_by_delta(-0.15), date, 1.0),
-                Transaction(opt_chain.get_by_delta(0.35), date, -1.0),
-                ]
+            Transaction(opt_chain.get_by_delta(0.10), date, 3.0),
+            Transaction(opt_chain.get_by_delta(0.35), date, -1.0),
+        ]
         return trans_list
 
-
-    def manage_opened_position(self, date, fut, opt_chain, regime, opened_position):
+    @staticmethod
+    def manage_opened_position(date, fut, opt_chain, regime, opened_position):
         logging.debug('Current position delta: {0}'.format(opened_position.delta))
 
         delta = opened_position.delta

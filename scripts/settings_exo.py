@@ -11,6 +11,10 @@ from exobuilder.algorithms.SmartEXO_Ichi_DeltaTargeting_Dec3_Bull_Bull_Spread im
 from exobuilder.algorithms.smartexo_ichi_with_deltatargeting_bull_fence_v2 import SmartEXO_Ichi_Bullish_Fence
 from exobuilder.algorithms.smartexo_ichi_with_deltatargeting_bear_fence_v2 import SmartEXO_Ichi_Bearish_Fence
 
+from exobuilder.algorithms.smartexo_bullish_ichi__dynamic_wrangle_1short_3long_jan11 import SmartEXO_Bullish_Ichi__Dynamic_Wrangle_1short_3Long_Jan11
+from exobuilder.algorithms.smartexo_ichi_dynamic_1short_3long_delta_bi_30_05_jan17 import SmartEXO_ichi_dynamic_1short_3long_delta_bi_30_05_jan17
+from exobuilder.algorithms.smartexo_ichi_dynamic_1short_3long_delta_bi_puts_30_05_Jan17 import SmartEXO_ichi_dynamic_1short_3long_delta_bi_puts_30_05_Jan17
+
 #
 # Instruments list
 #
@@ -66,5 +70,17 @@ EXO_LIST = [
     {
         'name': 'SmartEXO_Ichi_Class_Based_Bearish_Fence_Dec19',
         'class': SmartEXO_Ichi_Bearish_Fence,
+    },
+    {
+        'name': 'SmartEXO_Bullish_Ichi__Dynamic_Wrangle_1short_3Long_Jan11',
+        'class': SmartEXO_Bullish_Ichi__Dynamic_Wrangle_1short_3Long_Jan11,
+    },
+    {
+        'name': 'SmartEXO_ichi_dynamic_1short_3long_delta_bi_30_05_jan17',
+        'class': SmartEXO_ichi_dynamic_1short_3long_delta_bi_30_05_jan17,
+    },
+    {
+        'name': 'SmartEXO_ichi_dynamic_1short_3long_delta_bi_puts_30_05_Jan17',
+        'class': SmartEXO_ichi_dynamic_1short_3long_delta_bi_puts_30_05_Jan17,
     },
 ]
