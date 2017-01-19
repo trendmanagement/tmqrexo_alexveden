@@ -319,17 +319,10 @@ class EXOScript:
             for exo_name in exos:
                 series = exostorage.load_series(exo_name)[0]
                 if series is not None:
-                    if len(series) < 200 and (datetime.now() - series.index[-1]).days < 10:
-                        # The case when EXO added to framework but not properly backfilled
-                        # Due to online updates EXO data filled by recent calculations, that will prevent correct backfill
-
-                        # Deleting EXO and force it to recalculate
-                        exostorage.delete_exo(exo_name)
-                    else:
-                        last_date = series.index[-1] + timedelta(days=1)
-                        exec_time, decision_time = AssetIndexMongo.get_exec_time(last_date, self.asset_info)
-                        self.logger.info('Updating existing {0} series from: {1}'.format(exo_name, decision_time))
-                        exo_start_dates[exo_name] = decision_time
+                    last_date = series.index[-1] + timedelta(days=1)
+                    exec_time, decision_time = AssetIndexMongo.get_exec_time(last_date, self.asset_info)
+                    self.logger.info('Updating existing {0} series from: {1}'.format(exo_name, decision_time))
+                    exo_start_dates[exo_name] = decision_time
 
         else:
             self.logger.info('Updating new EXO series from: {0}'.format(self.args.backfill))
