@@ -122,13 +122,13 @@ def main(args, loglevel):
 
         # Check for EXO data validity
         exo_df, exo_info = exo_storage.load_series(exo)
-        if len(exo_df) == 0 or len(exo_df) < 200 or (datetime.now() - exo_df.index[-1]).days < 4:
+        if len(exo_df) == 0 or len(exo_df) < 200 or (datetime.now() - exo_df.index[-1]).days > 4:
             logging.error("Not actual EXO data found in {0} last date: \n{1}".format(exo, exo_df.tail()))
             last_exo_date = 'N/A' if len(exo_df) == 0 else exo_df.index[-1]
             signalapp.send(MsgStatus('ERROR',
                                      'Not actual or empty EXO data found in {0} last date {1}'.format(exo, last_exo_date),
                                      notify=True))
-            break
+            continue
 
         # Load alpha modules to process
         for module in os.listdir('alphas'):
