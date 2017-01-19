@@ -9,6 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from IPython.display import display, HTML
 import numpy as np
+from exobuilder.exo.exoenginebase import ExoEngineBase
 
 class PayoffAnalyzer:
     def __init__(self, datasource):
@@ -41,9 +42,13 @@ class PayoffAnalyzer:
         """
         # Load EXO dict from EXO engine
         exo_data = self.datasource.exostorage.load_exo(exo_name)
+        exo_df, exo_dict = self.datasource.exostorage.load_series(exo_name)
 
         if exo_data is None:
             raise NameError("EXO data for {0} not found.".format(exo_name))
+
+        # Warn if something bad with EXO series
+        ExoEngineBase.check_series_integrity(exo_name, exo_df, raise_exception=False)
 
         # Calculate net position on particular date
         # Reconstruct position passing transactions from early days to current day
@@ -105,8 +110,13 @@ class PayoffAnalyzer:
 
             # Calculate position based on EXO transactions
             exo_data = self.datasource.exostorage.load_exo(exo_name)
+            exo_df, exo_dict = self.datasource.exostorage.load_series(exo_name)
+
             if exo_data is None:
                 raise NameError("EXO data for {0} not found.".format(exo_name))
+
+            # Warn if something bad with EXO series
+            ExoEngineBase.check_series_integrity(exo_name, exo_df, raise_exception=False)
 
             for trans in exo_data['transactions']:
                 if trans['date'] <= pos_date:

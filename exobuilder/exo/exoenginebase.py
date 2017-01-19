@@ -4,6 +4,7 @@ import pandas as pd
 import pickle
 import os
 import datetime
+import warnings
 
 
 class ExoEngineBase(object):
@@ -208,6 +209,23 @@ class ExoEngineBase(object):
         result['calc_date'] = datetime.datetime.now()
 
         return result
+
+    @staticmethod
+    def check_series_integrity(exo_name, exo_df, raise_exception=False):
+        if len(exo_df) < 200:
+            if raise_exception:
+                raise ValueError("{0} [NODATA DataLen: {1}]".format(exo_name, len(exo_df)))
+            else:
+                warnings.warn("{0} [NODATA DataLen: {1}]".format(exo_name, len(exo_df)))
+                return False
+        elif (datetime.datetime.now() - exo_df.index[-1]).days > 4:
+            if raise_exception:
+                raise ValueError("{0} [DELAYED: LastDate: {1}]".format(exo_name, exo_df.index[-1]))
+            else:
+                warnings.warn("{0} [DELAYED: LastDate: {1}]".format(exo_name, exo_df.index[-1]))
+                return False
+        else:
+            return True
 
     def load(self):
         exo_data = self.datasource.exostorage.load_exo(self.name)
