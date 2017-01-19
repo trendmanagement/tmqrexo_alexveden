@@ -105,11 +105,14 @@ class AlphaOnlineScript:
                                                         APPCLASS_ALPHA,
                                                         MsgStatus("RUN", 'Processing custom alpha', notify=True))
                                 alphas_processed += 1
-                            except:
+                            except Exception as exc:
                                 self.log.exception("Failed to process EXO quote: {0}".format(msg.exo_name))
                                 self.signal_app.send(MsgStatus("ERROR",
-                                                               "Error while processing EXO quote: {0} for alpha {1}".format(
-                                                                   msg.exo_name, module + '.' + custom_file),
+                                                               "Error: {0} for alpha {1} Reason: {2}".format(
+                                                                   msg.exo_name,
+                                                                   module + '.' + custom_file,
+                                                                   exc
+                                                               ),
                                                                notify=True,
                                                                )
                                                      )
