@@ -38,6 +38,7 @@ from tradingcore.swarmonlinemanager import SwarmOnlineManager
 import sys, argparse, logging
 from tradingcore.messages import *
 from tradingcore.signalapp import SignalApp, APPCLASS_ALPHA
+from datetime import datetime
 
 
 TMQRPATH = os.getenv("TMQRPATH", '')
@@ -118,6 +119,17 @@ def main(args, loglevel):
 
     for exo in exo_names:
         logging.info("Processing EXO: " + exo)
+
+        # Check for EXO data validity
+        exo_df, exo_info = exo_storage.load_series(exo)
+        if len(exo_df) == 0 or len(exo_df) < 200 or (datetime.now() - exo_df.index[-1]).days < 4:
+            logging.error("Not actual EXO data found in {0} last date: \n{1}".format(exo, exo_df.tail()))
+            last_exo_date = 'N/A' if len(exo_df) == 0 else exo_df.index[-1]
+            signalapp.send(MsgStatus('ERROR',
+                                     'Not actual or empty EXO data found in {0} last date {1}'.format(exo, last_exo_date),
+                                     notify=True))
+            break
+
         # Load alpha modules to process
         for module in os.listdir('alphas'):
             #
@@ -152,9 +164,11 @@ def main(args, loglevel):
                             #
                             # Saving last EXO state to online DB
                             #
+
                             swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
                             logging.debug('Saving: {0}'.format(swm.name))
                             swmonline.save(swm)
+
                         except:
                             logging.exception('Exception occurred:')
                             signalapp.send(MsgStatus('ERROR',
