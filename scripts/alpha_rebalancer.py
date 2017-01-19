@@ -108,7 +108,7 @@ def main(args, loglevel):
         logging.basicConfig(filename=args.logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                             level=loglevel)
     signalapp = SignalApp("AlphaRebalancer", APPCLASS_ALPHA, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
-    signalapp.send(MsgStatus('INIT', 'Initiating alpha rebalancer script'))
+    signalapp.send(MsgStatus('INIT', 'Initiating alpha rebalancer script', notify=True))
 
     #exo_names = get_exo_names_mat()
     logging.getLogger("pika").setLevel(logging.WARNING)
