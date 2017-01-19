@@ -64,6 +64,14 @@ class EXOStorage(object):
         else:
             return list(data)
 
+    def delete_exo(self, exo_name):
+        """
+        Removes EXO series from DB
+        :param exo_name:
+        :return:
+        """
+        self.db.exo_data.delete_one({'name': exo_name})
+
     def swarms_info(self):
         """
         Aggregate swarm information by instrument, product, alpha type
