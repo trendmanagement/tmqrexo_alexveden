@@ -352,6 +352,10 @@ class EXOScript:
 
         if self.args.backfill is not None:
             # Backfill mode enabled
+            self.signalapp.send(MsgStatus("RUN",
+                                          "Starting EXO backfill.".format(self.args.instrument),
+                                          notify=True)
+                                )
             self.do_backfill()
             self.signalapp.send(MsgStatus("RUN",
                                           "EXO backfill for {0} has been finished.".format(self.args.instrument),
