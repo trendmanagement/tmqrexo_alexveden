@@ -199,11 +199,13 @@ def main(args, loglevel):
                         swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
                         logging.debug('Saving: {0}'.format(swm.name))
                         swmonline.save(swm)
-                except:
+                except Exception as exc:
                     logging.exception('Exception occurred:')
                     signalapp.send(MsgStatus('ERROR',
-                                             'Exception in {0}'.format(
-                                                 Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX)),
+                                             'Exception in {0} Message: {1}'.format(
+                                                 Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX),
+                                                 exc,
+                                             ),
                                              notify=True))
 
     logging.info("Processing accounts positions")

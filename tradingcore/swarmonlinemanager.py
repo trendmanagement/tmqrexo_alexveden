@@ -52,6 +52,14 @@ class SwarmOnlineManager:
         # Load All swarms for Strategy and EXO name
         swarms_data = self.load(exo_name, StrategyClass.name)
 
+        if len(swarms_data) > 0:
+            # Check EXO data length
+            exo_df, exo_info = exo_storage.load_series(exo_name)
+            if len(exo_df) == 0 or len(exo_df) < 200 or (datetime.now() - exo_df.index[-1]).days < 4:
+                last_exo_date = 'N/A' if len(exo_df) == 0 else exo_df.index[-1]
+                raise ValueError('Not actual or empty EXO data found in {0} last date {1}'.format(exo_name,
+                                                                                                  last_exo_date))
+
         for swm_dict in swarms_data:
             # Generate context for swarm
             context = self.strategy_context

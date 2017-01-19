@@ -285,10 +285,12 @@ class EXOScript:
                             if backfill_dict is None:
                                 # Sending signal to alphas that EXO price is ready
                                 self.signalapp.send(MsgEXOQuote(exo_engine.exo_name, decision_time))
-                    except:
+                    except Exception as exc:
                         self.logger.exception("Failed processing EXO: {0} on {1}".format(ExoClass, symbol))
                         self.signalapp.send(MsgStatus("ERROR",
-                                                      "Failed processing EXO: {0} on {1}".format(ExoClass, symbol),
+                                                      "Failed processing EXO: {0} on {1} Reason: {2}".format(ExoClass,
+                                                                                                             symbol,
+                                                                                                             exc),
                                                       notify=True)
                                             )
 
