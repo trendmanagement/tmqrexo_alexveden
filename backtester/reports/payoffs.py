@@ -110,6 +110,8 @@ class PayoffAnalyzer:
 
             for trans in exo_data['transactions']:
                 if trans['date'] <= pos_date:
+                    if trans['qty'] == 0:
+                        continue
                     trans['qty'] *= exp_dict['exposure']
                     trans['usdvalue'] *= exp_dict['exposure']
                     transactions.append(trans)
