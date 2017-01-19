@@ -1,5 +1,6 @@
 from exobuilder.exo.transaction import Transaction
 import copy
+import warnings
 
 class Position(object):
     def __init__(self):
@@ -84,6 +85,9 @@ class Position(object):
         transaction_qty = trans_dict['qty']
         transation_usdvalue = trans_dict['usdvalue']
 
+        if transaction_qty == 0:
+            raise ValueError("Transaction Qty must be non-zero")
+
         if asset_hash not in self._positions:
             self._positions[asset_hash] = {'qty': transaction_qty, 'value': transation_usdvalue}
         else:
@@ -122,6 +126,9 @@ class Position(object):
         else:
             # Set Position instance to Transaction mode (works with Transaction class instances)
             self.transaction_mode = "T"
+
+        if transaction.qty == 0:
+            raise ValueError("Transaction Qty must be non-zero")
 
         if transaction.asset not in self._positions:
             self._positions[transaction.asset] = {'qty': transaction.qty, 'value': transaction.usdvalue, 'leg_name': transaction.leg_name}
