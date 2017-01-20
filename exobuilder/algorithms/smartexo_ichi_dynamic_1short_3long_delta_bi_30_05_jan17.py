@@ -80,10 +80,6 @@ class SmartEXO_ichi_dynamic_1short_3long_delta_bi_30_05_jan17(SmartEXOIchi):
             #
             Transaction(opt_chain.get_by_delta(0.05), date, 3.0),
             Transaction(opt_chain.get_by_delta(0.3), date, -1.0),
-            Transaction(opt_chain.get_by_delta(0.25), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.6), date, -0.0),
-            Transaction(opt_chain.get_by_delta(0.20), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.05), date, 0.0),
         ]
         return trans_list
 
@@ -95,10 +91,6 @@ class SmartEXO_ichi_dynamic_1short_3long_delta_bi_30_05_jan17(SmartEXOIchi):
             #
             Transaction(opt_chain.get_by_delta(0.05), date, 3.0),
             Transaction(opt_chain.get_by_delta(0.3), date, -1.0),
-            Transaction(opt_chain.get_by_delta(0.25), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.6), date, -0.0),
-            Transaction(opt_chain.get_by_delta(0.20), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.05), date, 0.0),
 
         ]
 
@@ -115,8 +107,6 @@ class SmartEXO_ichi_dynamic_1short_3long_delta_bi_30_05_jan17(SmartEXOIchi):
             Transaction(opt_chain.get_by_delta(0.75), date, -3.0),
             Transaction(opt_chain.get_by_delta(-0.75), date, -3.0),
             Transaction(opt_chain.get_by_delta(-0.05), date, 3.0),
-            Transaction(opt_chain.get_by_delta(0.20), date, 0.0),
-            Transaction(opt_chain.get_by_delta(0.05), date, 0.0),
         ]
         return trans_list
 
