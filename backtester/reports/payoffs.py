@@ -56,6 +56,9 @@ class PayoffAnalyzer:
         self.position = Position()
 
         for trans in exo_data['transactions']:
+            if trans['qty'] == 0:
+                continue
+
             if trans['date'] <= pos_date:
                 self.position.add_transaction_dict(trans)
             else:
