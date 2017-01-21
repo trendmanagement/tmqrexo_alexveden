@@ -58,7 +58,8 @@ class Position(object):
         """
         transactions = []
         for asset, netposition in self.netpositions.items():
-            transactions.append(Transaction(asset, asset.date, -netposition['qty'], asset.price, leg_name=netposition['leg_name']))
+            if netposition['qty'] != 0:
+                transactions.append(Transaction(asset, asset.date, -netposition['qty'], asset.price, leg_name=netposition['leg_name']))
 
         return transactions
 
