@@ -9,6 +9,11 @@ class Position(object):
         self._legs = {}
 
         self.transaction_mode = None
+        self._last_trans_date = None
+
+    @property
+    def last_trans_date(self):
+        return self._last_trans_date
 
     @property
     def netpositions(self):
@@ -89,6 +94,8 @@ class Position(object):
         if transaction_qty == 0:
             raise ValueError("Transaction Qty must be non-zero")
 
+        self._last_trans_date = trans_dict['date']
+
         if asset_hash not in self._positions:
             self._positions[asset_hash] = {'qty': transaction_qty, 'value': transation_usdvalue}
         else:
@@ -130,6 +137,8 @@ class Position(object):
 
         if transaction.qty == 0:
             raise ValueError("Transaction Qty must be non-zero")
+
+        self._last_trans_date = transaction.date
 
         if transaction.asset not in self._positions:
             self._positions[transaction.asset] = {'qty': transaction.qty, 'value': transaction.usdvalue, 'leg_name': transaction.leg_name}
@@ -234,6 +243,10 @@ class Position(object):
         for asset, posdic in positions.items():
             if 'leg_name' in posdic and posdic['leg_name'] != '':
                 p._legs[posdic['leg_name']] = asset
+
+        if 'transactions' in position_dict and len(position_dict['transactions']) > 0:
+            p._last_trans_date = position_dict['transactions'][-1]['date']
+
         return p
 
     @staticmethod
