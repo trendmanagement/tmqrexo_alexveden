@@ -209,7 +209,8 @@ class Position(object):
 
         return {
             'positions': positions,
-            '_realized_pnl': self._realized_pnl
+            '_realized_pnl': self._realized_pnl,
+            '_last_trans_date': self.last_trans_date,
             }
 
     @staticmethod
@@ -244,8 +245,8 @@ class Position(object):
             if 'leg_name' in posdic and posdic['leg_name'] != '':
                 p._legs[posdic['leg_name']] = asset
 
-        if 'transactions' in position_dict and len(position_dict['transactions']) > 0:
-            p._last_trans_date = position_dict['transactions'][-1]['date']
+        if '_last_trans_date' in position_dict:
+            p._last_trans_date = position_dict['_last_trans_date']
 
         return p
 
