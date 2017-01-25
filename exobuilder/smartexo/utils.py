@@ -16,6 +16,9 @@ import warnings
 from backtester.reports.payoffs import PayoffAnalyzer
 
 from scripts.settings import *
+import bdateutil
+import holidays
+
 
 #try:
 #    from scripts.settings_local import *
@@ -64,6 +67,13 @@ class SmartEXOUtils:
         db['exo_data'].delete_many({'name': {'$regex': '.*{0}*.'.format(self.smartexo_class.EXO_NAME)}})
 
     def build_smartexo(self, start_date, **smartexo_kwargs):
+        def check_bday_or_holiday(date):
+            if date.weekday() >= 5 or not bdateutil.isbday(date, holidays=holidays.US()):
+                # Skipping weekends and US holidays
+                # date.weekday() >= 5 - 5 is Saturday!
+                return False
+
+            return True
         self.clear_smartexo()
 
         logging.info("Starting EXO calculation process from: {0}".format(start_date))
@@ -84,23 +94,23 @@ class SmartEXOUtils:
                 asset_info = self.assetindex.get_instrument_info(ticker)
                 exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(date, asset_info)
 
-                logging.info("\t\tRun on {0}".format(decision_time_end))
+                if check_bday_or_holiday(decision_time_end):
+                    logging.info("\t\tRun on {0}".format(decision_time_end))
+                    with self.smartexo_class(ticker, 0, decision_time_end, self.datasource, **smartexo_kwargs) as exo_engine:
+                        try:
+                            asset_list = exo_engine.ASSET_LIST
+                            # Checking if current symbol is present in EXO class ASSET_LIST
+                            if asset_list is not None:
+                                if ticker not in asset_list:
+                                    # Skipping assets which are not in the list
+                                    continue
+                        except AttributeError:
+                            warnings.warn(
+                                "EXO class {0} doesn't contain ASSET_LIST attribute filter, calculating all assets".format(self.smartexo_class))
 
-                with self.smartexo_class(ticker, 0, decision_time_end, self.datasource, **smartexo_kwargs) as exo_engine:
-                    try:
-                        asset_list = exo_engine.ASSET_LIST
-                        # Checking if current symbol is present in EXO class ASSET_LIST
-                        if asset_list is not None:
-                            if ticker not in asset_list:
-                                # Skipping assets which are not in the list
-                                continue
-                    except AttributeError:
-                        warnings.warn(
-                            "EXO class {0} doesn't contain ASSET_LIST attribute filter, calculating all assets".format(self.smartexo_class))
-
-                    # Load EXO information from mongo
-                    exo_engine.load()
-                    exo_engine.calculate()
+                        # Load EXO information from mongo
+                        exo_engine.load()
+                        exo_engine.calculate()
 
                 end_time = time.time()
                 currdate += timedelta(days=1)
