@@ -63,8 +63,22 @@ def get_exo_names():
     for instrument in INSTRUMENTS_LIST:
         for exo in EXO_LIST:
             ExoClass = exo['class']
+            try:
+                asset_list = ExoClass.ASSET_LIST
+                # Checking if current symbol is present in EXO class ASSET_LIST
+                if asset_list is not None:
+                    if instrument not in asset_list:
+                        # Skipping assets which are not in the list
+                        continue
+            except AttributeError:
+                logging.warning(
+                    "EXO class {0} doesn't contain ASSET_LIST attribute filter, calculating all assets".format(
+                        ExoClass))
+                pass
+
             for exo_name in ExoClass.names_list(instrument):
-                exo_names_list += exo_name
+                exo_names_list.append(exo_name)
+
 
     return exo_names_list
 
@@ -117,9 +131,11 @@ def main(args, loglevel):
         exo_df, exo_info = exo_storage.load_series(exo)
 
         if exo_df is None:
+            logging.error('Can\'t find exo data  {0}'.format(exo))
             signalapp.send(MsgStatus('ERROR',
                                      'Can\'t find exo data  {0}'.format(exo),
                                      notify=True))
+
             continue
 
         if len(exo_df) == 0 or len(exo_df) < 200 or (datetime.now() - exo_df.index[-1]).days > 4:
