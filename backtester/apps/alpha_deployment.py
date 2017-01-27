@@ -271,6 +271,8 @@ class AlphaDeployer(ui.Widget):
             os.mkdir(os.path.join(self.TMQRPATH, 'scripts', 'alphas', exo_name.lower()))
             # Create empty '__init__.py' to mark new directory as python package
             open(os.path.join(self.TMQRPATH, 'scripts', 'alphas', exo_name.lower(), '__init__.py'), 'a').close()
+            self._log("WARNING: You are deploying custom alpha for new SmartEXO asset, "
+                      "you need manually run 'install.py' script on the server after deployment to make alphas available.")
 
         self._log("Sanity checks PASSED")
         return True
