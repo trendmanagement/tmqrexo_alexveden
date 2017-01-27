@@ -102,7 +102,7 @@ class PayoffAnalyzer:
         cmp = Campaign(campaign_dict, self.datasource)
         # Calculate campaign's net exo position on particular date
         pos_date = datetime.now() if date is None else date
-        self.position = cmp.positions_at_date(pos_date)
+        self.position = cmp.positions_at_date(date)
 
         # Store positions values for analysis
         self.position_type = 'Campaign'
