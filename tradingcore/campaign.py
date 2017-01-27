@@ -1,6 +1,8 @@
 from exobuilder.exo.position import Position
 import warnings
 from exobuilder.exo.exoenginebase import ExoEngineBase
+from datetime import datetime
+
 
 class Campaign:
     def __init__(self, campaign_dict, datasource):
@@ -77,6 +79,7 @@ class Campaign:
                     'exo_name': info_dict['exo_name'],
                     }
         else:
+
             for swarm_name, info_dict in swarm_positions.items():
                 seriesdf = info_dict['swarm_series']
 
@@ -113,12 +116,14 @@ class Campaign:
     def positions_at_date(self, date=None):
         """
         Reconstruct campaign position at particular date
-        :param date: if None use last position
+        :param pos_date: if None use last position
         :return:
         """
         exo_exposure = self.exo_positions(date)
 
         transactions = []
+
+        pos_date = datetime.now() if date is None else date
         for exo_name, exp_dict in exo_exposure.items():
             # Skip zero-positions
             if exp_dict['exposure'] == 0:
@@ -135,7 +140,7 @@ class Campaign:
             ExoEngineBase.check_series_integrity(exo_name, exo_df, raise_exception=False)
 
             for trans in exo_data['transactions']:
-                if trans['date'] <= date:
+                if trans['date'] <= pos_date:
                     if trans['qty'] == 0:
                         continue
                     trans['qty'] *= exp_dict['exposure']
@@ -155,7 +160,7 @@ class Campaign:
         # Convert position to normal state
         # We will load all assets information from DB
         # And this will allow us to use position pricing as well
-        position.convert(self._datasource, date)
+        position.convert(self._datasource, pos_date)
         return position
 
     @property
