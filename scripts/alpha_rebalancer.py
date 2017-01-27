@@ -115,6 +115,13 @@ def main(args, loglevel):
 
         # Check for EXO data validity
         exo_df, exo_info = exo_storage.load_series(exo)
+
+        if exo_df is None:
+            signalapp.send(MsgStatus('ERROR',
+                                     'Can\'t find exo data  {0}'.format(exo),
+                                     notify=True))
+            continue
+
         if len(exo_df) == 0 or len(exo_df) < 200 or (datetime.now() - exo_df.index[-1]).days > 4:
             logging.error("Not actual EXO data found in {0} last date: \n{1}".format(exo, exo_df.tail()))
             last_exo_date = 'N/A' if len(exo_df) == 0 else exo_df.index[-1]
