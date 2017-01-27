@@ -62,23 +62,12 @@ def get_exo_names():
 
     for instrument in INSTRUMENTS_LIST:
         for exo in EXO_LIST:
-            print("Processing : " + exo['name'])
-
             ExoClass = exo['class']
             for exo_name in ExoClass.names_list(instrument):
-                exo_names_list.append(exo_name)
+                exo_names_list += exo_name
 
     return exo_names_list
 
-
-def get_exo_names_mat():
-    exo_names_list = []
-
-    for file in os.listdir(os.path.join(TMQRPATH, "mat")):
-        if 'strategy_' in file and '.mat' in file:
-            exo_names_list.append(file)
-
-    return exo_names_list
 
 def get_alpha_modules(base_dir, exo_names):
     results = {}
@@ -115,7 +104,11 @@ def main(args, loglevel):
     logging.info("Starting...")
 
     exo_storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
-    exo_names = exo_storage.exo_list()
+    # Generating EXO names
+    if args.all:
+        exo_names = exo_storage.exo_list()
+    else:
+        exo_names = get_exo_names()
 
     for exo in exo_names:
         logging.info("Processing EXO: " + exo)
@@ -236,6 +229,13 @@ if __name__ == '__main__':
         help="Log file path",
         action="store",
         default='')
+
+    parser.add_argument(
+        "-A",
+        "--all",
+        help="Use all EXOs in the DB instead of settings_exo.py module",
+        action="store_true",
+    )
 
     args = parser.parse_args()
 
