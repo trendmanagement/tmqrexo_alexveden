@@ -128,20 +128,26 @@ class AlphaSanityChecker:
 
         algo_result_full = algo_func(data, *args, **kwargs)
 
-        #print("Steps to go {0}".format(nsteps))
-
         if ipython_info() == 'notebook':
             pbar = tqdm_notebook(desc="Progress", total=nsteps)
         else:
             pbar = tqdm(desc="Progress", total=nsteps)
 
+        haserr = False
         for i in range(nsteps):
             data_chunk = data.iloc[:istart + day_step*i]
             t_algo_result = algo_func(data_chunk, *args, **kwargs)
             if not compare_func(algo_result_full, t_algo_result):
                 print("Algorithm fut-ref sanity check failed, on step # {0} Date: {1}".format(i, data_chunk.index[-1]))
+                haserr = True
                 break
             pbar.update(1)
+
+        pbar.close()
+        if haserr:
+            print("Finished: fut-ref check failed")
+        else:
+            print("Finished: algorithm seems to be OK")
 
     def run(self):
         data = self.strategy.data
