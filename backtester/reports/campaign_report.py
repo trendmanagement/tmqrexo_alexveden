@@ -26,6 +26,8 @@ class CampaignReport:
         isok = True
         last_date = datetime(1900, 1, 1)
         prev_date = datetime(1900, 1, 1)
+        decision_time = None
+        instrument_name = None
 
         for k, v in self.swarms_data.items():
             seriesdf = v['swarm_series']
@@ -37,6 +39,13 @@ class CampaignReport:
             seriesdf = v['swarm_series']
             asset_info = self.datasource.assetindex.get_instrument_info(instrument)
             exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), asset_info)
+
+
+            if instrument_name is None:
+                instrument_name = instrument
+            else:
+                if instrument_name != instrument:
+                    raise ValueError("The campaign has different products, only mono-product campaigns are supported")
 
             if (last_date - v['last_date']).days > 0:
                 print('[DELAYED] {0}: {1}'.format(k, v['last_date']))
@@ -55,8 +64,8 @@ class CampaignReport:
         else:
             print("Some alphas corrupted!")
 
-        self.last_date = last_date
-        self.prev_date = prev_date
+        self.last_date = datetime.combine(last_date.date(), decision_time.time())
+        self.prev_date = datetime.combine(prev_date.date(), decision_time.time())
 
         return isok
 
@@ -93,6 +102,7 @@ class CampaignReport:
     def report_positions(self):
         pos_last = self.cmp.positions_at_date(self.last_date)
         pos_prev = self.cmp.positions_at_date(self.prev_date)
+        pos_prev_pnl = self.cmp.positions_at_date(self.prev_date, self.last_date)
 
         positions = OrderedDict()
         for contract, exp_dict in pos_last.netpositions.items():
@@ -122,9 +132,26 @@ class CampaignReport:
         else:
             print("No trades occurred")
 
-        print("\nPnL for current date: {0}".format(pos_last.pnl - pos_prev.pnl))
+        print("\nPnL between decision moments (without costs)\n"
+              "[{0} - {1}]:{2: 0.2f}".format(self.prev_date,
+                                       self.last_date,
+                                       pos_prev_pnl.pnl - pos_prev.pnl))
 
     def report_all(self):
         self.report_exo_exposure()
         self.report_alpha_exposure()
         self.report_positions()
+
+if __name__ == '__main__':
+    from scripts.settings import *
+    # from backtester.reports.campaign_report import CampaignReport
+    from exobuilder.data.assetindex_mongo import AssetIndexMongo
+    from exobuilder.data.datasource_sql import DataSourceSQL
+    from exobuilder.data.exostorage import EXOStorage
+
+    assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+    storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+    datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, 3, 20, storage)
+
+    rpt = CampaignReport('ES_Bidirectional V3', datasource)
+    rpt.report_all()
