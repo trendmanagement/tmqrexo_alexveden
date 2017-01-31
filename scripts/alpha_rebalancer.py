@@ -224,13 +224,6 @@ def main(args, loglevel):
                                              ),
                                              notify=True))
 
-    logging.info("Processing accounts positions")
-    assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
-    datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit=10, options_limit=10,
-                                 exostorage=exo_storage)
-    exmgr = ExecutionManager(MONGO_CONNSTR, datasource, dbname=MONGO_EXO_DB)
-    exmgr.account_positions_process(write_to_db=True)
-
     signalapp.send(MsgStatus('RUN', 'Alpha rebalancer script', notify=True))
     logging.info("Done.")
 
