@@ -59,7 +59,7 @@ class PayoffAnalyzer:
             if trans['qty'] == 0:
                 continue
 
-            if trans['date'] <= pos_date:
+            if trans['date'].date() <= pos_date.date():
                 self.position.add_transaction_dict(trans)
             else:
                 break
