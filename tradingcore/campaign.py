@@ -113,10 +113,11 @@ class Campaign:
             exo_exposure[v['exo_name']]['exposure'] = exp['exposure'] + v['exposure']
         return exo_exposure
 
-    def positions_at_date(self, date=None):
+    def positions_at_date(self, date=None, pos_pnl_date=None):
         """
         Reconstruct campaign position at particular date
         :param pos_date: if None use last position
+        :param pos_pnl_date: Estimate pnl on particular date, if None pos_pnl_date = date
         :return:
         """
         exo_exposure = self.exo_positions(date)
@@ -160,7 +161,8 @@ class Campaign:
         # Convert position to normal state
         # We will load all assets information from DB
         # And this will allow us to use position pricing as well
-        position.convert(self._datasource, pos_date)
+
+        position.convert(self._datasource, pos_date if pos_pnl_date is None else pos_pnl_date)
         return position
 
     @property
