@@ -333,6 +333,8 @@ environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
         fh.write(file_contents)
 
 def install_events_logger():
+    if not os.path.exists(os.path.join(current_path, 'logs', 'trading')):
+        os.mkdir(os.path.join(current_path, 'logs', 'trading'))
 
     supervisor_conf_template = """[program:EVENT_LOGGER]
 command=python3.5 {script_file} -v
