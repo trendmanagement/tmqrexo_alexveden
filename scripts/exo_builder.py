@@ -221,14 +221,19 @@ class EXOScript:
                                           )
                                 )
 
-            #
-            # This code expected to execute only after all alphas have been processed
-            #       because self.run_exo_calc has blocking call of signalapp message sending
-            # And it will be executed only once for each product at decision time
-            self.exmgr = ExecutionManager(MONGO_CONNSTR, datasource, MONGO_EXO_DB)
-            self.exmgr.account_positions_process(write_to_db=True)
-            self.signalapp.send(MsgStatus("RUN", "Processing positions.", notify=True))
-
+            try:
+                # This code expected to execute only after all alphas have been processed
+                #       because self.run_exo_calc has blocking call of signalapp message sending
+                # And it will be executed only once for each product at decision time
+                exmgr = ExecutionManager(MONGO_CONNSTR, datasource, MONGO_EXO_DB)
+                exmgr.account_positions_process(write_to_db=True)
+                self.signalapp.send(MsgStatus("RUN", "Processing positions.", notify=True))
+            except Exception as exc:
+                self.logger.exception("Failed processing account positions for {0}".format(symbol))
+                self.signalapp.send(MsgStatus("ERROR",
+                                              "Failed processing account positions for {0} Reason: {1}".format(symbol,
+                                                                                                               exc),
+                                              notify=True))
         else:
             self.signalapp.send(MsgStatus('SKIPPED',
                                           'EXO calculation skipped for {0} at {1}, quote date < decision_time'.format(symbol, quote_date),
