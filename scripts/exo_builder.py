@@ -81,7 +81,7 @@ except SystemError:
     except ImportError:
         pass
     pass
-
+from tradingcore.execution_manager import ExecutionManager
 
 class EXOScript:
     def __init__(self, args, loglevel):
@@ -211,13 +211,23 @@ class EXOScript:
 
             end_time = time.time()
             self.signalapp.send(MsgStatus('RUN',
-                                          'EXOs processed for {0} at {1} (CalcTime: {2:0.2f}s)'.format(symbol, quote_date, end_time-start_time),
+                                          'EXOs processed for {0} at {1} (CalcTime: {2:0.2f}s)'.format(symbol,
+                                                                                                       quote_date,
+                                                                                                       end_time-start_time),
                                           context={'instrument': symbol,
                                                    'date': quote_date,
                                                    'exec_time': end_time-start_time},
                                           notify=True
                                           )
                                 )
+
+            #
+            # This code expected to execute only after all alphas have been processed
+            #       because self.run_exo_calc has blocking call of signalapp message sending
+            # And it will be executed only once for each product at decision time
+            self.exmgr = ExecutionManager(MONGO_CONNSTR, datasource, MONGO_EXO_DB)
+            self.exmgr.account_positions_process(write_to_db=True)
+            self.signalapp.send(MsgStatus("RUN", "Processing positions.", notify=True))
 
         else:
             self.signalapp.send(MsgStatus('SKIPPED',
