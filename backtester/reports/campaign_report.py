@@ -157,13 +157,13 @@ class CampaignReport:
 
         campaign_stats = pd.DataFrame({'Change': campaign_equity.diff(), 'Delta': campaign_deltas, 'Costs': campaign_costs})
 
-        print(campaign_stats.tail())
+        print(campaign_stats.tail(10))
 
     def report_all(self):
-        self.report_pnl()
         self.report_exo_exposure()
         self.report_alpha_exposure()
         self.report_positions()
+        self.report_pnl()
 
 if __name__ == '__main__':
     from scripts.settings import *
@@ -178,3 +178,9 @@ if __name__ == '__main__':
 
     rpt = CampaignReport('ES_Bidirectional V3', datasource)
     rpt.report_all()
+
+    swm_data = datasource.exostorage.swarms_data(rpt.cmp.alphas_list())
+
+    for alpha_name, swm_exposure_dict in rpt.cmp.alphas.items():
+        swarm_name = alpha_name
+        series = swm_data[swarm_name]['swarm_series']

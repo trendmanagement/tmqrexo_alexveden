@@ -11,7 +11,7 @@ import pyximport
 pyximport.install(setup_args={"include_dirs": np.get_include()})
 
 from backtester.backtester_fast import stats_exposure, calc_costs
-from copy import  deepcopy
+from copy import deepcopy, copy
 import inspect
 import pprint
 import warnings
@@ -26,7 +26,7 @@ class Swarm:
         :param context: dict(), strategy setting context
         :return:
         """
-        self.context = context
+        self.context = self.clone_context(context)
         self.global_filter = None
         self._rebalancetime = None
 
@@ -60,7 +60,19 @@ class Swarm:
         self._swarm = None
         self._swarm_exposure = None
 
+    @staticmethod
+    def clone_context(context):
+        storage = None
+        if 'exo_storage' in context['strategy']:
+            storage = context['strategy']['exo_storage']
+            del context['strategy']['exo_storage']
 
+        ctx = deepcopy(context)
+        if storage is not None:
+            ctx['strategy']['exo_storage'] = storage
+            context['strategy']['exo_storage'] = storage
+
+        return ctx
 
     @property
     def raw_equity(self):
@@ -511,7 +523,7 @@ class Swarm:
         :return:
         """
 
-        ctx = strategy_context
+        ctx = Swarm.clone_context(strategy_context)
         ctx['strategy']['opt_preset'] = Swarm._parse_params(state_dict['last_members_list'])
         # Creating new swarm in special mode (used for online updates)
         swm = Swarm(ctx, laststate=True)
@@ -586,15 +598,25 @@ class Swarm:
             # We have new quote data
             # Similar to backtester_fast.stats_exposure() backtesting algorithm
             if i == 0:
+                # usually PnL for 1-st day will be 0.0, but in case when EXO price recalculated we need to do adjustments
                 profit = (_exo_price_array.values[i] - self.last_exoquote) * self._last_prev_exposure
+
+                # Don't calculate costs at first day (it's assumed that costs already included in price)
+                if self._last_date != _exo_price_array.index[i]:
+                    if costs is not None:
+                        _costs_value = calc_costs(costs['transaction_costs'].values[i],
+                                                  costs['rollover_costs'].values[i],
+                                                  self._last_prev_exposure,           # Prev Exposure
+                                                  _exposure)                    # Current Exposure
+                        profit += _costs_value
             else:
                 profit = (_exo_price_array.values[i] - _exo_price_array.values[i-1]) * self._last_exposure
-            if costs is not None:
-                _costs_value = calc_costs(costs['transaction_costs'].values[i],
-                                          costs['rollover_costs'].values[i],
-                                          self.last_exposure,           # Prev Exposure
-                                          _exposure)                    # Current Exposure
-                profit += _costs_value
+                if costs is not None:
+                    _costs_value = calc_costs(costs['transaction_costs'].values[i],
+                                              costs['rollover_costs'].values[i],
+                                              self.last_exposure,           # Prev Exposure
+                                              _exposure)                    # Current Exposure
+                    profit += _costs_value
 
             # Updating swarm delta value if it exists in EXO dataframe
 

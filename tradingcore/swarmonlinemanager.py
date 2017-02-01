@@ -35,6 +35,46 @@ class SwarmOnlineManager:
             result.append(sctx)
         return result
 
+    def load_swarm(self, swarm_name):
+        return self.db['swarms'].find({'swarm_name': swarm_name}).next()
+
+    def process_custom(self, exo_name, swm_callback=None):
+        """
+        Run this method every time when new EXO quote comes
+        :param exo_name: exo_name in MongoDB
+        :param swm_callback: swarm_callback after swarm is updated
+        :return:
+        """
+        # Read EXO quote data from Mongo
+        exo_storage = EXOStorage(self.mongo_connstr, self.mongo_dbname)
+
+        # Generate context for swarm
+        context = self.strategy_context
+        context['strategy']['exo_storage'] = exo_storage
+        swm_tmp = Swarm(self.strategy_context)
+
+        # Load All swarms for Strategy and EXO name
+        swm_dict = self.load_swarm(swm_tmp.name)
+
+        # Check EXO data length
+        exo_df = swm_tmp.strategy.data
+        if len(exo_df) == 0 or len(exo_df) < 200 or (datetime.now() - exo_df.index[-1]).days > 4:
+            last_exo_date = 'N/A' if len(exo_df) == 0 else exo_df.index[-1]
+            raise ValueError('Not actual or empty EXO data found in {0} last date {1}'.format(exo_name, last_exo_date))
+
+        # Restoring swarms last state from dict
+        swm = Swarm.laststate_from_dict(swm_dict, context)
+
+
+        # Update swarm equity dynamic and last state
+        swm.update()
+
+        # Saving swarm state to Mongo
+        self.save(swm)
+
+        if swm_callback is not None:
+            # Run Swarm callback (to notify framework that swarm is updated)
+            swm_callback(swm)
 
     def process(self, exo_name, swm_callback=None):
         """
