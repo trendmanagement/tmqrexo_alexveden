@@ -38,3 +38,19 @@ STRATEGY_CONTEXT = {
         }
     }
 }
+
+
+if __name__ == '__main__':
+    from backtester.reports.alpha_sanity_checks import AlphaSanityChecker
+    from scripts.settings import *
+    from exobuilder.data.exostorage import EXOStorage
+    from backtester.swarms.swarm import Swarm
+
+    storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+    STRATEGY_CONTEXT['strategy']['exo_storage'] = storage
+
+    smgr = Swarm(STRATEGY_CONTEXT)
+    smgr.run_swarm()
+
+    asc = AlphaSanityChecker(smgr, day_step=5)
+    asc.run()
