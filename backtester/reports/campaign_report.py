@@ -137,7 +137,30 @@ class CampaignReport:
                                        self.last_date,
                                        pos_prev_pnl.pnl - pos_prev.pnl))
 
+    def report_pnl(self):
+        campaign_dict = {}
+        campaign_deltas_dict = {}
+        campaign_costs_dict = {}
+
+        swm_data = self.datasource.exostorage.swarms_data(self.cmp.alphas_list())
+
+        for alpha_name, swm_exposure_dict in self.cmp.alphas.items():
+            swarm_name = alpha_name
+            series = swm_data[swarm_name]['swarm_series']
+            campaign_dict[swarm_name] = series['equity'] * swm_exposure_dict['qty']
+            campaign_deltas_dict[swarm_name] = series['delta'] * swm_exposure_dict['qty']
+            campaign_costs_dict[swarm_name] = series['costs'] * swm_exposure_dict['qty']
+
+        campaign_equity = pd.DataFrame(campaign_dict).ffill().sum(axis=1)
+        campaign_deltas = pd.DataFrame(campaign_deltas_dict).sum(axis=1)
+        campaign_costs = pd.DataFrame(campaign_costs_dict).sum(axis=1)
+
+        campaign_stats = pd.DataFrame({'Change': campaign_equity.diff(), 'Delta': campaign_deltas, 'Costs': campaign_costs})
+
+        print(campaign_stats.tail())
+
     def report_all(self):
+        self.report_pnl()
         self.report_exo_exposure()
         self.report_alpha_exposure()
         self.report_positions()

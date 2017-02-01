@@ -152,15 +152,22 @@ class AlphaSanityChecker:
     def run(self):
         data = self.strategy.data
 
-
         opt_list = self.strategy.slice_opts()
         max_steps = len(self.swarm.raw_swarm.columns)
 
         has_errors = False
 
-        for opt in tqdm_notebook(opt_list, desc="Progress", total=max_steps):
+        if ipython_info() == 'notebook':
+            pbar = tqdm_notebook(desc="Progress", total=max_steps)
+        else:
+            pbar = tqdm(desc="Progress", total=max_steps)
+
+        for opt in opt_list:
             if not self.process_opts(opt, data):
                 has_errors = True
+            pbar.update(1)
+
+        pbar.close()
 
         self.strategy.data = data
         if has_errors:
