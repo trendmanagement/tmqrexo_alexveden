@@ -6,6 +6,17 @@ from exobuilder.data.exceptions import QuoteNotFoundException
 import warnings
 from tradingcore.campaign import Campaign
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
+import os, sys
+from IPython.display import display, HTML
+
+
+def ipython_info():
+    ip = False
+    if 'ipykernel' in sys.modules:
+        ip = 'notebook'
+    elif 'IPython' in sys.modules:
+        ip = 'terminal'
+    return ip
 
 
 class CampaignReport:
@@ -19,8 +30,33 @@ class CampaignReport:
         self.prev_date = None
 
         self.cmp = Campaign(campaign_dict, self.datasource)
+        self.campaign_name = campaign_name
         self.swarms_data = datasource.exostorage.swarms_data(self.cmp.alphas_list())
         self.isok = self.check_swarms_integrity()
+
+        campaign_dict = {}
+        campaign_deltas_dict = {}
+        campaign_costs_dict = {}
+
+        swm_data = self.datasource.exostorage.swarms_data(self.cmp.alphas_list())
+
+        for alpha_name, swm_exposure_dict in self.cmp.alphas.items():
+            swarm_name = alpha_name
+            series = swm_data[swarm_name]['swarm_series']
+            campaign_dict[swarm_name] = series['equity'] * swm_exposure_dict['qty']
+            campaign_deltas_dict[swarm_name] = series['delta'] * swm_exposure_dict['qty']
+            campaign_costs_dict[swarm_name] = series['costs'] * swm_exposure_dict['qty']
+
+        campaign_equity = pd.DataFrame(campaign_dict).ffill().sum(axis=1)
+        campaign_deltas = pd.DataFrame(campaign_deltas_dict).sum(axis=1)
+        campaign_costs = pd.DataFrame(campaign_costs_dict).sum(axis=1)
+
+        self.campaign_stats = pd.DataFrame({
+            'Equity': campaign_equity,
+            'Change': campaign_equity.diff(),
+            'Delta': campaign_deltas,
+            'Costs': campaign_costs
+        })
 
     def check_swarms_integrity(self):
         isok = True
@@ -138,32 +174,30 @@ class CampaignReport:
                                        pos_prev_pnl.pnl - pos_prev.pnl))
 
     def report_pnl(self):
-        campaign_dict = {}
-        campaign_deltas_dict = {}
-        campaign_costs_dict = {}
+        print(self.campaign_stats.tail(10))
 
-        swm_data = self.datasource.exostorage.swarms_data(self.cmp.alphas_list())
+    def report_export(self):
+        if not os.path.exists('export'):
+            os.mkdir('export')
 
-        for alpha_name, swm_exposure_dict in self.cmp.alphas.items():
-            swarm_name = alpha_name
-            series = swm_data[swarm_name]['swarm_series']
-            campaign_dict[swarm_name] = series['equity'] * swm_exposure_dict['qty']
-            campaign_deltas_dict[swarm_name] = series['delta'] * swm_exposure_dict['qty']
-            campaign_costs_dict[swarm_name] = series['costs'] * swm_exposure_dict['qty']
+        if not os.path.exists(os.path.join('export', 'campaigns')):
+            os.mkdir(os.path.join('export', 'campaigns'))
 
-        campaign_equity = pd.DataFrame(campaign_dict).ffill().sum(axis=1)
-        campaign_deltas = pd.DataFrame(campaign_deltas_dict).sum(axis=1)
-        campaign_costs = pd.DataFrame(campaign_costs_dict).sum(axis=1)
+        fn = os.path.join('export', 'campaigns', self.campaign_name + '.csv')
+        self.campaign_stats.to_csv(fn)
 
-        campaign_stats = pd.DataFrame({'Change': campaign_equity.diff(), 'Delta': campaign_deltas, 'Costs': campaign_costs})
-
-        print(campaign_stats.tail(10))
+        if ipython_info() == 'notebook':
+            link = '<a href="{0}'.format(fn)
+            display(HTML(link))
+        else:
+            print("File saved to: {0}".format(fn))
 
     def report_all(self):
         self.report_exo_exposure()
         self.report_alpha_exposure()
         self.report_positions()
         self.report_pnl()
+        self.report_export()
 
 if __name__ == '__main__':
     from scripts.settings import *
@@ -178,9 +212,3 @@ if __name__ == '__main__':
 
     rpt = CampaignReport('ES_Bidirectional V3', datasource)
     rpt.report_all()
-
-    swm_data = datasource.exostorage.swarms_data(rpt.cmp.alphas_list())
-
-    for alpha_name, swm_exposure_dict in rpt.cmp.alphas.items():
-        swarm_name = alpha_name
-        series = swm_data[swarm_name]['swarm_series']
