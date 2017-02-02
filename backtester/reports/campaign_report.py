@@ -187,7 +187,7 @@ class CampaignReport:
         self.campaign_stats.to_csv(fn)
 
         if ipython_info() == 'notebook':
-            link = '<a href="{0}" target="_blank">{1}</a>'.format(fn, self.campaign_name)
+            link = '<a href="{0}" target="_blank">Download CSV: {1}</a>'.format(fn, self.campaign_name)
             display(HTML(link))
         else:
             print("File saved to: {0}".format(fn))
