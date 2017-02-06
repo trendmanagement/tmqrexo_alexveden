@@ -7,7 +7,6 @@ import warnings
 from tradingcore.campaign import Campaign
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
 import os, sys
-from IPython.display import display, HTML
 from exobuilder.data.datasource_mongo import DataSourceMongo
 
 def ipython_info():
@@ -187,6 +186,8 @@ class CampaignReport:
         print(self.campaign_stats.tail(10))
 
     def report_export(self):
+        from IPython.display import display, HTML
+
         if not os.path.exists('export'):
             os.mkdir('export')
 

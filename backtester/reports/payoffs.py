@@ -7,7 +7,6 @@ from datetime import datetime
 import warnings
 import pandas as pd
 import matplotlib.pyplot as plt
-from IPython.display import display, HTML
 import numpy as np
 from exobuilder.exo.exoenginebase import ExoEngineBase
 
@@ -227,6 +226,7 @@ class PayoffAnalyzer:
         ax2.set_ylim(delta.min() - 0.2, delta.max() + 0.2)
 
     def show_report(self, iv_change, days_to_expiration):
+        from IPython.display import display, HTML
         if len(self.position.netpositions) == 0:
             warnings.warn("Can't calculate position report for empty position")
             return
