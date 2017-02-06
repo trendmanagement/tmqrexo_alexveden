@@ -8,7 +8,7 @@ from tradingcore.campaign import Campaign
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
 import os, sys
 from IPython.display import display, HTML
-
+from exobuilder.data.datasource_mongo import DataSourceMongo
 
 def ipython_info():
     ip = False
@@ -20,9 +20,14 @@ def ipython_info():
 
 
 class CampaignReport:
-    def __init__(self, campaign_name, datasource):
+    def __init__(self, campaign_name, datasource=None, **kwargs):
         self.datasource = datasource
-        campaign_dict = self.datasource.exostorage.campaign_load(campaign_name)
+
+        storage = kwargs.get('exo_storage', False)
+        if not storage:
+            storage = self.datasource.exostorage
+
+        campaign_dict = storage.campaign_load(campaign_name)
         if campaign_dict is None:
             warnings.warn("Campaign not found: " + campaign_name)
             return
@@ -31,14 +36,14 @@ class CampaignReport:
 
         self.cmp = Campaign(campaign_dict, self.datasource)
         self.campaign_name = campaign_name
-        self.swarms_data = datasource.exostorage.swarms_data(self.cmp.alphas_list())
-        self.isok = self.check_swarms_integrity()
+        self.swarms_data = storage.swarms_data(self.cmp.alphas_list())
+        self.isok = True
 
         campaign_dict = {}
         campaign_deltas_dict = {}
         campaign_costs_dict = {}
 
-        swm_data = self.datasource.exostorage.swarms_data(self.cmp.alphas_list())
+        swm_data = storage.swarms_data(self.cmp.alphas_list())
 
         for alpha_name, swm_exposure_dict in self.cmp.alphas.items():
             swarm_name = alpha_name
@@ -193,6 +198,7 @@ class CampaignReport:
             print("File saved to: {0}".format(fn))
 
     def report_all(self):
+        self.check_swarms_integrity()
         self.report_exo_exposure()
         self.report_alpha_exposure()
         self.report_positions()
