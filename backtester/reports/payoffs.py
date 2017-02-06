@@ -6,7 +6,6 @@ from tradingcore.campaign import Campaign
 from datetime import datetime
 import warnings
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 from exobuilder.exo.exoenginebase import ExoEngineBase
 
@@ -194,6 +193,8 @@ class PayoffAnalyzer:
         :param days_to_expiration: Days to expiration in WhatIF scenario
         :return:
         """
+        import matplotlib.pyplot as plt
+
         if len(self.position.netpositions) == 0:
             warnings.warn("Can't calculate payoff diagram for empty position")
             return
