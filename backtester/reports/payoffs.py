@@ -12,12 +12,13 @@ import numpy as np
 from exobuilder.exo.exoenginebase import ExoEngineBase
 
 class PayoffAnalyzer:
-    def __init__(self, datasource):
+    def __init__(self, datasource, **kwargs):
         self.datasource = datasource
         self.position = None
         self.position_type = None
         self.position_name = None
         self.analysis_date = None
+        self.raise_exceptions = kwargs.get('raise_exceptions', False)
 
     def load_transactions(self, transactions_list, analysis_date, position_name = ''):
         """
@@ -96,7 +97,10 @@ class PayoffAnalyzer:
         # Load campaign positions
         campaign_dict = self.datasource.exostorage.campaign_load(campaign_name)
         if campaign_dict is None:
-            warnings.warn("Campaign not found: " + campaign_name)
+            if self.raise_exceptions:
+                raise Exception("Campaign not found: " + campaign_name)
+            else:
+                warnings.warn("Campaign not found: " + campaign_name)
             return
 
         cmp = Campaign(campaign_dict, self.datasource)

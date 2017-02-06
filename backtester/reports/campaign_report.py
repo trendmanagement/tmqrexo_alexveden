@@ -24,12 +24,17 @@ class CampaignReport:
         self.datasource = datasource
 
         storage = kwargs.get('exo_storage', False)
+        raise_exc = kwargs.get('raise_exceptions', False)
+
         if not storage:
             storage = self.datasource.exostorage
 
         campaign_dict = storage.campaign_load(campaign_name)
         if campaign_dict is None:
-            warnings.warn("Campaign not found: " + campaign_name)
+            if raise_exc:
+                raise Exception("Campaign not found: " + campaign_name)
+            else:
+                warnings.warn("Campaign not found: " + campaign_name)
             return
         self.last_date = None
         self.prev_date = None
