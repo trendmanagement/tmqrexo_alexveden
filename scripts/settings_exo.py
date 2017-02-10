@@ -15,6 +15,9 @@ from exobuilder.algorithms.smartexo_bullish_ichi__dynamic_wrangle_1short_3long_j
 from exobuilder.algorithms.smartexo_ichi_dynamic_1short_3long_delta_bi_30_05_jan17 import SmartEXO_ichi_dynamic_1short_3long_delta_bi_30_05_jan17
 from exobuilder.algorithms.smartexo_ichi_dynamic_1short_3long_delta_bi_puts_30_05_Jan17 import SmartEXO_ichi_dynamic_1short_3long_delta_bi_puts_30_05_Jan17
 
+from exobuilder.algorithms.SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_call_side import SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_call_side
+from exobuilder.algorithms.SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side import SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side
+
 #
 # Instruments list
 #
@@ -82,5 +85,13 @@ EXO_LIST = [
     {
         'name': 'SmartEXO_ichi_dynamic_1short_3long_delta_bi_puts_30_05_Jan17',
         'class': SmartEXO_ichi_dynamic_1short_3long_delta_bi_puts_30_05_Jan17,
+    },
+    {
+        'name': 'SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_call_side',
+        'class': SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_call_side,
+    },
+{
+        'name': 'SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side',
+        'class': SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side,
     },
 ]
