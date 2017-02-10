@@ -9,6 +9,11 @@ class Position(object):
         self._legs = {}
 
         self.transaction_mode = None
+        self._last_trans_date = None
+
+    @property
+    def last_trans_date(self):
+        return self._last_trans_date
 
     @property
     def netpositions(self):
@@ -58,7 +63,8 @@ class Position(object):
         """
         transactions = []
         for asset, netposition in self.netpositions.items():
-            transactions.append(Transaction(asset, asset.date, -netposition['qty'], asset.price, leg_name=netposition['leg_name']))
+            if netposition['qty'] != 0:
+                transactions.append(Transaction(asset, asset.date, -netposition['qty'], asset.price, leg_name=netposition['leg_name']))
 
         return transactions
 
@@ -87,6 +93,8 @@ class Position(object):
 
         if transaction_qty == 0:
             raise ValueError("Transaction Qty must be non-zero")
+
+        self._last_trans_date = trans_dict['date']
 
         if asset_hash not in self._positions:
             self._positions[asset_hash] = {'qty': transaction_qty, 'value': transation_usdvalue}
@@ -129,6 +137,8 @@ class Position(object):
 
         if transaction.qty == 0:
             raise ValueError("Transaction Qty must be non-zero")
+
+        self._last_trans_date = transaction.date
 
         if transaction.asset not in self._positions:
             self._positions[transaction.asset] = {'qty': transaction.qty, 'value': transaction.usdvalue, 'leg_name': transaction.leg_name}
@@ -199,7 +209,8 @@ class Position(object):
 
         return {
             'positions': positions,
-            '_realized_pnl': self._realized_pnl
+            '_realized_pnl': self._realized_pnl,
+            '_last_trans_date': self.last_trans_date,
             }
 
     @staticmethod
@@ -233,6 +244,10 @@ class Position(object):
         for asset, posdic in positions.items():
             if 'leg_name' in posdic and posdic['leg_name'] != '':
                 p._legs[posdic['leg_name']] = asset
+
+        if '_last_trans_date' in position_dict:
+            p._last_trans_date = position_dict['_last_trans_date']
+
         return p
 
     @staticmethod

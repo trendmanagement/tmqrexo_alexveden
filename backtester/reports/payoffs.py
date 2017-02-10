@@ -6,18 +6,17 @@ from tradingcore.campaign import Campaign
 from datetime import datetime
 import warnings
 import pandas as pd
-import matplotlib.pyplot as plt
-from IPython.display import display, HTML
 import numpy as np
 from exobuilder.exo.exoenginebase import ExoEngineBase
 
 class PayoffAnalyzer:
-    def __init__(self, datasource):
+    def __init__(self, datasource, **kwargs):
         self.datasource = datasource
         self.position = None
         self.position_type = None
         self.position_name = None
         self.analysis_date = None
+        self.raise_exceptions = kwargs.get('raise_exceptions', False)
 
     def load_transactions(self, transactions_list, analysis_date, position_name = ''):
         """
@@ -56,7 +55,10 @@ class PayoffAnalyzer:
         self.position = Position()
 
         for trans in exo_data['transactions']:
-            if trans['date'] <= pos_date:
+            if trans['qty'] == 0:
+                continue
+
+            if trans['date'].date() <= pos_date.date():
                 self.position.add_transaction_dict(trans)
             else:
                 break
@@ -93,53 +95,16 @@ class PayoffAnalyzer:
         # Load campaign positions
         campaign_dict = self.datasource.exostorage.campaign_load(campaign_name)
         if campaign_dict is None:
-            warnings.warn("Campaign not found: " + campaign_name)
+            if self.raise_exceptions:
+                raise Exception("Campaign not found: " + campaign_name)
+            else:
+                warnings.warn("Campaign not found: " + campaign_name)
             return
 
         cmp = Campaign(campaign_dict, self.datasource)
         # Calculate campaign's net exo position on particular date
         pos_date = datetime.now() if date is None else date
-        exo_exposure = cmp.exo_positions(date)
-
-        transactions = []
-        for exo_name, exp_dict in exo_exposure.items():
-            print("Loading: {0} Exposure: {1}".format(exo_name, exp_dict['exposure']))
-            # Skip zero-positions
-            if exp_dict['exposure'] == 0:
-                continue
-
-            # Calculate position based on EXO transactions
-            exo_data = self.datasource.exostorage.load_exo(exo_name)
-            exo_df, exo_dict = self.datasource.exostorage.load_series(exo_name)
-
-            if exo_data is None:
-                raise NameError("EXO data for {0} not found.".format(exo_name))
-
-            # Warn if something bad with EXO series
-            ExoEngineBase.check_series_integrity(exo_name, exo_df, raise_exception=False)
-
-            for trans in exo_data['transactions']:
-                if trans['date'] <= pos_date:
-                    if trans['qty'] == 0:
-                        continue
-                    trans['qty'] *= exp_dict['exposure']
-                    trans['usdvalue'] *= exp_dict['exposure']
-                    transactions.append(trans)
-                else:
-                    break
-
-        # Sort transactions by date
-        transactions = sorted(transactions, key=lambda k: k['date'])
-
-        # Construct position
-        self.position = Position()
-        for t in transactions:
-            self.position.add_transaction_dict(t)
-
-        # Convert position to normal state
-        # We will load all assets information from DB
-        # And this will allow us to use position pricing as well
-        self.position.convert(self.datasource, pos_date)
+        self.position = cmp.positions_at_date(date)
 
         # Store positions values for analysis
         self.position_type = 'Campaign'
@@ -228,6 +193,8 @@ class PayoffAnalyzer:
         :param days_to_expiration: Days to expiration in WhatIF scenario
         :return:
         """
+        import matplotlib.pyplot as plt
+
         if len(self.position.netpositions) == 0:
             warnings.warn("Can't calculate payoff diagram for empty position")
             return
@@ -260,6 +227,7 @@ class PayoffAnalyzer:
         ax2.set_ylim(delta.min() - 0.2, delta.max() + 0.2)
 
     def show_report(self, iv_change, days_to_expiration):
+        from IPython.display import display, HTML
         if len(self.position.netpositions) == 0:
             warnings.warn("Can't calculate position report for empty position")
             return

@@ -219,39 +219,7 @@ environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
             with open(os.path.join(current_path, supervisor_config_dir, file_name), 'w') as fh:
                 fh.write(file_contents)
 
-def install_trading_script():
-    if not os.path.exists(os.path.join(current_path, 'logs', 'trading')):
-        os.mkdir(os.path.join(current_path, 'logs', 'trading'))
 
-    supervisor_conf_template = """[program:TRADING_ONLINE]
-command=python3.5 {script_file} -v
-stderr_logfile={stderr_log}
-stderr_logfile_maxbytes=1MB
-
-stdout_logfile={stdout_log}
-stdout_logfile_maxbytes=1MB
-directory={current_path}
-startsecs=30
-autostart=true
-startretries=5
-stopasgroup=true
-environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
-"""
-
-
-    file_contents = supervisor_conf_template.format(**{
-        'script_file': 'trading_online.py',
-        'stdout_log': os.path.join(current_path, 'logs', 'trading', 'trading_online_stdout.log'),
-        'stderr_log': os.path.join(current_path, 'logs', 'trading', 'trading_online_stderr.log'),
-        'current_path': current_path,
-        'tmqrpath': TMQRPATH,
-        'pythonpath': PYTHONPATH,
-    })
-
-    file_name = 'trading_online.conf'
-    print('install_alphas_custom(): Writing '+file_name)
-    with open(os.path.join(current_path, supervisor_config_dir, file_name), 'w') as fh:
-        fh.write(file_contents)
 
 def install_cron_alpha_rebalancer():
     if not os.path.exists(os.path.join(current_path, 'logs', 'scheduled')):
@@ -365,6 +333,8 @@ environment=TMQRPATH="{tmqrpath}",PYTHONPATH="{pythonpath}"
         fh.write(file_contents)
 
 def install_events_logger():
+    if not os.path.exists(os.path.join(current_path, 'logs', 'trading')):
+        os.mkdir(os.path.join(current_path, 'logs', 'trading'))
 
     supervisor_conf_template = """[program:EVENT_LOGGER]
 command=python3.5 {script_file} -v
@@ -419,7 +389,6 @@ if __name__ == '__main__':
     install_quotes_notifications()
     install_alphas_online()
     install_alphas_custom()
-    install_trading_script()
 
     # Install watcher scripts
     install_watchdog_bot()

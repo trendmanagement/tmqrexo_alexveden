@@ -1,5 +1,8 @@
 from exobuilder.exo.position import Position
 import warnings
+from exobuilder.exo.exoenginebase import ExoEngineBase
+from datetime import datetime
+
 
 class Campaign:
     def __init__(self, campaign_dict, datasource):
@@ -76,6 +79,7 @@ class Campaign:
                     'exo_name': info_dict['exo_name'],
                     }
         else:
+
             for swarm_name, info_dict in swarm_positions.items():
                 seriesdf = info_dict['swarm_series']
 
@@ -108,6 +112,58 @@ class Campaign:
             exp = exo_exposure.setdefault(v['exo_name'], {'exposure': 0.0})
             exo_exposure[v['exo_name']]['exposure'] = exp['exposure'] + v['exposure']
         return exo_exposure
+
+    def positions_at_date(self, date=None, pos_pnl_date=None):
+        """
+        Reconstruct campaign position at particular date
+        :param pos_date: if None use last position
+        :param pos_pnl_date: Estimate pnl on particular date, if None pos_pnl_date = date
+        :return:
+        """
+        exo_exposure = self.exo_positions(date)
+
+        transactions = []
+
+        pos_date = datetime.now() if date is None else date
+        for exo_name, exp_dict in exo_exposure.items():
+            # Skip zero-positions
+            if exp_dict['exposure'] == 0:
+                continue
+
+            # Calculate position based on EXO transactions
+            exo_data = self._datasource.exostorage.load_exo(exo_name)
+            exo_df, exo_dict = self._datasource.exostorage.load_series(exo_name)
+
+            if exo_data is None:
+                raise NameError("EXO data for {0} not found.".format(exo_name))
+
+            # Warn if something bad with EXO series
+            ExoEngineBase.check_series_integrity(exo_name, exo_df, raise_exception=False)
+
+            for trans in exo_data['transactions']:
+                if trans['date'].date() <= pos_date.date():
+                    if trans['qty'] == 0:
+                        continue
+                    trans['qty'] *= exp_dict['exposure']
+                    trans['usdvalue'] *= exp_dict['exposure']
+                    transactions.append(trans)
+                else:
+                    break
+
+        # Sort transactions by date
+        transactions = sorted(transactions, key=lambda k: k['date'])
+
+        # Construct position
+        position = Position()
+        for t in transactions:
+            position.add_transaction_dict(t)
+
+        # Convert position to normal state
+        # We will load all assets information from DB
+        # And this will allow us to use position pricing as well
+
+        position.convert(self._datasource, pos_date if pos_pnl_date is None else pos_pnl_date)
+        return position
 
     @property
     def positions(self):

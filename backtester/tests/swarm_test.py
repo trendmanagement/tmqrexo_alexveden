@@ -17,11 +17,15 @@ from copy import deepcopy
 import pyximport; pyximport.install()
 from backtester.backtester_fast import stats_exposure
 from unittest.mock import Mock, patch
+from scripts.settings import *
+from backtester.swarms.rankingclasses import *
 
+
+def reblance_every_5th(swarm):
+    return pd.Series(swarm.index % 5 == 0, index=swarm.index)
 
 class BacktesterTestCase(unittest.TestCase):
-    def reblance_every_5th(self, swarm):
-        return pd.Series(swarm.index % 5 == 0, index=swarm.index)
+
 
     def setUp(self):
         self.STRATEGY_CONTEXT = {
@@ -40,7 +44,7 @@ class BacktesterTestCase(unittest.TestCase):
             'swarm': {
                 'members_count': 1,
                 'ranking_class': RankerHighestReturns(return_period=1),
-                'rebalance_time_function': self.reblance_every_5th
+                'rebalance_time_function': reblance_every_5th
             }
         }
 
@@ -1232,3 +1236,64 @@ class BacktesterTestCase(unittest.TestCase):
         }
         self.assertRaises(ValueError, Swarm.get_direction, ctx)
 
+    def test_alpharebalancing_and_online_update_real(self):
+        from exobuilder.data.exostorage import EXOStorage
+
+        from backtester.costs import CostsManagerEXOFixed
+        from backtester.strategy import OptParam, OptParamArray
+
+        from backtester.swarms.rebalancing import SwarmRebalance
+        from strategies.strategy_macross_with_trail import StrategyMACrossTrail
+
+        exo_storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+
+
+        STRATEGY_CONTEXT = {
+            'strategy': {
+                'exo_storage': exo_storage,
+                'class': StrategyMACrossTrail,
+                'exo_name': 'ES_CallSpread',  # <---- Select and paste EXO name from cell above
+                'opt_params': [
+                    # OptParam(name, default_value, min_value, max_value, step)
+                    OptParamArray('Direction', [-1]),
+                    OptParam('SlowMAPeriod', 20, 10, 10, 50),
+                    OptParam('FastMAPeriod', 2, 5, 20, 5),
+                    OptParam('MedianPeriod', 5, 30, 80, 10)
+                ],
+
+            },
+            'swarm': {
+                'members_count': 2,
+                'ranking_class': RankerBestWithCorrel(window_size=-1, correl_threshold=0.5),
+                'rebalance_time_function': SwarmRebalance.every_friday,
+            },
+            'costs': {
+                'manager': CostsManagerEXOFixed,
+                'context': {
+                    'costs_options': 3.0,
+                    'costs_futures': 3.0,
+                }
+            }
+        }
+
+        swm_full = Swarm(STRATEGY_CONTEXT)
+        swm_full.strategy.data = swm_full.strategy.data.ix[swm_full.strategy.data.index[:-1]]
+        swm_full.run_swarm()
+        swm_full.pick()
+
+        #STRATEGY_CONTEXT['strategy']['exo_storage'] = exo_storage
+        swm_last_state = swm_full.laststate_to_dict()
+
+        #STRATEGY_CONTEXT['strategy']['exo_storage'] = exo_storage
+        swm_full2 = Swarm(STRATEGY_CONTEXT)
+        swm_full2.run_swarm()
+        swm_full2.pick()
+
+        #STRATEGY_CONTEXT['strategy']['exo_storage'] = exo_storage
+        swm_upd = Swarm.laststate_from_dict(swm_last_state, STRATEGY_CONTEXT)
+        swm_upd.update()
+
+
+
+        self.assertTrue(np.all(swm_full.series.equity == swm_full2.series.equity.ix[:-1]))
+        self.assertTrue(np.all(swm_upd.series.equity.round(2) == swm_full2.series.equity.round(2)))

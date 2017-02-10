@@ -100,7 +100,7 @@ class AlphaOnlineScript:
 
                                 swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, context)
                                 # Update and save swarm with new day data (and run callback)
-                                swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
+                                swmonline.process_custom(exo_name, swm_callback=self.swarm_updated_callback)
                                 self.signal_app.send_to("Custom_{0}".format(exo_name.split('_')[0]),
                                                         APPCLASS_ALPHA,
                                                         MsgStatus("RUN", 'Processing custom alpha', notify=True))
