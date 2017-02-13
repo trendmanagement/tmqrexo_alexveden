@@ -82,8 +82,8 @@ class SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_call_side(SmartE
                 # Transaction(asset, date, qty, price=[MktPrice], leg_name=['' or unique name])
                 #
                 #
-            Transaction(opt_chain.get_by_delta(-0.05), date, 2.0),
-            Transaction(opt_chain.get_by_delta(-0.15), date, -2.0),
+            Transaction(opt_chain.get_by_delta(0.05), date, 3.0),
+            Transaction(opt_chain.get_by_delta(0.15), date, -3.0),
         ]
         return trans_list
 
