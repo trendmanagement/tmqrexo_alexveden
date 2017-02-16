@@ -17,11 +17,12 @@ from exobuilder.algorithms.smartexo_ichi_dynamic_1short_3long_delta_bi_puts_30_0
 
 from exobuilder.algorithms.SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_call_side import SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_call_side
 from exobuilder.algorithms.SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side import SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side
+from exobuilder.algorithms.SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly import SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly
 
 #
 # Instruments list
 #
-INSTRUMENTS_LIST = ['ES', 'CL', 'NG', 'ZN', 'ZS', 'ZW', 'ZC', '6E']
+INSTRUMENTS_LIST = ['ES', 'CL', 'NG', 'ZN', 'ZS', 'ZW', 'ZC', '6E', 'CC']
 
 # Alphas list (generic)
 ALPHAS_GENERIC = ['alpha_exo']
@@ -93,5 +94,9 @@ EXO_LIST = [
     {
         'name': 'SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side',
         'class': SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side,
+    },
+    {
+        'name': 'SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly',
+        'class': SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly,
     },
 ]
