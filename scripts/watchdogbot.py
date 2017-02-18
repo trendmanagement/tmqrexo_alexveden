@@ -309,6 +309,7 @@ class WatchdogBot:
         except Exception:
             self.log.exception('Error while listening RabbitMQ')
             self.send_message("Exception occurred while processing framework messages, look into logs for information")
+            sys.exit(-1)
 
     def run_bot(self):
         self.log.info("Launching bot")
