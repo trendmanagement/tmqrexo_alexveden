@@ -14,21 +14,8 @@ class Strategy_Seasonality_DailySeasTracking(StrategyBase):
         # Initialize parent class
         super().__init__(strategy_context)
 
-        # https://www.quandl.com/data/CHRIS-Wiki-Continuous-Futures
 
-        '''
-        'CHRIS/CME_W1' wheat
-        'CHRIS/CME_NG1' nat gas
-        'CHRIS/CME_ES1' es
-        'CHRIS/CME_C1' corn
-        'CHRIS/CME_S1' soy bean
-        'CHRIS/CME_CL1' crude oil
-        '''
-        quandl_data_link = strategy_context['strategy']['opt_params'][1]
 
-        quandl_data_name = 'quandl_data/' + quandl_data_link.split('/')[1]
-        if not os.path.exists(quandl_data_name):
-            self.load_quandl_data(quandl_data_link)
 
     def load_quandl_data(self, quandl_data_link):
         '''
@@ -41,6 +28,18 @@ class Strategy_Seasonality_DailySeasTracking(StrategyBase):
     def calc_entryexit_rules(self, quandl_data_link, start_year, centered_ma_period, signals_shift, outliers_reduction,
                              rules_index):
         quandl_data_name = quandl_data_link.split('/')[1]
+
+        # https://www.quandl.com/data/CHRIS-Wiki-Continuous-Futures
+        '''
+        'CHRIS/CME_W1' wheat
+        'CHRIS/CME_NG1' nat gas
+        'CHRIS/CME_ES1' es
+        'CHRIS/CME_C1' corn
+        'CHRIS/CME_S1' soy bean
+        'CHRIS/CME_CL1' crude oil
+        '''
+        if not os.path.exists('quandl_data/' + quandl_data_name):
+            self.load_quandl_data(quandl_data_link)
 
         quandl_data = pd.read_csv('quandl_data/' + quandl_data_name, index_col=0, parse_dates=True)
 
