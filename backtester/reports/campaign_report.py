@@ -8,6 +8,7 @@ from tradingcore.campaign import Campaign
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
 import os, sys
 from exobuilder.data.datasource_mongo import DataSourceMongo
+from exobuilder.data.exceptions import QuoteNotFoundException
 
 def ipython_info():
     ip = False
@@ -67,9 +68,12 @@ class CampaignReport:
             if prev_idx_dt is None:
                 prev_idx_dt = idx_dt
                 continue
+            try:
+                diff = self.cmp.positions_at_date(prev_idx_dt, idx_dt).pnl_settlement - self.cmp.positions_at_date(
+                                                                                                prev_idx_dt).pnl_settlement
+            except QuoteNotFoundException:
+                diff = float('nan')
 
-            diff = self.cmp.positions_at_date(prev_idx_dt, idx_dt).pnl_settlement - self.cmp.positions_at_date(
-                                                                                            prev_idx_dt).pnl_settlement
 
             campaign_settle_chg[idx_dt] = diff + campaign_costs[idx_dt]
             prev_idx_dt = idx_dt
