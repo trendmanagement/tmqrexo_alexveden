@@ -24,6 +24,40 @@ class DataSourceSQL(DataSourceBase):
         for row in c2:
             return row
 
+    def get_fut_settlement(self, dbid, date):
+        c2 = self.conn.cursor(as_dict=True)
+        c2.execute(
+            "SELECT TOP(1) * FROM cqgdb.tbldailycontractsettlements where idcontract = {0} AND date = '{1}' ORDER BY date DESC".format(
+                dbid, date.isoformat()))
+
+        if c2.rowcount == 0:
+            raise QuoteNotFoundException('Futures settlement data not found contract id: {0} date: {1}'.format(dbid, date))
+
+        for row in c2:
+            return row['settlement']
+
+    def get_option_data(self, dbid, date):
+        c2 = self.conn.cursor(as_dict=True)
+        c2.execute("SELECT TOP(1) * FROM cqgdb.tbloptiondata where idoption = {0} AND datetime < '{1}' ORDER BY datetime DESC".format(
+                dbid, date.date().isoformat()))
+
+        if c2.rowcount == 0:
+            raise QuoteNotFoundException('Option data not found contract id: {0} date: {1}'.format(dbid, date))
+
+        for row in c2:
+            return row
+
+    def get_option_settlement(self, dbid, date):
+        c2 = self.conn.cursor(as_dict=True)
+        c2.execute(
+            "SELECT TOP(1) * FROM cqgdb.tbloptiondata where idoption = {0} AND datetime = '{1}' ORDER BY datetime DESC".format(
+                dbid, date.date().isoformat()))
+
+        if c2.rowcount == 0:
+            raise QuoteNotFoundException('Option settlement data not found contract id: {0} date: {1}'.format(dbid, date))
+
+        for row in c2:
+            return row['price']
 
     def get_extra_data(self, key, date):
 
@@ -51,15 +85,6 @@ class DataSourceSQL(DataSourceBase):
         else:
             raise KeyError("Unknown key for extra_data, only 'riskfreerate' supported.")
 
-    def get_option_data(self, dbid, date):
-        c2 = self.conn.cursor(as_dict=True)
-        c2.execute("SELECT TOP(1) * FROM cqgdb.tbloptiondata where idoption = {0} AND datetime < '{1}' ORDER BY datetime DESC".format(
-                dbid, date.date().isoformat()))
 
-        if c2.rowcount == 0:
-            raise QuoteNotFoundException('Option data not found contract id: {0} date: {1}'.format(dbid, date))
-
-        for row in c2:
-            return row
 
 

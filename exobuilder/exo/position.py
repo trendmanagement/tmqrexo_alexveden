@@ -49,11 +49,25 @@ class Position(object):
 
     @property
     def pnl(self):
-        """PnL of position"""
+        """
+        PnL of position at the decision time
+        """
         pnl = 0.0
         for asset, netposition in self.netpositions.items():
             # calculate unrealized profit based on current price
             pnl += asset.pointvalue * asset.price * netposition['qty'] - netposition['value']
+        return pnl + self._realized_pnl
+
+    @property
+    def pnl_settlement(self):
+        """
+        PnL of position at the settlement time
+        :return:
+        """
+        pnl = 0.0
+        for asset, netposition in self.netpositions.items():
+            # calculate unrealized profit based on current price
+            pnl += asset.pointvalue * asset.price_settlement * netposition['qty'] - netposition['value']
         return pnl + self._realized_pnl
 
     def close_all_translist(self):

@@ -18,6 +18,7 @@ class OptionContract(object):
         self._option_price_data = None
         self._option_price = float('nan')
         self._options_greeks = None
+        self._option_price_settlement = float('nan')
 
     @property
     def name(self):
@@ -101,6 +102,17 @@ class OptionContract(object):
             self._option_price = blackscholes(self.callorput, self.underlying.price, self.strike, self.to_expiration_years, self.riskfreerate, self.iv)
 
         return self._option_price
+
+    @property
+    def price_settlement(self):
+        """
+        Option's settlement price
+        :return: float
+        """
+        if np.isnan(self._option_price_settlement):
+            self._option_price_settlement = self.instrument.datasource.get_option_settlement(self.dbid, self.date)
+
+        return self._option_price_settlement
 
     def price_whatif(self, underlying_price=None, iv_change=0.0, days_to_expiration=None, riskfreerate=None):
         """
