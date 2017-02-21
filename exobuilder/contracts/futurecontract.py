@@ -16,6 +16,7 @@ class FutureContract(object):
         self._options = None
         self._price_data = None
         self._price = 0.0
+        self._price_settlement = 0.0
 
     @property
     def name(self):
@@ -47,12 +48,26 @@ class FutureContract(object):
 
     @property
     def price(self):
+        """
+        Future price at the decision time
+        :return: float
+        """
         if self._price == 0.0:
             # Getting price data from datasource
             self._price_data = self._instrument.datasource.get_fut_data(self.dbid, self._instrument.date)
             self._price = self._price_data['close']
-
         return self._price
+
+    @property
+    def price_settlement(self):
+        """
+        Return settlement price used for reconciliation
+        :return: float
+        """
+        if self._price_settlement == 0.0:
+            # Getting price data from datasource
+            self._price_settlement = self._instrument.datasource.get_fut_settlement(self.dbid, self._instrument.date)
+        return self._price_settlement
 
     def price_whatif(self, underlying_price=None, iv_change=0.0, days_to_expiration=None, riskfreerate=None):
         """

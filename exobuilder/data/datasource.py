@@ -19,6 +19,12 @@ class DataSourceBase(object):
     def get_option_data(self, dbid, date):
         raise NotImplementedError()
 
+    def get_fut_settlement(self, dbid, date):
+        raise NotImplementedError()
+
+    def get_option_settlement(self, dbid, date):
+        raise NotImplementedError()
+
     def get_extra_data(self, key, date):
         raise NotImplementedError()
 
