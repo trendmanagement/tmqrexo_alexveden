@@ -24,6 +24,7 @@ class CampaignReport:
 
         storage = kwargs.get('exo_storage', False)
         raise_exc = kwargs.get('raise_exceptions', False)
+        self.pnl_settlement_ndays = kwargs.get('pnl_settlement_ndays', 10)
 
         if not storage:
             storage = self.datasource.exostorage
@@ -59,10 +60,26 @@ class CampaignReport:
         campaign_equity = pd.DataFrame(campaign_dict).ffill().sum(axis=1)
         campaign_deltas = pd.DataFrame(campaign_deltas_dict).sum(axis=1)
         campaign_costs = pd.DataFrame(campaign_costs_dict).sum(axis=1)
+        campaign_settle_chg = pd.Series(index=campaign_equity.index)
+
+        prev_idx_dt = None
+        for idx_dt in campaign_settle_chg.index[-self.pnl_settlement_ndays:]:
+            if prev_idx_dt is None:
+                prev_idx_dt = idx_dt
+                continue
+
+            diff = self.cmp.positions_at_date(prev_idx_dt, idx_dt).pnl_settlement - self.cmp.positions_at_date(
+                                                                                            prev_idx_dt).pnl_settlement
+
+            campaign_settle_chg[idx_dt] = diff + campaign_costs[idx_dt]
+            prev_idx_dt = idx_dt
+
+
 
         self.campaign_stats = pd.DataFrame({
             'Equity': campaign_equity,
             'Change': campaign_equity.diff(),
+            'SettleChange': campaign_settle_chg,
             'Delta': campaign_deltas,
             'Costs': campaign_costs
         })
@@ -177,13 +194,8 @@ class CampaignReport:
         else:
             print("No trades occurred")
 
-        print("\nPnL between decision moments (without costs)\n"
-              "[{0} - {1}]:{2: 0.2f}".format(self.prev_date,
-                                       self.last_date,
-                                       pos_prev_pnl.pnl - pos_prev.pnl))
-
     def report_pnl(self):
-        print(self.campaign_stats.tail(10))
+        print(self.campaign_stats.tail(self.pnl_settlement_ndays))
 
     def report_export(self):
         from IPython.display import display, HTML
