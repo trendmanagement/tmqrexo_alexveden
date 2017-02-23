@@ -29,6 +29,9 @@ class CampaignReport:
 
         if not storage:
             storage = self.datasource.exostorage
+            calc_settlements = True
+        else:
+            calc_settlements = False
 
         campaign_dict = storage.campaign_load(campaign_name)
         if campaign_dict is None:
@@ -61,32 +64,32 @@ class CampaignReport:
         campaign_equity = pd.DataFrame(campaign_dict).ffill().sum(axis=1)
         campaign_deltas = pd.DataFrame(campaign_deltas_dict).sum(axis=1)
         campaign_costs = pd.DataFrame(campaign_costs_dict).sum(axis=1)
-        campaign_settle_chg = pd.Series(index=campaign_equity.index)
 
-        prev_idx_dt = None
-        for idx_dt in campaign_settle_chg.index[-self.pnl_settlement_ndays:]:
-            if prev_idx_dt is None:
-                prev_idx_dt = idx_dt
-                continue
-            try:
-                diff = self.cmp.positions_at_date(prev_idx_dt, idx_dt).pnl_settlement - self.cmp.positions_at_date(
-                                                                                                prev_idx_dt).pnl_settlement
-            except QuoteNotFoundException:
-                diff = float('nan')
-
-
-            campaign_settle_chg[idx_dt] = diff + campaign_costs[idx_dt]
-            prev_idx_dt = idx_dt
-
-
-
-        self.campaign_stats = pd.DataFrame({
+        result_dict = {
             'Equity': campaign_equity,
             'Change': campaign_equity.diff(),
-            'SettleChange': campaign_settle_chg,
             'Delta': campaign_deltas,
             'Costs': campaign_costs
-        })
+        }
+        if calc_settlements:
+            campaign_settle_chg = pd.Series(index=campaign_equity.index)
+            prev_idx_dt = None
+            for idx_dt in campaign_settle_chg.index[-self.pnl_settlement_ndays:]:
+                if prev_idx_dt is None:
+                    prev_idx_dt = idx_dt
+                    continue
+                try:
+                    diff = self.cmp.positions_at_date(prev_idx_dt, idx_dt).pnl_settlement - self.cmp.positions_at_date(
+                                                                                                    prev_idx_dt).pnl_settlement
+                except QuoteNotFoundException:
+                    diff = float('nan')
+
+
+                campaign_settle_chg[idx_dt] = diff + campaign_costs[idx_dt]
+                prev_idx_dt = idx_dt
+            result_dict['SettleChange'] = campaign_settle_chg
+
+        self.campaign_stats = pd.DataFrame(result_dict)
 
     def check_swarms_integrity(self):
         isok = True
