@@ -80,7 +80,7 @@ def fill_data_line_object(accountId, exchangeSymbol, contractType, spanFutureCod
         portfolioLine += '"' + '",'
     else:
         portfolioLine += '"' + spanOptionCode.upper() + '",'
-        portfolioLine += '"' + str(optionYear) + str(optionMonth).zfill(2) + '",'
+        portfolioLine += '"' + str(futureContractYear) + str(futureContractMonth).zfill(2) + '",'
         portfolioLine += '"' + contractType.upper() + '",'
         portfolioLine += '"' + str(optionStrike) + '",'
         portfolioLine += '"' + str(optionYear) + str(optionMonth).zfill(2) + '",'
