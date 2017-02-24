@@ -91,6 +91,14 @@ def fill_data_line_object(accountId, exchangeSymbol, contractType, spanFutureCod
 
     return portfolioLine
 
+def format_strike_for_cme_core(idinstrument, strike_price):
+
+    if idinstrument == 11:
+        return str(int(strike_price))
+    elif idinstrument == 31:
+        return str(strike_price/100)
+    else:
+        return str(strike_price)
 
 # def createXMLtest():
 #     # <membership/>
