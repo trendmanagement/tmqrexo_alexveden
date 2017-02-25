@@ -190,7 +190,10 @@ class CampaignReport:
 
         print("\n\nPositions Exposure report")
         df = pd.DataFrame(positions).T.sort_index()
-        print(df[['LastDate', 'PrevDate']])
+        if len(df) > 0:
+            print(df[['LastDate', 'PrevDate']])
+        else:
+            print('No positions opened')
 
         print("\nTrades report")
         df['Qty'] = df['LastDate'] - df['PrevDate']
@@ -241,5 +244,5 @@ if __name__ == '__main__':
     storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
     datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, 3, 20, storage)
 
-    rpt = CampaignReport('ES_Bidirectional V3', datasource)
+    rpt = CampaignReport('ES_Collect_V1', datasource)
     rpt.report_all()
