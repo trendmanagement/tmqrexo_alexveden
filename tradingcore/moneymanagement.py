@@ -22,8 +22,6 @@ class PlainMM:
         """
         pos_dict = copy.deepcopy(campaign_positions)
         for asset in pos_dict.keys():
-            if pos_dict[asset]['qty'] == 0:
-                continue
             pos_dict[asset]['qty'] = round(pos_dict[asset]['qty'] * self.size_factor)
             pos_dict[asset]['prev_qty'] = float('nan')
         return list(pos_dict.values())
