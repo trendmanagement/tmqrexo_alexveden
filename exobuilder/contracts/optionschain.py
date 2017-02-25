@@ -91,9 +91,13 @@ class OptionsChain(object):
                 raise KeyError('Option pair with strike "{0}" not found'.format(item))
             return self._options[item]
         if isinstance(item, (int, np.int32, np.int64)):
+            is_not_found = False
             while True:
                 if self.atmindex + item < 0 or self.atmindex + item > len(self._strike_array)-1:
-                    raise IndexError("Strike offset is too low, [{0}, {1}] values allowed".format(-self.atmindex,
+                    if is_not_found:
+                        raise ValueError("Failed to find options quotes while processing chain at {0}".format(self.underlying.date))
+                    else:
+                        raise IndexError("Strike offset is too low, [{0}, {1}] values allowed".format(-self.atmindex,
                                                                                                   len(self._strike_array)-self.atmindex-1))
                 strike = self._strike_array[self.atmindex + item]
                 pc_pair = self._options[strike]
@@ -104,6 +108,7 @@ class OptionsChain(object):
                     pc_pair.P.price
                     return pc_pair
                 except QuoteNotFoundException:
+                    is_not_found = True
                     # Searching next strike
                     if item >= 0:
                         item += 1
