@@ -21,6 +21,8 @@ class Strategy_Seasonality_DailySeasTracking(StrategyBase):
         '''
         quandl_data_link must have format like this - 'CHRIS/CME_CL1'
         '''
+        if not os.path.exists('quandl_data/'):
+            os.mkdir('quandl_data')
         quandl_data = quandl.get(quandl_data_link)
         quandl_data_name = quandl_data_link.split('/')[1]
         quandl_data.to_csv('quandl_data/' + quandl_data_name)
