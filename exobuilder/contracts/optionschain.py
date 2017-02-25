@@ -40,6 +40,9 @@ class OptionsChain(object):
 
         self._strike_array = np.array(list(self._options.keys()))
 
+        if len(self._strike_array) == 0:
+            raise ValueError("Option chain for {0} is empty".format(futures_contract))
+
     @property
     def underlying(self):
         return self._fut
