@@ -196,11 +196,14 @@ class CampaignReport:
             print('No positions opened')
 
         print("\nTrades report")
-        df['Qty'] = df['LastDate'] - df['PrevDate']
-        df['Price'] = df['Contract'].apply(lambda x: x.price)
-        trades_df = df[df['Qty'] != 0]
-        if len(trades_df) > 0:
-            print(trades_df[['Qty', 'Price']])
+        if len(df) > 0:
+            df['Qty'] = df['LastDate'] - df['PrevDate']
+            df['Price'] = df['Contract'].apply(lambda x: x.price)
+            trades_df = df[df['Qty'] != 0]
+            if len(trades_df) > 0:
+                print(trades_df[['Qty', 'Price']])
+            else:
+                print("No trades occurred")
         else:
             print("No trades occurred")
 
