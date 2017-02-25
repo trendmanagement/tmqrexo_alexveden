@@ -21,11 +21,11 @@ class Strategy_Seasonality_DailySeasTracking(StrategyBase):
         '''
         quandl_data_link must have format like this - 'CHRIS/CME_CL1'
         '''
-        if not os.path.exists('quandl_data/'):
-            os.mkdir('quandl_data')
+        if not os.path.exists('/var/data/quandl_data/'):
+            os.mkdir('/var/data/quandl_data/')
         quandl_data = quandl.get(quandl_data_link)
         quandl_data_name = quandl_data_link.split('/')[1]
-        quandl_data.to_csv('quandl_data/' + quandl_data_name)
+        quandl_data.to_csv('/var/data/quandl_data/' + quandl_data_name)
 
     def calc_entryexit_rules(self, quandl_data_link, start_year, centered_ma_period, signals_shift, outliers_reduction,
                              rules_index):
@@ -40,10 +40,10 @@ class Strategy_Seasonality_DailySeasTracking(StrategyBase):
         'CHRIS/CME_S1' soy bean
         'CHRIS/CME_CL1' crude oil
         '''
-        if not os.path.exists('quandl_data/' + quandl_data_name):
+        if not os.path.exists('/var/data/quandl_data/' + quandl_data_name):
             self.load_quandl_data(quandl_data_link)
 
-        quandl_data = pd.read_csv('quandl_data/' + quandl_data_name, index_col=0, parse_dates=True)
+        quandl_data = pd.read_csv('/var/data/quandl_data/' + quandl_data_name, index_col=0, parse_dates=True)
 
         if start_year == 'first+1':
             data = quandl_data[(quandl_data.index.year >= (np.unique(quandl_data.index.year)[0] + 1)) &
