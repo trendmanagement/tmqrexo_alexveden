@@ -189,6 +189,9 @@ class Campaign:
                     # Multiply EXO position by campaign exposure
                     position['qty'] += pos_dict['qty'] * exo_exposure['exposure']
                     position['prev_qty'] += float('nan')
+
+                    if position['qty'] == 0:
+                        del net_positions[asset_name_safe]
             else:
                 warnings.warn("EXO data not found for " + exo_name)
 
