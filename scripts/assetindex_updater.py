@@ -65,8 +65,8 @@ def get_sql_data(sql_conn, mongo_db, colname, idinstrument=-1):
         if idinstrument == -1:
             idname = 'idoption > '
             try:
-                last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
-                lastid = last_data[idname]
+                last_data = mongo_db[colname].find({}).sort('idoption', pymongo.DESCENDING).limit(1).next()
+                lastid = last_data['idoption']
                 logging.info('Updating Options from ID:{0}'.format(lastid))
             except:
                 logging.info("Can't find lastID for 'options' collection")
@@ -77,8 +77,8 @@ def get_sql_data(sql_conn, mongo_db, colname, idinstrument=-1):
         if idinstrument == -1:
             try:
                 idname = 'idcontract > '
-                last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
-                lastid = last_data[idname]
+                last_data = mongo_db[colname].find({}).sort('idcontract', pymongo.DESCENDING).limit(1).next()
+                lastid = last_data['idcontract']
                 logging.info('Updating Futures from ID:{0}'.format(lastid))
             except:
                 logging.info("Can't find lastID for 'futures' collection")
@@ -88,8 +88,8 @@ def get_sql_data(sql_conn, mongo_db, colname, idinstrument=-1):
     elif colname == 'instruments':
         try:
             idname = 'idinstrument > '
-            last_data = mongo_db[colname].find({}).sort(idname, pymongo.DESCENDING).limit(1).next()
-            lastid = last_data[idname]
+            last_data = mongo_db[colname].find({}).sort('idinstrument', pymongo.DESCENDING).limit(1).next()
+            lastid = last_data['idinstrument']
             logging.info('Updating Instruments from ID:{0}'.format(lastid))
         except:
             logging.info("Can't find lastID for 'instruments' collection")
