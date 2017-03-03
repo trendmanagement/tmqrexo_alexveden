@@ -134,6 +134,9 @@ class SmartEXOBase(ExoEngineBase):
         rh = RolloverHelper(instr)
         fut, opt_chain = rh.get_active_chains()
 
+        if fut is None or opt_chain is None:
+            raise ValueError("Active option chain is not found for {0}".format(self._symbol))
+
         if regime == 1 and 'bullish' not in self.position.legs:
             # Close all
             trans_list += self.position.close_all_translist()

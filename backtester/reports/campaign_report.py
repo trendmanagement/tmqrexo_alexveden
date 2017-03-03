@@ -10,6 +10,14 @@ import os, sys
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.exceptions import QuoteNotFoundException
 
+#
+# Warnings messages formatting
+#
+def custom_formatwarning(msg, *a):
+    # ignore everything except the message
+    return str(msg) + '\n'
+warnings.formatwarning = custom_formatwarning
+
 def ipython_info():
     ip = False
     if 'ipykernel' in sys.modules:
@@ -117,13 +125,13 @@ class CampaignReport:
                     raise ValueError("The campaign has different products, only mono-product campaigns are supported")
 
             if (last_date - v['last_date']).days > 0:
-                print('[DELAYED] {0}: {1}'.format(k, v['last_date']))
+                warnings.warn('[DELAYED] {0}: {1}'.format(k, v['last_date']))
                 isok = False
             elif datetime.now() > decision_time and (datetime.now() - v['last_date']).days > 0:
-                print('[NOT_ACTUAL] {0}: {1}'.format(k, v['last_date']))
+                warnings.warn('[NOT_ACTUAL] {0}: {1}'.format(k, v['last_date']))
                 isok = False
             elif (prev_date - seriesdf.index[-2]).days > 0:
-                print('[ERR_PREVDAY] {0}: {1}'.format(k, seriesdf.index[-2]))
+                warnings.warn('[ERR_PREVDAY] {0}: {1}'.format(k, seriesdf.index[-2]))
                 isok = False
 
         print('Last quote date: {0} Pevious date: {1}'.format(last_date, prev_date))
@@ -131,7 +139,7 @@ class CampaignReport:
         if isok:
             print('Alphas seems to be valid')
         else:
-            print("Some alphas corrupted!")
+            warnings.warn("Some alphas corrupted!")
 
         self.last_date = datetime.combine(last_date.date(), decision_time.time())
         self.prev_date = datetime.combine(prev_date.date(), decision_time.time())
@@ -179,14 +187,14 @@ class CampaignReport:
                 edic = positions.setdefault(contract.name, {'LastDate': 0.0, 'PrevDate': 0.0, 'Contract': contract})
                 edic['LastDate'] = exp_dict['qty']
             except QuoteNotFoundException:
-                print("QuoteNotFound for: {0}".format(contract.name))
+                warnings.warn("QuoteNotFound for: {0}".format(contract.name))
 
         for contract, exp_dict in pos_prev.netpositions.items():
             try:
                 edic = positions.setdefault(contract.name, {'LastDate': 0.0, 'PrevDate': 0.0, 'Contract': contract})
                 edic['PrevDate'] = exp_dict['qty']
             except QuoteNotFoundException:
-                print("QuoteNotFound for: {0}".format(contract.name))
+                warnings.warn("QuoteNotFound for: {0}".format(contract.name))
 
         print("\n\nPositions Exposure report")
         df = pd.DataFrame(positions).T.sort_index()

@@ -53,7 +53,6 @@ class Campaign:
         legs = self._legs.setdefault(leg_name.lower(), [])
         legs.append(alpha_name)
 
-
     def alphas_list(self, by_leg='*'):
         if by_leg == "*":
             return sorted(list(self.alphas.keys()))
@@ -77,7 +76,7 @@ class Campaign:
                 alpha_exposure[swarm_name] = {
                     'exposure': info_dict['last_exposure'] * self.alphas[swarm_name]['qty'],
                     'exo_name': info_dict['exo_name'],
-                    }
+                }
         else:
 
             for swarm_name, info_dict in swarm_positions.items():
@@ -92,8 +91,14 @@ class Campaign:
                     exposure = seriesdf['exposure'][date]
                 else:
                     # Date is not found in swarm_series dataframe
-                    exposure = 0.0
-                    warnings.warn("Date ({0}) is not found in swarms series for {1}".format(date, swarm_name))
+                    # Try no get last available value fo calculation
+                    nearest_idx = seriesdf.index.get_loc(date, method='ffill')
+                    if (date - seriesdf.index[nearest_idx]).days > 3:
+                        warnings.warn(
+                            "Date {0} is not found in swarms series for {1} nearest date {2}".format(date, swarm_name,
+                                                                                                     seriesdf.index[
+                                                                                                         nearest_idx]))
+                    exposure = seriesdf['exposure'][nearest_idx]
 
                 alpha_exposure[swarm_name] = {
                     'exposure': exposure * self.alphas[swarm_name]['qty'],
@@ -184,7 +189,8 @@ class Campaign:
                 for assetname, pos_dict in exo_pos.items():
                     # Escape special MongoDB keys chars in key names
                     asset_name_safe = assetname.replace('.', '_').replace('$', '_')
-                    position = net_positions.setdefault(asset_name_safe, {'asset': pos_dict['asset'], 'qty': 0.0, 'prev_qty': 0.0})
+                    position = net_positions.setdefault(asset_name_safe,
+                                                        {'asset': pos_dict['asset'], 'qty': 0.0, 'prev_qty': 0.0})
 
                     # Multiply EXO position by campaign exposure
                     position['qty'] += pos_dict['qty'] * exo_exposure['exposure']
