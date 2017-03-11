@@ -64,7 +64,7 @@ mongo_db = client[MONGO_EXO_DB]
 
 #mongo_collection.create_index([('idbardata', pymongo.ASCENDING)], unique=True)
 #mongo_collection.create_index([('idcontract', pymongo.ASCENDING), ('datetime', pymongo.ASCENDING)], unique=True)
-
+'''
 print('contracts')
 ############################################################################
 collection = mongo_db['contracts']
@@ -227,7 +227,7 @@ result  = collection.insert_many(contract_settlements)
 #print(result.inserted_ids)
 
 print('Done {0} rows'.format(cnt))
-
+'''
 
 print('options data')
 ############################################################################
