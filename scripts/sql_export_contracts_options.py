@@ -255,7 +255,7 @@ for row in c2:
                                      'impliedvol': option_settlements['impliedvol'], \
                                      'timetoexpinyears': option_settlements['timetoexpinyears']})
 
-        if(cnt % 1000 == 0):
+        if(cnt % 100000 == 0):
             if(len(contract_settlements) > 0):
                 collection.insert_many(contract_settlements)
 
@@ -310,7 +310,7 @@ for row in c2:
                               'idcontract': bar['idcontract'],
                               })
 
-        if(cnt % 1000 == 0):
+        if(cnt % 100000 == 0):
             if(len(contract_bars) > 0):
                 collection.insert_many(contract_bars)
 
