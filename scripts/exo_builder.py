@@ -193,7 +193,7 @@ class EXOScript:
 
 
 
-            futures_limit = 3
+            futures_limit = 4
             options_limit = 20
 
             #datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
@@ -318,7 +318,7 @@ class EXOScript:
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
-        futures_limit = 3
+        futures_limit = 4
         options_limit = 20
         # datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
         datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
