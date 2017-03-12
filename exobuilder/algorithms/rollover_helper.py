@@ -81,16 +81,7 @@ class RolloverHelper:
             self.rollover_months = [3, 5, 7, 9, 12]
             self.days_before_expiration = 5
 
-        if self.instrument.name.upper() == "6E":
-            """
-            https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
-            @steve
-            On Feb 22 2017 CME introduced monthly futures on all of their FX products.
-            The options are only on the quarterly futures.
-            So the roll schedule for CME FX products will be monthly for the options on the quarterly futures.
-            """
-            self.rollover_months = [3, 6, 9, 12]
-            self.days_before_expiration = 2
+
 
         if self.instrument.name.upper() == "ES":
             self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -100,6 +91,16 @@ class RolloverHelper:
                     re.compile('^EW$'),       # Matches end-of-month option
                     re.compile('^$'),         # Matches '' empty option code
                 ]
+        elif self.instrument.name.upper() == "6E":
+            """
+            https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
+            @steve
+            On Feb 22 2017 CME introduced monthly futures on all of their FX products.
+            The options are only on the quarterly futures.
+            So the roll schedule for CME FX products will be monthly for the options on the quarterly futures.
+            """
+            self.rollover_months = [3, 6, 9, 12]
+            self.days_before_expiration = 2
         else:
             # Default
             # Roll every month
