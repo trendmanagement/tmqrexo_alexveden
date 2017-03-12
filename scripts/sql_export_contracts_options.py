@@ -326,8 +326,8 @@ for row in c2:
         print(row)
         break
 
-    if cnt > 3:
-        break
+    #if cnt > 3:
+    #    break
 
     pbar.update(1)
 
