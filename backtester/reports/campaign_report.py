@@ -255,7 +255,7 @@ class CampaignReport:
             new_equity = equity_without_costs + new_costs.cumsum() + starting_capital
 
             #
-            # Calculation of the performance feed (with high-water mark)
+            # Calculation of the performance fees (with high-water mark)
             #
             monthly_eq = new_equity.resample('M').last()
             monthly_high_watermark = monthly_eq.expanding().max().shift()
