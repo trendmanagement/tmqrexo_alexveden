@@ -227,7 +227,7 @@ result  = collection.insert_many(contract_settlements)
 #print(result.inserted_ids)
 
 print('Done {0} rows'.format(cnt))
-'''
+
 
 print('options data')
 ############################################################################
@@ -281,10 +281,14 @@ if(len(contract_settlements) > 0):
 
 print('Done {0} rows'.format(cnt))
 
+'''
 
 print('Bar data')
 ############################################################################
 collection = mongo_db['contracts_bars']
+
+collection.create_index([('idcontract',pymongo.ASCENDING),('datetime',pymongo.ASCENDING)])
+collection.create_index([('idcontract',pymongo.ASCENDING),('datetime',pymongo.DESCENDING)])
 
 qry = 'SELECT * FROM cqgdb.tblbardata '
 logging.debug(qry)
@@ -323,7 +327,7 @@ for row in c2:
         break
 
     #if cnt > 3:
-     #   break
+    #    break
 
     pbar.update(1)
 
