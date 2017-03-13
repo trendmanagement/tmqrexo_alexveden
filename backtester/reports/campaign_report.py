@@ -9,6 +9,7 @@ from exobuilder.data.assetindex_mongo import AssetIndexMongo
 import os, sys
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.exceptions import QuoteNotFoundException
+import matplotlib.pyplot as plt
 
 #
 # Warnings messages formatting
@@ -27,12 +28,16 @@ def ipython_info():
     return ip
 
 
+COMMISSION_PER_CONTRACT = 3.0
+
+
 class CampaignReport:
     def __init__(self, campaign_name, datasource=None, **kwargs):
         self.datasource = datasource
 
         storage = kwargs.get('exo_storage', False)
         raise_exc = kwargs.get('raise_exceptions', False)
+
         self.pnl_settlement_ndays = kwargs.get('pnl_settlement_ndays', 10)
 
         if not storage:
@@ -68,6 +73,7 @@ class CampaignReport:
             campaign_dict[swarm_name] = series['equity'] * swm_exposure_dict['qty']
             campaign_deltas_dict[swarm_name] = series['delta'] * swm_exposure_dict['qty']
             campaign_costs_dict[swarm_name] = series['costs'] * swm_exposure_dict['qty']
+
 
         campaign_equity = pd.DataFrame(campaign_dict).ffill().sum(axis=1)
         campaign_deltas = pd.DataFrame(campaign_deltas_dict).sum(axis=1)
@@ -235,6 +241,46 @@ class CampaignReport:
             display(HTML(link))
         else:
             print("File saved to: {0}".format(fn))
+
+    def calculate_performance_fee(self, starting_capital=50000, dollar_costs=3, performance_fee=0.2, plot_graph=False):
+            eq = self.campaign_stats.Equity
+            costs_sum = self.campaign_stats['Costs'].cumsum()
+            equity_without_costs = (eq - costs_sum)
+
+            #
+            # Calculating equity with new costs
+            #
+            ncontracts_traded = (self.campaign_stats['Costs'] / 3.0).abs()
+            new_costs = ncontracts_traded * -abs(dollar_costs)
+            new_equity = equity_without_costs + new_costs.cumsum() + starting_capital
+
+            #
+            # Calculation of the performance feed (with high-water mark)
+            #
+            monthly_eq = new_equity.resample('M').last()
+            monthly_high_watermark = monthly_eq.expanding().max().shift()
+
+            # Skip periods when equity closed lower than previous month's high-water mark
+            performance_fee_base = monthly_eq - monthly_high_watermark
+            performance_fee_base[performance_fee_base <= 0] = 0
+            performance_fee = performance_fee_base * -abs(performance_fee)
+
+            performance_fees_sum = performance_fee.cumsum().reindex(eq.index, method='ffill')
+            performance_fee_equity = new_equity + performance_fees_sum
+
+            df_result = pd.DataFrame({
+                "equity_original": eq + starting_capital,
+                "equity_with_costs": new_equity,
+                "equity_all_included": performance_fee_equity,
+                "costs_sum": new_costs.cumsum(),
+                'performance_fee_sum': performance_fees_sum,
+            })
+
+            if plot_graph:
+                df_result[["equity_original", "equity_with_costs", "equity_all_included"]].plot()
+                plt.figure()
+                df_result[["costs_sum", 'performance_fee_sum']].plot()
+            return df_result
 
     def report_all(self):
         self.check_swarms_integrity()
