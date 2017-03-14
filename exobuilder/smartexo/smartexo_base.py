@@ -16,7 +16,10 @@ class SmartEXOBase(ExoEngineBase):
 
     @staticmethod
     def direction_type():
-        return 0
+        # Fixed at 2017-03-14 (return value was 0)
+        # SmartEXOs has unified direction, direction = 0 lead to double SmartEXO calculation in smart exo script
+        # Returning 1 we are sure that SmartEXO calculates only once
+        return 1
 
     @classmethod
     def names_list(cls, symbol):
