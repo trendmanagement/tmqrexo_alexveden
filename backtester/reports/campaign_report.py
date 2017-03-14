@@ -242,7 +242,7 @@ class CampaignReport:
         else:
             print("File saved to: {0}".format(fn))
 
-    def calculate_performance_fee(self, starting_capital=50000, dollar_costs=3, performance_fee=0.2, plot_graph=False):
+    def calculate_performance_fee(self, starting_capital=50000, dollar_costs=3, performance_fee=0.2, fixed_mgmt_fee=0, plot_graph=False):
             eq = self.campaign_stats.Equity
             costs_sum = self.campaign_stats['Costs'].cumsum()
             equity_without_costs = (eq - costs_sum)
@@ -265,8 +265,11 @@ class CampaignReport:
             performance_fee_base[performance_fee_base <= 0] = 0
             performance_fee = performance_fee_base * -abs(performance_fee)
 
+            management_fee = pd.Series(-abs(fixed_mgmt_fee), index=performance_fee.index)
+
             performance_fees_sum = performance_fee.cumsum().reindex(eq.index, method='ffill')
-            performance_fee_equity = new_equity + performance_fees_sum
+            management_fee_sum = management_fee.cumsum().reindex(eq.index, method='ffill')
+            performance_fee_equity = new_equity + performance_fees_sum + management_fee_sum
 
             df_result = pd.DataFrame({
                 "equity_original": eq + starting_capital,
@@ -274,12 +277,13 @@ class CampaignReport:
                 "equity_all_included": performance_fee_equity,
                 "costs_sum": new_costs.cumsum(),
                 'performance_fee_sum': performance_fees_sum,
+                'management_fee_sum': management_fee_sum,
             })
 
             if plot_graph:
                 df_result[["equity_original", "equity_with_costs", "equity_all_included"]].plot()
                 plt.figure()
-                df_result[["costs_sum", 'performance_fee_sum']].plot()
+                df_result[["costs_sum", 'performance_fee_sum', 'management_fee_sum']].plot()
             return df_result
 
     def report_all(self):
