@@ -127,6 +127,13 @@ class SmartEXOBase(ExoEngineBase):
 
         trans_list = []
 
+        #
+        # Writing custom values to store inside DB
+        #
+        self.custom_values = {
+            'regime': regime if regime is not None else float('nan')
+        }
+
         if regime is None and len(self.position) > 0:
             return self.position.close_all_translist()
 
@@ -170,12 +177,7 @@ class SmartEXOBase(ExoEngineBase):
             self._log_transactions(trans_list)
             return trans_list
 
-        #
-        # Writing custom values to store inside DB
-        #
-        self.custom_values = {
-            'regime': regime if regime is not None else float('nan')
-        }
+
 
         #
         # Manage opened position
