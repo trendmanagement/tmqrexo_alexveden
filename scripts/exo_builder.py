@@ -203,7 +203,7 @@ class EXOScript:
             #
             tmp_mongo_connstr = 'mongodb://tml:tml@10.0.1.2/tmldb_test?authMechanism=SCRAM-SHA-1'
             tmp_mongo_db = 'tmldb_test'
-            datasource = DataSourceHybrid(SQL_HOST, SQL_USER, SQL_PASS, assetindex, tmp_mongo_connstr, tmp_mongo_db,
+            datasource = DataSourceHybrid(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, tmp_mongo_connstr, tmp_mongo_db,
                                           futures_limit, options_limit, exostorage)
 
             # Run EXO calculation
