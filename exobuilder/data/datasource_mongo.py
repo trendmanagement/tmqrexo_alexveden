@@ -4,6 +4,7 @@ from pymongo import MongoClient
 import pymongo
 from datetime import datetime
 
+
 class DataSourceMongo(DataSourceBase):
     def __init__(self, conn_str, dbname, assetindex, futures_limit, options_limit, exostorage=None):
         super().__init__(assetindex, futures_limit, options_limit, exostorage=exostorage)
@@ -11,7 +12,7 @@ class DataSourceMongo(DataSourceBase):
         self.db = self.client[dbname]
 
         # Creating indexes for fast data fetching
-        self.db.futures_data.create_index([('idcontract', pymongo.ASCENDING),('datetime', pymongo.ASCENDING)])
+        self.db.futures_data.create_index([('idcontract', pymongo.ASCENDING), ('datetime', pymongo.ASCENDING)])
 
         # Extradata cache
         self.extra_data_cache = {}
@@ -21,15 +22,23 @@ class DataSourceMongo(DataSourceBase):
             dt.date(),
             datetime.min.time())
 
-
     def get_fut_data(self, dbid, date):
         try:
-            return self.db.futures_data.find({'datetime': date, 'idcontract': dbid}).next()
-        except:
+            return self.db.contracts_bars.find({'datetime': {'$lte': date}, 'idcontract': dbid}).next()
+        except StopIteration:
             raise QuoteNotFoundException('Futures data not found contract id: {0} date: {1}'.format(dbid, date))
 
-    def get_extra_data(self, key, date):
+    def get_fut_settlement(self, dbid, date):
 
+
+        try:
+            return self.db['futures_contract_settlements'].find(
+                {'date': self._shrink_datetime(date), 'idcontract': dbid}).next()['settlement']
+        except StopIteration:
+            raise QuoteNotFoundException(
+                'Futures settlement data not found contract id: {0} date: {1}'.format(dbid, self._shrink_datetime(date)))
+
+    def get_extra_data(self, key, date):
 
         if key == 'riskfreerate':
             if key in self.extra_data_cache:
@@ -40,9 +49,11 @@ class DataSourceMongo(DataSourceBase):
             #
             #  Getting risk-free-rate on previous day
             #
-            rfr_result = self.db.options_data_inputs.find({"idoptioninputsymbol": 15,
-                                              "optioninputdatetime": { '$lt': self._shrink_datetime(date)}
-                                              }).sort([("optioninputdatetime", -1)]).limit(1).next()
+            rfr_result = self.db['option_input_data'].find({
+                "idoptioninputsymbol": 15,
+                "optioninputdatetime": {
+                    '$lt': self._shrink_datetime(date)}
+            }).sort([("optioninputdatetime", -1)]).limit(1).next()
 
             rfr_dic[date] = rfr_result["optioninputclose"]
             return self.extra_data_cache[key][date]
@@ -54,10 +65,19 @@ class DataSourceMongo(DataSourceBase):
         # Returning previous day IV information
         #
         try:
-            return self.db.options_data.find({'idoption': dbid,
-                                              'datetime': {'$lt': self._shrink_datetime(date)}
-                                              }).sort([('datetime', -1)]).limit(1).next()
-        except:
+            return self.db.options_data.find({
+                'idoption': dbid,
+                'datetime': {'$lt': self._shrink_datetime(date)}
+            }).sort([('datetime', -1)]).limit(1).next()
+        except StopIteration:
             raise QuoteNotFoundException('Option data not found contract id: {0} date: {1}'.format(dbid, date))
 
-
+    def get_option_settlement(self, dbid, date):
+        try:
+            return self.db.options_data.find({
+                'idoption': dbid,
+                'datetime': self._shrink_datetime(date),
+            }).sort([('datetime', -1)]).limit(1).next()['price']
+        except StopIteration:
+            raise QuoteNotFoundException(
+                'Option settlement data not found contract id: {0} date: {1}'.format(dbid, date))

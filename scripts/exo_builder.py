@@ -58,7 +58,7 @@ from datetime import timedelta
 
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.datasource_hybrid import DataSourceHybrid
-from exobuilder.data.datasource_sql import DataSourceSQL
+from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.exostorage import EXOStorage
 from tradingcore.messages import *
 from tradingcore.signalapp import SignalApp, APPCLASS_DATA, APPCLASS_EXO
@@ -320,8 +320,8 @@ class EXOScript:
 
         futures_limit = 4
         options_limit = 20
-        # datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
-        datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
+        datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, exostorage)
+        #datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
 
         exos = exostorage.exo_list(exo_filter=self.args.instrument+'_', return_names=True)
 
