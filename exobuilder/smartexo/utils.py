@@ -7,7 +7,7 @@ from pymongo import MongoClient
 
 from exobuilder.algorithms.rollover_helper import RolloverHelper
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
-from exobuilder.data.datasource_sql import DataSourceSQL
+from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.exostorage import EXOStorage
 import matplotlib.pyplot as plt
 importlib.reload(logging);
@@ -42,9 +42,12 @@ class SmartEXOUtils:
         self.assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         self.exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
-        self.datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, self.assetindex,
-                                        self.futures_limit, self.options_limit,
-                                        self.exostorage)
+        #self.datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, self.assetindex,
+        #                                self.futures_limit, self.options_limit,
+        #                                self.exostorage)
+        self.datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, self.assetindex,
+                                          self.futures_limit, self.options_limit,
+                                          self.exostorage)
 
     def plot_transactions_payoff(self, smart_exo_position_func, analysis_date, analysis_instrument, **whatif_kwargs):
 
