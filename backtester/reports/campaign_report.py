@@ -210,6 +210,8 @@ class CampaignReport:
         else:
             print('No positions opened')
 
+        self.report_margin(positions)
+
         print("\nTrades report")
         if len(df) > 0:
             df['Qty'] = df['LastDate'] - df['PrevDate']
@@ -287,10 +289,10 @@ class CampaignReport:
                 df_result[["costs_sum", 'performance_fee_sum', 'management_fee_sum']].plot()
             return df_result
 
-    def report_margin(self):
+    def report_margin(self, positions):
         try:
             mpcm = ModelPosCoreMargin()
-            margin = mpcm.get_cme_core_margin(rpt.cmp.positions)
+            margin = mpcm.get_cme_core_margin(positions)
 
             if margin['status'] == 'SUCCESS':
                 print('CME CORE init:${0} maint:${1}'.format(margin['init'],
@@ -305,7 +307,6 @@ class CampaignReport:
         self.report_exo_exposure()
         self.report_alpha_exposure()
         self.report_positions()
-        self.report_margin()
         self.report_pnl()
         self.report_export()
 
