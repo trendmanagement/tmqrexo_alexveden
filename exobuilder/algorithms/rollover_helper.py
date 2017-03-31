@@ -59,6 +59,28 @@ class RolloverHelper:
             self.rollover_months = [1, 3, 5, 7, 8, 9, 11]
             self.days_before_expiration = 5
 
+        if self.instrument.name.upper() == "ZL":
+            """
+            Soy
+
+            Option	Future
+
+            Jan	Jan
+            Feb	Mar
+            Mar	Mar
+            Apr	May
+            May	May
+            Jun	Jul
+            Jul	Jul
+            Aug	Aug
+            Sep	Sep
+            Oct	Nov
+            Nov	Nov
+            Dec	Jan
+            """
+            self.rollover_months = [1, 3, 5, 7, 8, 9, 11]
+            self.days_before_expiration = 5
+
         if self.instrument.name.upper() == "CC":
             """
             Cocoa
