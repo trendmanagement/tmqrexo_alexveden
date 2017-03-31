@@ -10,6 +10,7 @@ import os, sys
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.exceptions import QuoteNotFoundException
 import matplotlib.pyplot as plt
+from remotemargincalls.margincalls.model_pos_margin import ModelPosCoreMargin
 
 #
 # Warnings messages formatting
@@ -286,11 +287,25 @@ class CampaignReport:
                 df_result[["costs_sum", 'performance_fee_sum', 'management_fee_sum']].plot()
             return df_result
 
+    def report_margin(self):
+        try:
+            mpcm = ModelPosCoreMargin()
+            margin = mpcm.get_cme_core_margin(rpt.cmp.positions)
+
+            if margin['status'] == 'SUCCESS':
+                print('CME CORE init:${0} maint:${1}'.format(margin['init'],
+                                                                      margin['maint']))
+            else:
+                warnings.warn('CME CORE Margin Error')
+        except:
+            warnings.warn('CME CORE Margin Error')
+
     def report_all(self):
         self.check_swarms_integrity()
         self.report_exo_exposure()
         self.report_alpha_exposure()
         self.report_positions()
+        self.report_margin()
         self.report_pnl()
         self.report_export()
 
