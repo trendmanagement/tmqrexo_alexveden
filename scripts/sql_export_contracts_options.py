@@ -281,7 +281,7 @@ if(len(contract_settlements) > 0):
 
 print('Done {0} rows'.format(cnt))
 
-'''
+
 
 print('Bar data')
 ############################################################################
@@ -313,6 +313,67 @@ for row in c2:
                                      'close': bar['close'], \
                               'idcontract': bar['idcontract'],
                               })
+
+        if(cnt % 100000 == 0):
+            if(len(contract_bars) > 0):
+                collection.insert_many(contract_bars)
+
+            contract_bars = []
+
+        cnt += 1
+    except TypeError:
+        print('TypeError')
+        print(row)
+        break
+
+    #if cnt > 3:
+    #    break
+
+    pbar.update(1)
+
+#print(contract_settlements)
+
+if(len(contract_bars) > 0):
+    result  = collection.insert_many(contract_bars)
+
+#print(result.inserted_ids)
+
+print('Done {0} rows'.format(cnt))
+
+'''
+
+print('Bar data')
+############################################################################
+collection = mongo_db['contractexpirations']
+
+collection.create_index([('optionyear',pymongo.ASCENDING),('optionmonthint',pymongo.ASCENDING),('contracttype',pymongo.ASCENDING)])
+
+qry = 'SELECT * FROM cqgdb.tblcontractexpirations '
+logging.debug(qry)
+
+max_steps = 1
+pbar = tqdm(desc="Progress", total=max_steps)
+
+c2 = sql_conn.cursor(as_dict=True)
+c2.execute(qry)
+
+contract_bars = []
+
+cnt = 0
+for row in c2:
+    try:
+        bar = dict(map(convert_dates, row.items()));
+
+        contract_description = 'future'
+        if bar['contracttype'] == 2:
+            contract_description = 'option'
+
+        contract_bars.append({'contracttype': bar['contracttype'], \
+                                     'contractdescription': contract_description, \
+                                     'idinstrument': bar['idinstrument'], \
+                                     'optionyear': bar['optionyear'], \
+                                     'optionmonthint': bar['optionmonthint'], \
+                              'expirationdate': bar['expirationdate']})
 
         if(cnt % 100000 == 0):
             if(len(contract_bars) > 0):

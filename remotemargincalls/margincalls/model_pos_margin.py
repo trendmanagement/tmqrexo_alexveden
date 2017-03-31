@@ -34,7 +34,7 @@ class ModelPosCoreMargin:
             # print(exp_dict['optionyear'])
 
             if exp_dict['qty'] != 0:
-                print(contract, exp_dict['qty'])
+                #print(contract, exp_dict['qty'])
                 # print(exp_dict)
                 asset = exp_dict['asset']
 
