@@ -210,6 +210,7 @@ class CampaignReport:
         else:
             print('No positions opened')
 
+        print("\n\n")
         self.report_margin()
 
         print("\nTrades report")
