@@ -210,7 +210,7 @@ class CampaignReport:
         else:
             print('No positions opened')
 
-        self.report_margin(positions)
+        self.report_margin()
 
         print("\nTrades report")
         if len(df) > 0:
@@ -289,14 +289,13 @@ class CampaignReport:
                 df_result[["costs_sum", 'performance_fee_sum', 'management_fee_sum']].plot()
             return df_result
 
-    def report_margin(self, positions):
+    def report_margin(self):
         try:
             mpcm = ModelPosCoreMargin()
-            margin = mpcm.get_cme_core_margin(positions)
+            margin = mpcm.get_cme_core_margin(self.cmp.positions)
 
             if margin['status'] == 'SUCCESS':
-                print('CME CORE init:${0} maint:${1}'.format(margin['init'],
-                                                                      margin['maint']))
+                print('CME CORE init:{0} maint:{1}'.format(margin['init'], margin['maint']))
             else:
                 warnings.warn('CME CORE Margin Error')
         except:
