@@ -340,9 +340,9 @@ if(len(contract_bars) > 0):
 
 print('Done {0} rows'.format(cnt))
 
-'''
 
-print('Bar data')
+
+print('Expiration data')
 ############################################################################
 collection = mongo_db['contractexpirations']
 
@@ -398,5 +398,112 @@ if(len(contract_bars) > 0):
     result  = collection.insert_many(contract_bars)
 
 #print(result.inserted_ids)
+'''
+#print('Done {0} rows'.format(cnt))
 
-print('Done {0} rows'.format(cnt))
+print('Bar data')
+############################################################################
+
+max_steps = 6615
+pbar = tqdm(desc="Progress", total=max_steps)
+
+contracts_col = mongo_db['contracts']
+contracts_mongo = contracts_col.find({})
+contracts_dict = {}
+
+for contract_mongo in contracts_mongo:
+    tup = (contract_mongo['idinstrument'],contract_mongo['year'],contract_mongo['month'])
+    contracts_dict[tup] = contract_mongo
+
+
+contracts_qry = 'SELECT * FROM cqgdb.tblcontracts'
+contracts_sql = sql_conn.cursor(as_dict=True)
+contracts_sql.execute(contracts_qry)
+
+sql_conn_2 = pymssql.connect(server=SQL_HOST, \
+                           user=SQL_USER + "@" + SQL_HOST, password=SQL_PASS, database='TMLDB')
+
+count = 0
+for contract_row in contracts_sql:
+    #print(contract_row)
+
+    if (contract_row['idinstrument'],contract_row['year'],contract_row['month']) in contracts_dict:
+        contract_mongo2 = contracts_dict[contract_row['idinstrument'],contract_row['year'],contract_row['month']]
+
+        #print(contract_mongo2)
+
+        contract_query_bar = 'SELECT datetime,volume FROM cqgdb.tblbardata WHERE idcontract = ' \
+                             + str(contract_row['idcontract']) + ' ORDER BY datetime'
+        c2 = sql_conn_2.cursor(as_dict=True)
+        c2.execute(contract_query_bar)
+
+        for row in c2:
+            if row['volume'] > 0:
+                rowdatetime = datetime.datetime.strptime(row['datetime'], '%Y-%m-%d %H:%M:%S')
+
+                test = mongo_db['contracts_bars'].update(
+                    {'idcontract':contract_mongo2['idcontract'],'datetime':rowdatetime},
+                    {'$set':{'volume':row['volume']}},upsert=False, multi=False)
+
+                print(test)
+
+    pbar.update(1)
+    count+=1
+
+
+'''
+collection = mongo_db['contracts_bars']
+
+collection.create_index([('idcontract',pymongo.ASCENDING),('datetime',pymongo.ASCENDING)])
+collection.create_index([('idcontract',pymongo.ASCENDING),('datetime',pymongo.DESCENDING)])
+
+qry = 'SELECT * FROM cqgdb.tblbardata '
+logging.debug(qry)
+
+max_steps = 1
+pbar = tqdm(desc="Progress", total=max_steps)
+
+c2 = sql_conn.cursor(as_dict=True)
+c2.execute(qry)
+
+contract_bars = []
+
+cnt = 0
+for row in c2:
+    try:
+        bar = dict(map(convert_dates, row.items()));
+
+        contract_bars.append({'datetime': bar['datetime'], \
+                                     'open': bar['open'], \
+                                     'high': bar['high'], \
+                                     'low': bar['low'], \
+                                     'close': bar['close'], \
+                              'idcontract': bar['idcontract'],
+                              })
+
+        if(cnt % 100000 == 0):
+            if(len(contract_bars) > 0):
+                collection.insert_many(contract_bars)
+
+            contract_bars = []
+
+        cnt += 1
+    except TypeError:
+        print('TypeError')
+        print(row)
+        break
+
+    #if cnt > 3:
+    #    break
+
+    pbar.update(1)
+
+#print(contract_settlements)
+
+if(len(contract_bars) > 0):
+    result  = collection.insert_many(contract_bars)
+
+#print(result.inserted_ids)
+
+
+'''
