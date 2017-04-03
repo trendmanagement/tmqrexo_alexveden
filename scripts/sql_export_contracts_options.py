@@ -439,13 +439,13 @@ for contract_row in contracts_sql:
 
         for row in c2:
             if row['volume'] > 0:
-                rowdatetime = datetime.datetime.strptime(row['datetime'], '%Y-%m-%d %H:%M:%S')
+                rowdatetime = datetime.datetime.strptime(str(row['datetime']), '%Y-%m-%d %H:%M:%S')
 
                 test = mongo_db['contracts_bars'].update(
                     {'idcontract':contract_mongo2['idcontract'],'datetime':rowdatetime},
                     {'$set':{'volume':row['volume']}},upsert=False, multi=False)
 
-                print(test)
+                #print(test)
 
     pbar.update(1)
     count+=1
