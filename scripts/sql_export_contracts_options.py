@@ -57,10 +57,13 @@ MONGO_CONNSTR = 'mongodb://tmqr:tmqr@10.0.1.2/tmldb_v2?authMechanism=SCRAM-SHA-1
 MONGO_CONNSTR_LOCAL = 'mongodb://localhost:27017'
 MONGO_EXO_DB = 'tmldb_v2'
 MONGO_EXO_DB_LOCAL = 'tmldb'
+MONGO_CONNSTR_LIVE = 'mongodb://exowriter:qmWSy4K3@10.0.1.2/tmldb?authMechanism=SCRAM-SHA-1'
+MONGO_EXO_DB_LIVE = 'tmldb'
+
 
 # Init mongo asset index
-client = MongoClient(MONGO_CONNSTR)
-mongo_db = client[MONGO_EXO_DB]
+client = MongoClient(MONGO_CONNSTR_LIVE)
+mongo_db = client[MONGO_EXO_DB_LIVE]
 
 #mongo_collection.create_index([('idbardata', pymongo.ASCENDING)], unique=True)
 #mongo_collection.create_index([('idcontract', pymongo.ASCENDING), ('datetime', pymongo.ASCENDING)], unique=True)
@@ -398,7 +401,7 @@ if(len(contract_bars) > 0):
     result  = collection.insert_many(contract_bars)
 
 #print(result.inserted_ids)
-'''
+
 #print('Done {0} rows'.format(cnt))
 
 print('Bar data')
@@ -461,7 +464,7 @@ for contract_row in contracts_sql:
     count+=1
 
 
-'''
+
 collection = mongo_db['contracts_bars']
 
 collection.create_index([('idcontract',pymongo.ASCENDING),('datetime',pymongo.ASCENDING)])
@@ -517,3 +520,34 @@ if(len(contract_bars) > 0):
 
 
 '''
+
+print('instruments')
+############################################################################
+collection = mongo_db['instruments']
+
+qry = 'SELECT * FROM cqgdb.tblinstruments '
+logging.debug(qry)
+
+max_steps = 1
+pbar = tqdm(desc="Progress", total=max_steps)
+
+c2 = sql_conn.cursor(as_dict=True)
+c2.execute(qry)
+
+cnt = 0
+for row in c2:
+    try:
+        data = dict(map(convert_dates, row.items()))
+        collection.replace_one({'idinstrument':data['idinstrument']},data,upsert=True)
+        cnt += 1
+    except TypeError:
+        print('TypeError')
+        print(row)
+        break
+
+    pbar.update(1)
+
+print('Done {0} rows'.format(cnt))
+
+
+print('option_input_data')
