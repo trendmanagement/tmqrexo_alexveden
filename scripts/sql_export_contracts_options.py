@@ -426,7 +426,7 @@ for contract_row in contracts_sql:
 
 pbar = tqdm(desc="Progress", total=max_steps)
 
-contracts_qry = 'SELECT * FROM cqgdb.tblcontracts where year = 2009'
+contracts_qry = 'SELECT * FROM cqgdb.tblcontracts where year = 2010'
 contracts_sql = sql_conn.cursor(as_dict=True)
 contracts_sql.execute(contracts_qry)
 
