@@ -404,8 +404,7 @@ if(len(contract_bars) > 0):
 print('Bar data')
 ############################################################################
 
-max_steps = 6615
-pbar = tqdm(desc="Progress", total=max_steps)
+
 
 contracts_col = mongo_db['contracts']
 contracts_mongo = contracts_col.find({})
@@ -416,7 +415,18 @@ for contract_mongo in contracts_mongo:
     contracts_dict[tup] = contract_mongo
 
 
-contracts_qry = 'SELECT * FROM cqgdb.tblcontracts'
+contracts_qry = 'SELECT count(*) FROM cqgdb.tblcontracts where year = 2009'
+contracts_sql = sql_conn.cursor()
+contracts_sql.execute(contracts_qry)
+
+max_steps = 0
+for contract_row in contracts_sql:
+    print(contract_row[0])
+    max_steps=contract_row[0]
+
+pbar = tqdm(desc="Progress", total=max_steps)
+
+contracts_qry = 'SELECT * FROM cqgdb.tblcontracts where year = 2009'
 contracts_sql = sql_conn.cursor(as_dict=True)
 contracts_sql.execute(contracts_qry)
 
