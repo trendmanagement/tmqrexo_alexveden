@@ -426,7 +426,7 @@ for contract_row in contracts_sql:
 
 pbar = tqdm(desc="Progress", total=max_steps)
 
-contracts_qry = 'SELECT * FROM cqgdb.tblcontracts where year = 2010'
+contracts_qry = 'SELECT * FROM cqgdb.tblcontracts where year = 2011 ORDER BY idcontract'
 contracts_sql = sql_conn.cursor(as_dict=True)
 contracts_sql.execute(contracts_qry)
 
@@ -440,7 +440,7 @@ for contract_row in contracts_sql:
     if (contract_row['idinstrument'],contract_row['year'],contract_row['month']) in contracts_dict:
         contract_mongo2 = contracts_dict[contract_row['idinstrument'],contract_row['year'],contract_row['month']]
 
-        #print(contract_mongo2)
+        print('Contract ', str(contract_row['idcontract']))
 
         contract_query_bar = 'SELECT datetime,volume FROM cqgdb.tblbardata WHERE idcontract = ' \
                              + str(contract_row['idcontract']) + ' ORDER BY datetime'
