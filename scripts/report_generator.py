@@ -81,7 +81,7 @@ class ReportGenerator:
             # Archiving file
             zip_file_name = report_out_file_name.replace('html', 'zip')
             with open(zip_file_name, 'wb') as zipfh:
-                with zipfile.ZipFile(zipfh, 'w', compression=zipfile.ZIP_BZIP2) as myzip:
+                with zipfile.ZipFile(zipfh, 'w', compression=zipfile.ZIP_DEFLATED) as myzip:
                     myzip.write(report_out_file_name)
 
             # Removing html file
