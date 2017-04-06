@@ -62,8 +62,8 @@ MONGO_EXO_DB_LIVE = 'tmldb'
 
 
 # Init mongo asset index
-client = MongoClient(MONGO_CONNSTR_LIVE)
-mongo_db = client[MONGO_EXO_DB_LIVE]
+client = MongoClient(MONGO_CONNSTR)
+mongo_db = client[MONGO_EXO_DB]
 
 #mongo_collection.create_index([('idbardata', pymongo.ASCENDING)], unique=True)
 #mongo_collection.create_index([('idcontract', pymongo.ASCENDING), ('datetime', pymongo.ASCENDING)], unique=True)
@@ -521,11 +521,9 @@ if(len(contract_bars) > 0):
 
 '''
 
-print('instruments')
-############################################################################
-collection = mongo_db['instruments']
+collection = mongo_db['option_input_data']
 
-qry = 'SELECT * FROM cqgdb.tblinstruments '
+qry = 'SELECT * FROM cqgdb.tbloptioninputdata '
 logging.debug(qry)
 
 max_steps = 1
@@ -538,7 +536,7 @@ cnt = 0
 for row in c2:
     try:
         data = dict(map(convert_dates, row.items()))
-        collection.replace_one({'idinstrument':data['idinstrument']},data,upsert=True)
+        collection.replace_one({'idoptioninputsymbol':data['idoptioninputsymbol'],'optioninputdatetime':data['optioninputdatetime']},data,upsert=True)
         cnt += 1
     except TypeError:
         print('TypeError')
@@ -548,6 +546,3 @@ for row in c2:
     pbar.update(1)
 
 print('Done {0} rows'.format(cnt))
-
-
-print('option_input_data')
