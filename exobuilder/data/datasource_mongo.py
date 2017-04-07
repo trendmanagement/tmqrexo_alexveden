@@ -55,7 +55,7 @@ class DataSourceMongo(DataSourceBase):
                     '$lt': self._shrink_datetime(date)}
             }).sort([("optioninputdatetime", -1)]).limit(1).next()
 
-            rfr_dic[date] = rfr_result["optioninputclose"]
+            rfr_dic[date] = rfr_result["optioninputclose"] / 100.0
             return self.extra_data_cache[key][date]
         else:
             raise KeyError("Unknown key for extra_data, only 'riskfreerate' supported.")
