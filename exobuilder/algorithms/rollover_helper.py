@@ -125,7 +125,12 @@ class RolloverHelper:
             self.rollover_months = [1, 3, 5, 7, 9, 11]
             self.days_before_expiration = 5
 
-
+        if self.instrument.name.upper() == "GC":
+            """
+            Gold
+            """
+            self.rollover_months = [2, 6, 8, 12]
+            self.days_before_expiration = 5
 
         if self.instrument.name.upper() == "ES":
             self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
