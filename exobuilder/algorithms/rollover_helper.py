@@ -120,6 +120,13 @@ class RolloverHelper:
                     re.compile('^$'),         # Matches '' empty option code
                 ]
 
+        if self.instrument.name.upper() == "GC":
+            """
+            Gold
+            """
+            self.rollover_months = [2, 6, 8, 12]
+            self.days_before_expiration = 5
+
         if self.instrument.name.upper() == "6E":
             """
             https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
@@ -130,6 +137,11 @@ class RolloverHelper:
             """
             self.rollover_months = [3, 6, 9, 12]
             self.days_before_expiration = 2
+            if len(self.re_option_code_include) == 0:
+                self.re_option_code_include = [
+                    re.compile('^EUU$'),       # Matches end-of-month option
+                    re.compile('^$'),          # Matches '' empty option code
+                ]
 
 
 
