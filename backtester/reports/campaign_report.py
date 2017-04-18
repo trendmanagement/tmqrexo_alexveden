@@ -70,9 +70,13 @@ class CampaignReport:
         for alpha_name, swm_exposure_dict in self.cmp.alphas.items():
             swarm_name = alpha_name
             series = swm_data[swarm_name]['swarm_series']
-            campaign_dict[swarm_name] = series['equity'] * swm_exposure_dict['qty']
-            campaign_deltas_dict[swarm_name] = series['delta'] * swm_exposure_dict['qty']
-            campaign_costs_dict[swarm_name] = series['costs'] * swm_exposure_dict['qty']
+
+            date_begin = swm_exposure_dict.get('begin', datetime(1900, 1, 1))
+            date_end = swm_exposure_dict.get('end', datetime(2100, 1, 1))
+
+            campaign_dict[swarm_name] = series['equity'].ix[date_begin:date_end] * swm_exposure_dict['qty']
+            campaign_deltas_dict[swarm_name] = series['delta'].ix[date_begin:date_end] * swm_exposure_dict['qty']
+            campaign_costs_dict[swarm_name] = series['costs'].ix[date_begin:date_end] * swm_exposure_dict['qty']
 
 
         campaign_equity = pd.DataFrame(campaign_dict).ffill().sum(axis=1)
@@ -118,6 +122,9 @@ class CampaignReport:
             prev_date = max(prev_date, seriesdf.index[-2])
 
         for k, v in self.swarms_data.items():
+            # Skip integrity checks for inactive alphas
+            if not self.cmp.alpha_is_active(k, last_date):
+                continue
             instrument = k.split('_')[0]
             seriesdf = v['swarm_series']
             asset_info = self.datasource.assetindex.get_instrument_info(instrument)
