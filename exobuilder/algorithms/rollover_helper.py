@@ -1,6 +1,5 @@
 import re
 
-
 class RolloverHelper:
     def __init__(self, instrument, **kwargs):
         self.instrument = instrument
@@ -8,15 +7,8 @@ class RolloverHelper:
         re_include = kwargs.get('option_code_include', [])
 
         self.re_option_code_include = []
-
         for pattern in re_include:
             self.re_option_code_include.append(re.compile(pattern))
-
-        # Default
-        # Roll every month
-        self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-        # Roll 2-days before expiration
-        self.days_before_expiration = 2
 
         if self.instrument.name.upper() == "ZC":
             # Corn custom rollover options
@@ -111,6 +103,8 @@ class RolloverHelper:
             self.rollover_months = [1, 3, 5, 7, 9, 11]
             self.days_before_expiration = 5
 
+
+
         if self.instrument.name.upper() == "ES":
             self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             self.days_before_expiration = 2
@@ -119,15 +113,7 @@ class RolloverHelper:
                     re.compile('^EW$'),       # Matches end-of-month option
                     re.compile('^$'),         # Matches '' empty option code
                 ]
-
-        if self.instrument.name.upper() == "GC":
-            """
-            Gold
-            """
-            self.rollover_months = [2, 6, 8, 12]
-            self.days_before_expiration = 5
-
-        if self.instrument.name.upper() == "6E":
+        elif self.instrument.name.upper() == "6E":
             """
             https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
             @steve
@@ -137,13 +123,12 @@ class RolloverHelper:
             """
             self.rollover_months = [3, 6, 9, 12]
             self.days_before_expiration = 2
-            if len(self.re_option_code_include) == 0:
-                self.re_option_code_include = [
-                    re.compile('^EUU$'),       # Matches end-of-month option
-                    re.compile('^$'),          # Matches '' empty option code
-                ]
-
-
+        else:
+            # Default
+            # Roll every month
+            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            # Roll 2-days before expiration
+            self.days_before_expiration = 2
 
     def _get_recent_option_chain(self, fut):
         """

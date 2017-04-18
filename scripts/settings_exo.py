@@ -22,7 +22,7 @@ from exobuilder.algorithms.SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnl
 #
 # Instruments list
 #
-INSTRUMENTS_LIST = ['ES', 'CL', 'NG', 'ZN', 'ZS', 'ZW', 'ZC', '6E', 'LBS', 'GC']
+INSTRUMENTS_LIST = ['CL', 'NG', 'ZN', 'ZC', 'ZS', 'ZW'] #,'ES', '6E', 'LBS', 'GC']
 
 # Alphas list (generic)
 ALPHAS_GENERIC = ['alpha_exo']
@@ -59,6 +59,10 @@ EXO_LIST = [
         'name': 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread',
         'class': SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread,
     },
+
+]
+
+"""
     {
         'name': 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread',
         'class': SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread,
@@ -99,8 +103,5 @@ EXO_LIST = [
         'name': 'SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly',
         'class': SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly,
     },
-
-]
-
-
+"""
 
