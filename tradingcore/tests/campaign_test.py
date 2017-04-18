@@ -200,6 +200,51 @@ class CampaignTestCase(unittest.TestCase):
         self.assertEqual(-4.0, pos['alpha3']['exposure'])
         self.assertEqual('exo2', pos['alpha3']['exo_name'])
 
+    def test_campaign_alpha_is_active_now(self):
+        _dict = {
+            'name': 'test_campaign',
+            'description': 'Brief description of campaign',
+            '_id': ObjectId("57b42aba82d9c39e0341fbc7"),
+            'alphas': {
+                'alpha1': {
+                    'qty': -1.0,
+                    'leg_name': 'leg1',
+                    'end': datetime(2016, 1, 1),
+                    'begin': datetime(2011, 1, 1)
+                },
+                'alpha2': {
+                    'qty': -2.0,
+                    'end': datetime(2011, 1, 1),
+                },
+                'alpha3': {
+                    'qty': 2.0,
+                    'leg_name': 'leg2',
+                    'begin': datetime(2016, 1, 1),
+                },
+            }
+        }
+
+        _cmp = Campaign(_dict, self._datasource)
+        self.assertEqual(True, _cmp.alpha_is_active('alpha1', datetime(2015, 1, 1)))
+        self.assertEqual(False, _cmp.alpha_is_active('alpha1', datetime(2016, 1, 1)))
+        self.assertEqual(True, _cmp.alpha_is_active('alpha1', datetime(2011, 1, 1)))
+        self.assertEqual(False, _cmp.alpha_is_active('alpha1', datetime(2016, 1, 2)))
+        self.assertEqual(False, _cmp.alpha_is_active('alpha1', datetime(2010, 12, 31)))
+
+        self.assertEqual(False, _cmp.alpha_is_active('alpha2', datetime(2015, 1, 1)))
+        self.assertEqual(False, _cmp.alpha_is_active('alpha2', datetime(2016, 1, 1)))
+        self.assertEqual(False, _cmp.alpha_is_active('alpha2', datetime(2011, 1, 2)))
+        self.assertEqual(False, _cmp.alpha_is_active('alpha2', datetime(2011, 1, 1)))
+        self.assertEqual(True, _cmp.alpha_is_active('alpha2', datetime(2010, 12, 31)))
+
+        self.assertEqual(True, _cmp.alpha_is_active('alpha3', datetime(2025, 1, 1)))
+        self.assertEqual(True, _cmp.alpha_is_active('alpha3', datetime(2016, 1, 1)))
+        self.assertEqual(False, _cmp.alpha_is_active('alpha3', datetime(2011, 1, 2)))
+        self.assertEqual(False, _cmp.alpha_is_active('alpha3', datetime(2015, 12, 31)))
+
+
+
+
     def test_campaign_exo_positions(self):
         pos = self._cmp.exo_positions(None)
 
@@ -304,12 +349,12 @@ class CampaignTestCase(unittest.TestCase):
         p = self._cmp.alphas_positions(datetime(2015, 1, 6))
         self.assertEqual(0, p['alpha1']['exposure'])
         self.assertEqual(0, p['alpha2']['exposure'])
-        self.assertEqual(0, p['alpha3']['exposure'])
+        self.assertEqual(4, p['alpha3']['exposure'])
 
         p = self._cmp.alphas_positions(datetime(2015, 1, 7))
         self.assertEqual(0, p['alpha1']['exposure'])
         self.assertEqual(-2, p['alpha2']['exposure'])
-        self.assertEqual(0, p['alpha3']['exposure'])
+        self.assertEqual(4, p['alpha3']['exposure'])
 
     def test_exo_positions_on_date(self):
         """
@@ -360,7 +405,7 @@ class CampaignTestCase(unittest.TestCase):
 
         p = self._cmp.exo_positions(datetime(2015, 1, 7))
         self.assertEqual(-2, p['exo1']['exposure'])
-        self.assertEqual(0, p['exo2']['exposure'])
+        self.assertEqual(4, p['exo2']['exposure'])
 
 
 

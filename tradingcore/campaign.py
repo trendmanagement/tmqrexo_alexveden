@@ -61,6 +61,17 @@ class Campaign:
         else:
             return self._legs[by_leg.lower()]
 
+    def alpha_is_active(self, swarm_name, date):
+        assert date is not None
+
+        sett_dict = self.alphas[swarm_name]
+        date_begin = sett_dict.get('begin', datetime(1900, 1, 1))
+        date_end = sett_dict.get('end', datetime(2100, 1, 1))
+
+        assert date_end > date_begin
+
+        return date.date() >= date_begin.date() and date.date() < date_end.date()
+
     def alphas_positions(self, date):
         """
         Returns list of alpha's exposures regarding campaign's qty
@@ -73,13 +84,18 @@ class Campaign:
             # If date is not defined return actual swarm exposures
             # Old behavior (for compatibility)
             for swarm_name, info_dict in swarm_positions.items():
-                alpha_exposure[swarm_name] = {
-                    'exposure': info_dict['last_exposure'] * self.alphas[swarm_name]['qty'],
-                    'exo_name': info_dict['exo_name'],
-                }
+                if self.alpha_is_active(swarm_name, datetime.now()):
+                    alpha_exposure[swarm_name] = {
+                        'exposure': info_dict['last_exposure'] * self.alphas[swarm_name]['qty'],
+                        'exo_name': info_dict['exo_name'],
+                    }
         else:
 
             for swarm_name, info_dict in swarm_positions.items():
+                # Skipping retired alphas
+                if not self.alpha_is_active(swarm_name, date):
+                    continue
+
                 seriesdf = info_dict['swarm_series']
 
                 # Handle swarm indexing as Date and DateTime
