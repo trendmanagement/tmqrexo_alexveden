@@ -49,14 +49,17 @@ class DataSourceMongo(DataSourceBase):
             #
             #  Getting risk-free-rate on previous day
             #
-            rfr_result = self.db['option_input_data'].find({
-                "idoptioninputsymbol": 15,
-                "optioninputdatetime": {
-                    '$lt': self._shrink_datetime(date)}
-            }).sort([("optioninputdatetime", -1)]).limit(1).next()
+            try:
+                rfr_result = self.db['option_input_data'].find({
+                    "idoptioninputsymbol": 15,
+                    "optioninputdatetime": {
+                        '$lt': self._shrink_datetime(date)}
+                }).sort([("optioninputdatetime", -1)]).limit(1).next()
 
-            rfr_dic[date] = rfr_result["optioninputclose"] / 100.0
-            return self.extra_data_cache[key][date]
+                rfr_dic[date] = rfr_result["optioninputclose"] / 100.0
+                return self.extra_data_cache[key][date]
+            except StopIteration:
+                return 0.0
         else:
             raise KeyError("Unknown key for extra_data, only 'riskfreerate' supported.")
 
