@@ -59,7 +59,7 @@ class DataSourceMongo(DataSourceBase):
                 rfr_dic[date] = rfr_result["optioninputclose"] / 100.0
                 return self.extra_data_cache[key][date]
             except StopIteration:
-                return 0.0
+                return 1.27/100.0
         else:
             raise KeyError("Unknown key for extra_data, only 'riskfreerate' supported.")
 
