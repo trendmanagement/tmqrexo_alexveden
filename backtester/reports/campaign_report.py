@@ -79,7 +79,7 @@ class CampaignReport:
             campaign_costs_dict[swarm_name] = series['costs'].ix[date_begin:date_end] * swm_exposure_dict['qty']
 
 
-        campaign_equity = pd.DataFrame(campaign_dict).ffill().diff().sum(axis=1)
+        campaign_equity = pd.DataFrame(campaign_dict).ffill().diff().cumsum().sum(axis=1)
         campaign_deltas = pd.DataFrame(campaign_deltas_dict).sum(axis=1)
         campaign_costs = pd.DataFrame(campaign_costs_dict).sum(axis=1)
 
@@ -318,3 +318,4 @@ if __name__ == '__main__':
 
     rpt = CampaignReport('ZN_Bidirectional V3', datasource)
     rpt.report_all()
+    pass
