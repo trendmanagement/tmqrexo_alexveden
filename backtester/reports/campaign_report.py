@@ -9,7 +9,7 @@ from exobuilder.data.assetindex_mongo import AssetIndexMongo
 import os, sys
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.exceptions import QuoteNotFoundException
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 #
 # Warnings messages formatting
@@ -79,7 +79,7 @@ class CampaignReport:
             campaign_costs_dict[swarm_name] = series['costs'].ix[date_begin:date_end] * swm_exposure_dict['qty']
 
 
-        campaign_equity = pd.DataFrame(campaign_dict).ffill().sum(axis=1)
+        campaign_equity = pd.DataFrame(campaign_dict).ffill().diff().sum(axis=1)
         campaign_deltas = pd.DataFrame(campaign_deltas_dict).sum(axis=1)
         campaign_costs = pd.DataFrame(campaign_costs_dict).sum(axis=1)
 
@@ -289,7 +289,7 @@ class CampaignReport:
 
             if plot_graph:
                 df_result[["equity_original", "equity_with_costs", "equity_all_included"]].plot()
-                plt.figure()
+                #plt.figure()
                 df_result[["costs_sum", 'performance_fee_sum', 'management_fee_sum']].plot()
             return df_result
 
@@ -305,12 +305,16 @@ if __name__ == '__main__':
     from scripts.settings import *
     # from backtester.reports.campaign_report import CampaignReport
     from exobuilder.data.assetindex_mongo import AssetIndexMongo
-    from exobuilder.data.datasource_sql import DataSourceSQL
+    from exobuilder.data.datasource_mongo import DataSourceMongo
     from exobuilder.data.exostorage import EXOStorage
 
     assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
     storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
-    datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, 3, 20, storage)
 
-    rpt = CampaignReport('ES_Collect_V1', datasource)
+    #datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, 3, 20, storage)
+    futures_limit = 4
+    options_limit = 20
+    datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, storage)
+
+    rpt = CampaignReport('ZN_Bidirectional V3', datasource)
     rpt.report_all()
