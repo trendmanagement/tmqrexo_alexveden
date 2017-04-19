@@ -113,7 +113,7 @@ class CampaignReport:
         isok = True
         last_date = datetime(1900, 1, 1)
         prev_date = datetime(1900, 1, 1)
-        decision_time = None
+        decision_time = datetime(1900, 1, 1, 0, 0, 0)
         instrument_name = None
 
         for k, v in self.swarms_data.items():
