@@ -40,14 +40,14 @@ class ExecutionManager:
                     if 'end' not in campaign.alphas[exesting_alpha] or existing_val['end'] != \
                             campaign.alphas[exesting_alpha]['end']:
                         print(
-                            "WARNING: {0} have 'begin' setting in the DB, but it's not set in new records or not equal".format(
+                            "WARNING: {0} have 'end' setting in the DB, but it's not set in new records or not equal".format(
                                 exesting_alpha))
                         sanity_passed = False
 
 
         if sanity_passed:
-            #campaign_collection.replace_one({'name': campaign.name}, campaign.as_dict(), upsert=True)
-            print("Done (TODO!)")
+            campaign_collection.replace_one({'name': campaign.name}, campaign.as_dict(), upsert=True)
+            print("Done")
         else:
             print("(!) Sanity checks are failed, check the campaign settings and run campaign_save() with force=True")
 
