@@ -12,14 +12,44 @@ class ExecutionManager:
         self.datasource = datasource
         self._campaign_cache = {}
 
-    def campaign_save(self, campaign):
+    def campaign_save(self, campaign, force=False):
         """
         Saves campaign instance to MongoDB
         :param campaign: Campaign class instance
+        :param force: Skip sanity checks and force campaign write to DB
         :return: None
         """
         campaign_collection = self.db['campaigns']
-        campaign_collection.replace_one({'name': campaign.name}, campaign.as_dict(), upsert=True)
+
+        existing_campaign = campaign_collection.find_one({'name': campaign.name})
+
+        sanity_passed = True
+
+        if existing_campaign:
+            # Do sanity checks
+            for exesting_alpha, existing_val in existing_campaign.alphas.items():
+                if 'begin' in existing_val:
+                    if 'begin' not in campaign.alphas[exesting_alpha] or existing_val['begin'] != \
+                            campaign.alphas[exesting_alpha]['begin']:
+                        sanity_passed = False
+                        print(
+                            "WARNING: {0} have 'begin' setting in the DB, but it's not set in new records or not equal".format(
+                                exesting_alpha))
+
+                if 'end' in existing_val:
+                    if 'end' not in campaign.alphas[exesting_alpha] or existing_val['end'] != \
+                            campaign.alphas[exesting_alpha]['end']:
+                        print(
+                            "WARNING: {0} have 'begin' setting in the DB, but it's not set in new records or not equal".format(
+                                exesting_alpha))
+                        sanity_passed = False
+
+
+        if sanity_passed:
+            #campaign_collection.replace_one({'name': campaign.name}, campaign.as_dict(), upsert=True)
+            print("Done (TODO!)")
+        else:
+            print("(!) Sanity checks are failed, check the campaign settings and run campaign_save() with force=True")
 
     def campaign_load(self, campaign_name):
         """
@@ -140,4 +170,3 @@ class ExecutionManager:
             # Execute bulk insert into MongoDB
             bulk.execute()
         return account_positions
-
