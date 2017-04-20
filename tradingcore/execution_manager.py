@@ -27,7 +27,7 @@ class ExecutionManager:
 
         if existing_campaign:
             # Do sanity checks
-            for exesting_alpha, existing_val in existing_campaign.alphas.items():
+            for exesting_alpha, existing_val in existing_campaign['alphas'].items():
                 if 'begin' in existing_val:
                     if 'begin' not in campaign.alphas[exesting_alpha] or existing_val['begin'] != \
                             campaign.alphas[exesting_alpha]['begin']:
