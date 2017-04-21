@@ -15,6 +15,14 @@ REPORT_SETTINGS = {
         'email_list': None,
         'type': 'html'
     },
+    'Asymmetric_Partners': {
+            'work_dir': '/var/data/notebooks/tools',
+            'notebook': 'All_Production_Campaign_Settlements-Email_template.ipynb',
+            'slack_channel_id': 'C4X46TQSX',
+            'slack_token': "xoxb-173565579159-8fiagQeIrR6kNh04sgdpqON6", # Place custom BOT token here
+            'email_list': None,
+            'type': 'html'
+        },
 }
 """
     'TestReport': {
