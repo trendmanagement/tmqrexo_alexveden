@@ -25,7 +25,7 @@ class ExecutionManager:
 
         sanity_passed = True
 
-        if existing_campaign:
+        if existing_campaign and not force:
             # Do sanity checks
             for exesting_alpha, existing_val in existing_campaign['alphas'].items():
                 if 'begin' in existing_val:
