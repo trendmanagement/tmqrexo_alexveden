@@ -285,6 +285,9 @@ class CampaignReport:
                 "costs_sum": new_costs.cumsum(),
                 'performance_fee_sum': performance_fees_sum,
                 'management_fee_sum': management_fee_sum,
+                'ncontracts_traded': ncontracts_traded,
+                'costs': new_costs,
+                'delta': self.campaign_stats['Delta'],
             })
 
             if plot_graph:
