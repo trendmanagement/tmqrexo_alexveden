@@ -131,9 +131,11 @@ class SmartEXOUtils:
             f, (ax1, ax2) = plt.subplots(2, gridspec_kw={'height_ratios': [3, 1]})
 
             exo_df['exo'].plot(ax=ax1, title='{0}_{1}'.format(ticker, self.smartexo_class.EXO_NAME))
-            ax = exo_df['regime'].plot(ax=ax1, secondary_y=True)
-            ax.set_ylim(-2, 2)
+
+            if 'regime' in exo_df:
+                ax = exo_df['regime'].plot(ax=ax1, secondary_y=True)
+                ax.set_ylim(-2, 2)
 
             exo_df['delta'].plot(ax=ax2);
             ax2.set_title('Delta');
-            plt.show()
+            plt.show();
