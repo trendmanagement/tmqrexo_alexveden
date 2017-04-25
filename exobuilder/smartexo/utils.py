@@ -98,7 +98,7 @@ class SmartEXOUtils:
                 exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(date, asset_info)
 
                 if check_bday_or_holiday(decision_time_end):
-                    logging.info("\t\tRun on {0}".format(decision_time_end))
+                    logging.debug("\t\tRun on {0}".format(decision_time_end))
                     with self.smartexo_class(ticker, 0, decision_time_end, self.datasource, **smartexo_kwargs) as exo_engine:
                         try:
                             asset_list = exo_engine.ASSET_LIST
@@ -131,9 +131,11 @@ class SmartEXOUtils:
             f, (ax1, ax2) = plt.subplots(2, gridspec_kw={'height_ratios': [3, 1]})
 
             exo_df['exo'].plot(ax=ax1, title='{0}_{1}'.format(ticker, self.smartexo_class.EXO_NAME))
-            ax = exo_df['regime'].plot(ax=ax1, secondary_y=True)
-            ax.set_ylim(-2, 2)
+
+            if 'regime' in exo_df:
+                ax = exo_df['regime'].plot(ax=ax1, secondary_y=True)
+                ax.set_ylim(-2, 2)
 
             exo_df['delta'].plot(ax=ax2);
             ax2.set_title('Delta');
-            plt.show()
+            plt.show();
