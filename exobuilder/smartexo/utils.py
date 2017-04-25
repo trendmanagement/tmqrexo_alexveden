@@ -98,7 +98,7 @@ class SmartEXOUtils:
                 exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(date, asset_info)
 
                 if check_bday_or_holiday(decision_time_end):
-                    logging.info("\t\tRun on {0}".format(decision_time_end))
+                    logging.debug("\t\tRun on {0}".format(decision_time_end))
                     with self.smartexo_class(ticker, 0, decision_time_end, self.datasource, **smartexo_kwargs) as exo_engine:
                         try:
                             asset_list = exo_engine.ASSET_LIST
