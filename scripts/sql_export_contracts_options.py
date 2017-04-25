@@ -281,7 +281,7 @@ if(len(contract_settlements) > 0):
 
 print('Done {0} rows'.format(cnt))
 
-'''
+
 
 print('Bar data')
 ############################################################################
@@ -338,4 +338,5 @@ if(len(contract_bars) > 0):
 
 #print(result.inserted_ids)
 
-print('Done {0} rows'.format(cnt))
+'''
+#print('Done {0} rows'.format(cnt))
