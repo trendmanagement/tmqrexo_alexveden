@@ -225,6 +225,8 @@ class EXOScript:
                 # This code expected to execute only after all alphas have been processed
                 #       because self.run_exo_calc has blocking call of signalapp message sending
                 # And it will be executed only once for each product at decision time
+                # TODO: change this, self.run_exo_calc IS NOT blocking call!!!
+                time.sleep(60)
                 exmgr = ExecutionManager(MONGO_CONNSTR, datasource, MONGO_EXO_DB)
                 exmgr.account_positions_process(write_to_db=True)
                 self.signalapp.send(MsgStatus("RUN", "Processing positions.", notify=True))
