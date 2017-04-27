@@ -390,35 +390,43 @@ class SignalApp(object):
         :param str|unicode body: The message body
 
         """
-        LOGGER.info('Received message # %s from %s: %s',
-                    method.delivery_tag, properties.app_id, body)
-
-        self.acknowledge_message(method.delivery_tag)
-
-        if '.' not in method.routing_key:
-            LOGGER.error('Bad routing key format: {0}'.format(method.routing_key))
-            return
-
-        tok = method.routing_key.split('.')
-        if len(tok) != 2:
-            LOGGER.error('Bad routing key format: {0}'.format(method.routing_key))
-            return
-
-        appclass = tok[0]
-        appname = tok[1]
 
         try:
-            # This is pickled dictionary
-            data_object = MsgBase(pickle.loads(body))
-        except TypeError:
-            try:
-                data_object = MsgBase(json.loads(body, object_hook=json_util.object_hook))
-            except:
-                LOGGER.error('Failed to load JSON from {0}'.format(body))
+            LOGGER.info('Received message # %s from %s: %s',
+                        method.delivery_tag, properties.app_id, body)
+
+            if '.' not in method.routing_key:
+                LOGGER.error('Bad routing key format: {0}'.format(method.routing_key))
+                self.acknowledge_message(method.delivery_tag)
                 return
 
-        if self.listen_callback is not None:
-            self.listen_callback(appclass, appname, data_object)
+            tok = method.routing_key.split('.')
+            if len(tok) != 2:
+                LOGGER.error('Bad routing key format: {0}'.format(method.routing_key))
+                self.acknowledge_message(method.delivery_tag)
+                return
+
+            appclass = tok[0]
+            appname = tok[1]
+
+            try:
+                # This is pickled dictionary
+                data_object = MsgBase(pickle.loads(body))
+            except TypeError:
+                try:
+                    data_object = MsgBase(json.loads(body, object_hook=json_util.object_hook))
+                except:
+                    LOGGER.error('Failed to load JSON from {0}'.format(body))
+                    self.acknowledge_message(method.delivery_tag)
+                    return
+
+            if self.listen_callback is not None:
+                self.listen_callback(appclass, appname, data_object)
+        except Exception as exc:
+            LOGGER.error('Exception occurred {0}'.format(exc))
+            raise exc
+        finally:
+            self.acknowledge_message(method.delivery_tag)
 
 
 
