@@ -250,7 +250,7 @@ class CampaignReport:
             print("File saved to: {0}".format(fn))
 
     def calculate_performance_fee(self, starting_capital=50000, dollar_costs=3, performance_fee=0.2, fixed_mgmt_fee=0, plot_graph=False):
-            eq = self.campaign_stats.Equity
+            eq = self.campaign_stats.Equity.fillna(0.0)
             costs_sum = self.campaign_stats['Costs'].cumsum()
             equity_without_costs = (eq - costs_sum)
 
@@ -276,7 +276,7 @@ class CampaignReport:
 
             performance_fees_sum = performance_fee.cumsum().reindex(eq.index, method='ffill')
             management_fee_sum = management_fee.cumsum().reindex(eq.index, method='ffill')
-            performance_fee_equity = new_equity + performance_fees_sum + management_fee_sum
+            performance_fee_equity = new_equity + performance_fees_sum.fillna(0.0) + management_fee_sum.fillna(0.0)
 
             df_result = pd.DataFrame({
                 "equity_original": eq + starting_capital,
