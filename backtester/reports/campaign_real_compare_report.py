@@ -14,7 +14,7 @@ class CampaignRealCompare:
         db = mongoClient[tmp_mongo_db]
         self.collection = db.accountsummarycollection
 
-    def run_compare_report(self, campaign_stats, num_days_back):
+    def run_compare_report(self, campaign_stats, num_days_back, office, account):
         model_tail = pd.DataFrame(campaign_stats['SettleChange'].tail(num_days_back))
 
         model_tail['Model_Equity'] = pd.DataFrame(
@@ -23,16 +23,14 @@ class CampaignRealCompare:
         model_tail['Model_Costs'] = pd.DataFrame(campaign_stats['Costs'].tail(num_days_back))
 
         start_date = model_tail.index[0].strftime('%Y-%m-%d')
-        Office = 'CLX'
-        Account = '60125'
 
         col_s = self.collection.find(
             {'Batchid': {'$gte': start_date},
-             'Office': Office, 'Account': Account, 'SummaryDetailFlag': 'S', 'AccountType': '9Z'})
+             'Office': office, 'Account': account, 'SummaryDetailFlag': 'S', 'AccountType': '9Z'})
 
         col_d = self.collection.find(
             {'Batchid': {'$gte': start_date},
-             'Office': Office, 'Account': Account, 'SummaryDetailFlag': 'D'})
+             'Office': office, 'Account': account, 'SummaryDetailFlag': 'D'})
         # 'TransactionsCommissionsFees':{'$lt': 0}})
 
         prev_date = datetime.now()
