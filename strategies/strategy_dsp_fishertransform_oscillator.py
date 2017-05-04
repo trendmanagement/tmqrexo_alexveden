@@ -1,4 +1,3 @@
-from sklearn import (pipeline, preprocessing, ensemble, neighbors, model_selection)
 from backtester.strategy import StrategyBase
 import pandas as pd
 
