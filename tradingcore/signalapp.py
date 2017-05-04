@@ -412,13 +412,10 @@ class SignalApp(object):
             try:
                 # This is pickled dictionary
                 data_object = MsgBase(pickle.loads(body))
-            except TypeError:
-                try:
-                    data_object = MsgBase(json.loads(body, object_hook=json_util.object_hook))
-                except:
-                    LOGGER.error('Failed to load JSON from {0}'.format(body))
-                    self.acknowledge_message(method.delivery_tag)
-                    return
+            except Exception as exc:
+                LOGGER.error('Failed to load message: {0}'.format(exc))
+                self.acknowledge_message(method.delivery_tag)
+                return
 
             if self.listen_callback is not None:
                 self.listen_callback(appclass, appname, data_object)
