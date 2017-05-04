@@ -110,10 +110,12 @@ class SmartEXOUtils:
                         except AttributeError:
                             warnings.warn(
                                 "EXO class {0} doesn't contain ASSET_LIST attribute filter, calculating all assets".format(self.smartexo_class))
-
-                        # Load EXO information from mongo
-                        exo_engine.load()
-                        exo_engine.calculate()
+                        try:
+                            # Load EXO information from mongo
+                            exo_engine.load()
+                            exo_engine.calculate()
+                        except Exception as exc:
+                            logging.error("ERROR!: {0}".format(exc))
 
                 end_time = time.time()
                 currdate += timedelta(days=1)
