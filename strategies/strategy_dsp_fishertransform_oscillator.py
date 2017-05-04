@@ -1,5 +1,7 @@
 from backtester.strategy import StrategyBase
 import pandas as pd
+import numpy as np
+
 
 class Strategy_DSP_FisherTransform_Oscillator(StrategyBase):
     name = 'Strategy_DSP_FisherTransform_Oscillator'
