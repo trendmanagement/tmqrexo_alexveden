@@ -417,8 +417,8 @@ class Position(object):
                                       asset.name,
                                       pdic['qty'],
                                       round(asset.pointvalue * asset.price * pdic['qty'] - pdic['value'], 2),
-                                      round(pdic['value'] / asset.pointvalue / pdic['qty'], 2),
-                                      round(asset.price, 2),
+                                      round(pdic['value'] / asset.pointvalue / pdic['qty'], 3),
+                                      round(asset.price, 3),
                                       round(asset.delta * pdic['qty'], 2))
 
         return result

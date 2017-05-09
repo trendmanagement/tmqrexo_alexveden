@@ -8,6 +8,7 @@ import warnings
 import pandas as pd
 import numpy as np
 from exobuilder.exo.exoenginebase import ExoEngineBase
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
 
 class PayoffAnalyzer:
     def __init__(self, datasource, **kwargs):
@@ -46,12 +47,17 @@ class PayoffAnalyzer:
         if exo_data is None:
             raise NameError("EXO data for {0} not found.".format(exo_name))
 
+        ticker = exo_name.split('_')[0]
+        asset_info = self.datasource.assetindex.get_instrument_info(ticker)
+        exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(datetime.now() if date is None else date,
+                                                                         asset_info)
+
         # Warn if something bad with EXO series
         ExoEngineBase.check_series_integrity(exo_name, exo_df, raise_exception=False)
 
         # Calculate net position on particular date
         # Reconstruct position passing transactions from early days to current day
-        pos_date = datetime.now() if date is None else date
+        pos_date = decision_time_end
         self.position = Position()
 
         for trans in exo_data['transactions']:
@@ -102,9 +108,14 @@ class PayoffAnalyzer:
             return
 
         cmp = Campaign(campaign_dict, self.datasource)
+        ticker = campaign_name.split('_')[0]
+        asset_info = self.datasource.assetindex.get_instrument_info(ticker)
+        exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(datetime.now() if date is None else date,
+                                                                         asset_info)
+
         # Calculate campaign's net exo position on particular date
-        pos_date = datetime.now() if date is None else date
-        self.position = cmp.positions_at_date(date)
+        pos_date = decision_time_end
+        self.position = cmp.positions_at_date(pos_date)
 
         # Store positions values for analysis
         self.position_type = 'Campaign'
