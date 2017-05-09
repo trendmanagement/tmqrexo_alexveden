@@ -44,6 +44,12 @@ class ExecutionManager:
                                 exesting_alpha))
                         sanity_passed = False
 
+            for alpha_name, alpha_dict in campaign.alphas.items():
+                if alpha_name not in existing_campaign['alphas']:
+                    if 'end' in alpha_dict:
+                        print("WARNING: {0} new alpha has 'end' parameter set, expected to be 'begin' ?")
+                        sanity_passed = False
+
 
         if sanity_passed:
             campaign_collection.replace_one({'name': campaign.name}, campaign.as_dict(), upsert=True)
