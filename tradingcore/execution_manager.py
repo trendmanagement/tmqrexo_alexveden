@@ -47,7 +47,7 @@ class ExecutionManager:
             for alpha_name, alpha_dict in campaign.alphas.items():
                 if alpha_name not in existing_campaign['alphas']:
                     if 'end' in alpha_dict:
-                        print("WARNING: {0} new alpha has 'end' parameter set, expected to be 'begin' ?")
+                        print("WARNING: {0} new alpha has 'end' parameter set, expected to be 'begin' ?".format(alpha_name))
                         sanity_passed = False
 
 
