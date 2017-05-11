@@ -1,27 +1,22 @@
-from pymongo import MongoClient
+from collections import OrderedDict
 from datetime import datetime
-import pprint
+
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
+from pymongo import MongoClient
+
+from exobuilder.contracts.futurecontract import FutureContract
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
+from exobuilder.data.datasource_mongo import DataSourceMongo
+from exobuilder.data.exostorage import EXOStorage
 from exobuilder.exo.position import Position
 from exobuilder.exo.transaction import Transaction
-from collections import OrderedDict
-from exobuilder.contracts.optioncontract import OptionContract
-from exobuilder.contracts.futurecontract import FutureContract
 from scripts.settings import *
 from tradingcore.execution_manager import ExecutionManager
-from tradingcore.campaign import Campaign
-from exobuilder.data.datasource_mongo import DataSourceMongo
-from exobuilder.data.assetindex_mongo import AssetIndexMongo
-from exobuilder.data.datasource_sql import DataSourceSQL
-from backtester.reports.campaign_real_compare_report import CampaignRealCompare
-from backtester.reports.campaign_report import CampaignReport
-from exobuilder.data.exostorage import EXOStorage
 
 
 class CampaignRealCompare:
-    def __init__(self, instrument=None):
+    def __init__(self):
         tmp_mongo_connstr = 'mongodb://tmqr:tmqr@10.0.1.2/client-gmi?authMechanism=SCRAM-SHA-1'
         tmp_mongo_db = 'client-gmi'
 
@@ -65,7 +60,6 @@ class CampaignRealCompare:
         storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, 4, 20, storage)
-        exmgr = ExecutionManager(MONGO_CONNSTR, datasource, dbname=MONGO_EXO_DB)
 
         position_dict = OrderedDict()
 
