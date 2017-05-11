@@ -4,15 +4,137 @@ import pprint
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from exobuilder.exo.position import Position
+from exobuilder.exo.transaction import Transaction
+from collections import OrderedDict
+from exobuilder.contracts.optioncontract import OptionContract
+from exobuilder.contracts.futurecontract import FutureContract
+from scripts.settings import *
+from tradingcore.execution_manager import ExecutionManager
+from tradingcore.campaign import Campaign
+from exobuilder.data.datasource_mongo import DataSourceMongo
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
+from exobuilder.data.datasource_sql import DataSourceSQL
+from backtester.reports.campaign_real_compare_report import CampaignRealCompare
+from backtester.reports.campaign_report import CampaignReport
+from exobuilder.data.exostorage import EXOStorage
+
 
 class CampaignRealCompare:
-    def __init__(self):
+    def __init__(self, instrument=None):
         tmp_mongo_connstr = 'mongodb://tmqr:tmqr@10.0.1.2/client-gmi?authMechanism=SCRAM-SHA-1'
         tmp_mongo_db = 'client-gmi'
 
         mongoClient = MongoClient(tmp_mongo_connstr)
         db = mongoClient[tmp_mongo_db]
         self.collection = db.accountsummarycollection
+
+
+
+    def _calc_transactions(self, date, current_pos, prev_pos):
+        result = {}
+        assert current_pos is not None, 'current_pos must be initialized'
+
+        if prev_pos is None:
+            intersected_assets = set(current_pos)
+        else:
+            intersected_assets = set(current_pos) | set(prev_pos)
+
+        for asset in intersected_assets:
+            prev_values = prev_pos.get(asset, None) if prev_pos is not None else None
+            curr_values = current_pos.get(asset, None)
+
+            if prev_values is None:
+                result[asset] = curr_values
+            elif curr_values is None:
+                # Skip old closed positions
+                if prev_values != 0:
+                    result[asset] = -prev_values
+            else:
+                # Calculating transactions for existing position
+                trans_qty = curr_values - prev_values
+
+                result[asset] = trans_qty
+        return result
+
+    def get_account_positions_archive_pnl(self, account_name, instrument, costs_per_option = 3.0, costs_per_contract = 3.0):
+
+        mongoClient = MongoClient(MONGO_CONNSTR)
+        db = mongoClient[MONGO_EXO_DB]
+
+        storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+        datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, 4, 20, storage)
+        exmgr = ExecutionManager(MONGO_CONNSTR, datasource, dbname=MONGO_EXO_DB)
+
+        position_dict = OrderedDict()
+
+        for pos in db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', 1)]):
+            # print(pos)
+
+            dt = pos['date_now']
+            pos_rec = position_dict.setdefault(dt, {})
+
+            for p in pos['positions']:
+                if '_hash' not in p['asset']:
+                    break
+
+                pos_rec[p['asset']['_hash']] = p['qty']
+
+        prev_position = None
+
+        account_pnl = []
+        costs = []
+        account_pnl_index = []
+
+        p_dict = Position().as_dict()
+
+
+        for d, pos_rec in position_dict.items():
+            costs_sum = 0.0
+
+            asset_info = assetindex.get_instrument_info(instrument)
+            exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
+
+            position = Position.from_dict(p_dict, datasource, decision_time_end)
+
+            # print('\n\nDate: {0}'.format(d))
+            # print('Position previous: \n{0}'.format(prev_position))
+            # print('Position current: \n{0}'.format(pos_rec))
+
+
+            transactions = self._calc_transactions(d, pos_rec, prev_position)
+            # print("Transactions: \n{0}".format(transactions))
+
+            for contract_hash, qty in transactions.items():
+                if qty == 0:
+                    continue
+
+                contract = datasource.get(contract_hash, decision_time_end)
+                position.add(Transaction(contract, decision_time_end, qty))
+
+                if isinstance(contract, FutureContract):
+                    costs_sum += -abs(costs_per_contract) * abs(qty)
+                else:
+                    costs_sum += -abs(costs_per_option) * abs(qty)
+
+            try:
+                pnl = position.pnl_settlement - costs_sum
+            except:
+                pnl = float('nan')
+            # print("Pnl: {0}".format(pnl))
+            prev_position = pos_rec
+
+            p_dict = position.as_dict()
+            account_pnl.append(pnl)
+            account_pnl_index.append(d)
+            costs.append(costs_sum)
+
+        return pd.DataFrame({
+            'SettleChange': pd.Series(account_pnl, index=account_pnl_index).diff(),
+            'Costs': pd.Series(costs, index=account_pnl_index)
+        }
+        )
 
     def run_compare_report(self, campaign_stats, num_days_back, office, account):
         model_tail = pd.DataFrame(campaign_stats['SettleChange'].tail(num_days_back))
