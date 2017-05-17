@@ -89,6 +89,20 @@ class RolloverHelper:
             self.rollover_months = [3, 5, 7, 9, 12]
             self.days_before_expiration = 5
 
+        if self.instrument.name.upper() == "LE":
+            """
+            Live Cattle
+            """
+            self.rollover_months = [2, 4, 6, 8, 10, 12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "SB":
+            """
+            Sugar No. 11
+            """
+            self.rollover_months = [3, 5, 7, 10]
+            self.days_before_expiration = 5
+
         if self.instrument.name.upper() == "LBS":
             """
             Lumber
