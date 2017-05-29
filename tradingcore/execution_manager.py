@@ -3,6 +3,7 @@ from tradingcore.campaign import Campaign
 from tradingcore.account import Account
 from tradingcore.moneymanagement import MM_CLASSES
 from datetime import datetime
+from io import StringIO
 
 
 class ExecutionManager:
@@ -146,6 +147,8 @@ class ExecutionManager:
         """
         account_collection = self.db['accounts']
         acc_list = account_collection.find()
+        acc_exc_messages = StringIO()
+        has_exception = False
 
         # Populate campaign list cache
         self.campaign_load_all()
@@ -162,17 +165,28 @@ class ExecutionManager:
             acc = self.account_process(acc_dict)
             if not acc.isactive:
                 continue
-            # Get account positions processed by MM algorithm
-            acc_pos = acc.positions
 
-            # Add position dict to MongoDB bulk write operation
-            result_dict = acc_dict
-            result_dict['positions'] = acc_pos
-            result_dict['date_now'] = datetime.now()
-            bulk.insert(result_dict)
-            account_positions[acc.name] = result_dict
+            try:
+                # Get account positions processed by MM algorithm
+                acc_pos = acc.positions
+
+                # Add position dict to MongoDB bulk write operation
+                result_dict = acc_dict
+                result_dict['positions'] = acc_pos
+                result_dict['date_now'] = datetime.now()
+                bulk.insert(result_dict)
+                account_positions[acc.name] = result_dict
+            except Exception as exc:
+                acc_exc_messages.write("Account {0} error: {1}\n".format(acc.name,
+                                                                       str(exc)))
+                has_exception = True
+
 
         if write_to_db:
             # Execute bulk insert into MongoDB
             bulk.execute()
+
+        if has_exception:
+            raise Exception(acc_exc_messages.getvalue())
+
         return account_positions
