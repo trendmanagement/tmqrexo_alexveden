@@ -2,7 +2,13 @@ from collections import OrderedDict
 
 import pandas as pd
 from pymongo import MongoClient
-
+from backtester.reports.campaign_report import CampaignReport
+from exobuilder.contracts.futurecontract import FutureContract
+from datetime import datetime
+from exobuilder.data.datasource_mongo import DataSourceMongo
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
+from exobuilder.data.exostorage import EXOStorage
+from exobuilder.exo.transaction import Transaction
 from exobuilder.exo.position import Position
 from scripts.settings import *
 
@@ -238,13 +244,7 @@ class CampaignRealCompare:
 
 
 if __name__ == '__main__':
-    from backtester.reports.campaign_report import CampaignReport
-    from exobuilder.contracts.futurecontract import FutureContract
-    from datetime import datetime
-    from exobuilder.data.datasource_mongo import DataSourceMongo
-    from exobuilder.data.assetindex_mongo import AssetIndexMongo
-    from exobuilder.data.exostorage import EXOStorage
-    from exobuilder.exo.transaction import Transaction
+
 
     assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
     storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
