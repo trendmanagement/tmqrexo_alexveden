@@ -1,18 +1,10 @@
 from collections import OrderedDict
-from datetime import datetime
 
-import matplotlib.pyplot as plt
 import pandas as pd
 from pymongo import MongoClient
 
-from exobuilder.contracts.futurecontract import FutureContract
-from exobuilder.data.assetindex_mongo import AssetIndexMongo
-from exobuilder.data.datasource_mongo import DataSourceMongo
-from exobuilder.data.exostorage import EXOStorage
 from exobuilder.exo.position import Position
-from exobuilder.exo.transaction import Transaction
 from scripts.settings import *
-from tradingcore.execution_manager import ExecutionManager
 
 
 class CampaignRealCompare:
@@ -52,7 +44,8 @@ class CampaignRealCompare:
                 result[asset] = trans_qty
         return result
 
-    def get_account_positions_archive_pnl(self, account_name, instrument, costs_per_option = 3.0, costs_per_contract = 3.0):
+    def get_account_positions_archive_pnl(self, account_name, instrument, costs_per_option=3.0, costs_per_contract=3.0,
+                                          num_days_back=20):
 
         mongoClient = MongoClient(MONGO_CONNSTR)
         db = mongoClient[MONGO_EXO_DB]
@@ -63,7 +56,7 @@ class CampaignRealCompare:
 
         position_dict = OrderedDict()
 
-        for pos in db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', 1)]):
+        for pos in reversed(list(db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(num_days_back))):
             # print(pos)
 
             dt = pos['date_now']
@@ -113,7 +106,7 @@ class CampaignRealCompare:
                     costs_sum += -abs(costs_per_option) * abs(qty)
 
             try:
-                pnl = position.pnl_settlement - costs_sum
+                pnl = position.pnl_settlement + costs_sum
             except:
                 pnl = float('nan')
             # print("Pnl: {0}".format(pnl))
@@ -131,6 +124,7 @@ class CampaignRealCompare:
         )
 
     def run_compare_report(self, campaign_stats, num_days_back, office, account):
+        import matplotlib.pyplot as plt
         model_tail = pd.DataFrame(campaign_stats['SettleChange'].tail(num_days_back))
 
         model_tail['Model_Equity'] = pd.DataFrame(
@@ -241,3 +235,36 @@ class CampaignRealCompare:
 
         tail_plot_real.plot()  # ax=ax1,label='At expiration', lw=2, c='blue');
         plt.show()
+
+
+if __name__ == '__main__':
+    from backtester.reports.campaign_report import CampaignReport
+    from exobuilder.contracts.futurecontract import FutureContract
+    from datetime import datetime
+    from exobuilder.data.datasource_mongo import DataSourceMongo
+    from exobuilder.data.assetindex_mongo import AssetIndexMongo
+    from exobuilder.data.exostorage import EXOStorage
+    from exobuilder.exo.transaction import Transaction
+
+    assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+    storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+
+    futures_limit = 3
+    options_limit = 10
+
+    num_of_days_back_master = 10
+
+    # datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, storage)
+    datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, storage)
+
+    rpt = CampaignReport('ES_Bidirectional V3', datasource, pnl_settlement_ndays=num_of_days_back_master + 1)
+
+    crc = CampaignRealCompare()
+    archive_based_pnl = crc.get_account_positions_archive_pnl(account_name="CLX60125",
+                                                              instrument="ES",
+                                                              # costs_per_contract=3.0 # Default
+                                                              # costs_per_option=3.0 # Default
+                                                              num_days_back=num_of_days_back_master + 1
+                                                              )
+
+    pass

@@ -1,14 +1,15 @@
-from datetime import datetime, timedelta
-import pickle
-from collections import OrderedDict
-import pandas as pd
-from exobuilder.data.exceptions import QuoteNotFoundException
+import os
+import sys
 import warnings
-from tradingcore.campaign import Campaign
-from exobuilder.data.assetindex_mongo import AssetIndexMongo
-import os, sys
-from exobuilder.data.datasource_mongo import DataSourceMongo
+from collections import OrderedDict
+from datetime import datetime
+
+import pandas as pd
+
 from exobuilder.data.exceptions import QuoteNotFoundException
+from tradingcore.campaign import Campaign
+
+
 #import matplotlib.pyplot as plt
 
 #
