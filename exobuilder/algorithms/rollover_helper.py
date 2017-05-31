@@ -138,7 +138,7 @@ class RolloverHelper:
             """
             Gold
             """
-            self.rollover_months = [2, 6, 8, 12]
+            self.rollover_months = [2,4,6,8,10,12]
             self.days_before_expiration = 5
 
         if self.instrument.name.upper() == "6E":
