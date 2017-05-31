@@ -8,6 +8,9 @@ import pandas as pd
 
 from exobuilder.data.exceptions import QuoteNotFoundException
 from tradingcore.campaign import Campaign
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
+from exobuilder.data.datasource_mongo import DataSourceMongo
+from exobuilder.data.exostorage import EXOStorage
 
 
 #import matplotlib.pyplot as plt
@@ -308,9 +311,7 @@ class CampaignReport:
 if __name__ == '__main__':
     from scripts.settings import *
     # from backtester.reports.campaign_report import CampaignReport
-    from exobuilder.data.assetindex_mongo import AssetIndexMongo
-    from exobuilder.data.datasource_mongo import DataSourceMongo
-    from exobuilder.data.exostorage import EXOStorage
+
 
     assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
     storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
