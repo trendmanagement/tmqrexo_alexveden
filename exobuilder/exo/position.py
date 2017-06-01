@@ -210,6 +210,25 @@ class Position(object):
         # this will deny to call add_transaction_dict(), and allow us to use position pricing and add()
         self.transaction_mode = 'T'
 
+    def set_date(self, datasource, date):
+        """
+        Set position date for PnL calculations
+        :param date:
+        :return:
+        """
+        if len(self.netpositions) > 0 and self.transaction_mode != 'T':
+            raise Exception(
+                "Conversion is not allowed, current position instance must be initiated using add_transaction_dict()"
+            )
+
+        new_positions = {}
+        for asset, pos_dict in self.netpositions.items():
+            asset_hash = asset.__hash__()
+            asset_instance = datasource.get(int(asset_hash), date)
+            new_positions[asset_instance] = pos_dict
+
+        self._positions = new_positions
+
 
     def as_dict(self):
         """

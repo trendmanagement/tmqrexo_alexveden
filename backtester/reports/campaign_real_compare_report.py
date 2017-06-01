@@ -22,9 +22,8 @@ class CampaignRealCompare:
         db = mongoClient[tmp_mongo_db]
         self.collection = db.accountsummarycollection
 
-
-
-    def _calc_transactions(self, date, current_pos, prev_pos):
+    @staticmethod
+    def _calc_transactions(date, current_pos, prev_pos):
         result = {}
         assert current_pos is not None, 'current_pos must be initialized'
 
@@ -85,8 +84,23 @@ class CampaignRealCompare:
 
         for d, pos_rec in position_dict.items():
             costs_sum = 0.0
+            pnl = 0.0
 
             asset_info = assetindex.get_instrument_info(instrument)
+
+            if prev_position is not None:
+                position = Position.from_dict(p_dict, datasource, decision_time_end)
+
+                new_exec_time_end, new_decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
+
+                tmp_prev_pnl = position.pnl_settlement
+                position.set_date(datasource, new_decision_time_end)
+
+                try:
+                    pnl = position.pnl_settlement - tmp_prev_pnl
+                except:
+                    pnl = float('nan')
+
             exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
 
             position = Position.from_dict(p_dict, datasource, decision_time_end)
@@ -111,10 +125,8 @@ class CampaignRealCompare:
                 else:
                     costs_sum += -abs(costs_per_option) * abs(qty)
 
-            try:
-                pnl = position.pnl_settlement + costs_sum
-            except:
-                pnl = float('nan')
+
+            pnl += costs_sum
             # print("Pnl: {0}".format(pnl))
             prev_position = pos_rec
 
@@ -124,7 +136,7 @@ class CampaignRealCompare:
             costs.append(costs_sum)
 
         return pd.DataFrame({
-            'SettleChange': pd.Series(account_pnl, index=account_pnl_index).diff(),
+            'SettleChange': pd.Series(account_pnl, index=account_pnl_index),
             'Costs': pd.Series(costs, index=account_pnl_index)
         }
         )
