@@ -3,6 +3,7 @@ from collections import OrderedDict
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import calendar
 from pymongo import MongoClient
 from backtester.reports.campaign_report import CampaignReport
 from exobuilder.contracts.futurecontract import FutureContract
@@ -299,8 +300,31 @@ class CampaignRealCompare:
         sample = pd.DataFrame()
         sample['Real_Equity'] = tail_plot_real.Real_Equity.resample('M').last() + initial_acct_value
         sample['Dollar_Change'] = tail_plot_real.Daily_Dollar_Change.resample('M').sum()
-        sample['Real_Equity_Percent_Change'] = (sample['Real_Equity'].pct_change() * 100).apply('%{:,.2f}'.format)
+        sample['Real_Equity_Percent_Change'] = (sample['Real_Equity'].pct_change() * 100).apply('{:,.2f}%'.format)
         print(sample)
+
+
+        minyear = min(sample.index.year)
+        maxyear = max(sample.index.year)
+
+        row_headers = list(range(minyear, maxyear + 1))
+        returns = pd.DataFrame()
+
+        returns['year'] = row_headers
+
+        for i in range(1, 13):
+            returns[calendar.month_name[i]] = ''
+
+        returns = returns.set_index('year')
+
+        for years in row_headers:
+            for months in range(1, 13):
+                if len(sample['Real_Equity_Percent_Change'][
+                                   (sample.index.month == months) & (sample.index.year == years)].index) != 0:
+                    returns.ix[years][calendar.month_name[months]] = sample['Real_Equity_Percent_Change'][
+                        (sample.index.month == months) & (sample.index.year == years)].item()
+
+        returns
 
 
 if __name__ == '__main__':
