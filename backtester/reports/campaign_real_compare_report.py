@@ -1,6 +1,8 @@
 from collections import OrderedDict
 
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 from pymongo import MongoClient
 from backtester.reports.campaign_report import CampaignReport
 from exobuilder.contracts.futurecontract import FutureContract
@@ -11,6 +13,8 @@ from exobuilder.data.exostorage import EXOStorage
 from exobuilder.exo.transaction import Transaction
 from exobuilder.exo.position import Position
 from scripts.settings import *
+
+
 
 
 class CampaignRealCompare:
@@ -142,7 +146,7 @@ class CampaignRealCompare:
         )
 
     def run_compare_report(self, campaign_stats, num_days_back, office, account):
-        import matplotlib.pyplot as plt
+
         model_tail = pd.DataFrame(campaign_stats['SettleChange'].tail(num_days_back))
 
         model_tail['Model_Equity'] = pd.DataFrame(
@@ -253,6 +257,54 @@ class CampaignRealCompare:
 
         tail_plot_real.plot()  # ax=ax1,label='At expiration', lw=2, c='blue');
         plt.show()
+
+
+    def run_return_report(self, office, account):
+
+        col_s = self.collection.find(
+            {'Office': office, 'Account': account, 'SummaryDetailFlag': 'S', 'AccountType': '9Z'})
+
+        series = []
+        table_series = []
+        cumValue = 0
+        for post_s in col_s:
+
+            date = datetime.strptime(post_s['Batchid'], '%Y-%m-%d')
+
+            change = post_s['ConvertedChangeInAccountValueAtMarket']
+            cumValue += change
+
+            series_point = {
+                'date': date,
+                'Real_Equity': cumValue
+            }
+
+            series.append(series_point)
+
+            table_series_point = {
+                'date': date,
+                # 'Costs':post_s['TransactionsCommissionsFees'],
+                'Real_Equity_Chg': change,
+                'Real_Equity': cumValue
+            }
+
+            table_series.append(table_series_point)
+
+        tail_plot_real = pd.DataFrame(series)
+        tail_plot_real.index = tail_plot_real['date']
+        del tail_plot_real['date']
+        tail_plot_real.plot()  # ax=ax1,label='At expiration', lw=2, c='blue');
+        plt.show()
+
+        x = tail_plot_real['Real_Equity']
+        calc_daily_dollar_change = np.subtract(x[1:], x[0:-1])
+        tail_plot_real['Daily_Dollar_Change'] = calc_daily_dollar_change
+
+        sample = pd.DataFrame()
+        sample['Real_Equity'] = tail_plot_real.Real_Equity.resample('M').last() + 50000
+        sample['Dollar_Change'] = tail_plot_real.Daily_Dollar_Change.resample('M').sum()
+        sample['Real_Equity_Percent_Change'] = (sample['Real_Equity'].pct_change() * 100).apply('%{:,.2f}'.format)
+        sample
 
 
 if __name__ == '__main__':
