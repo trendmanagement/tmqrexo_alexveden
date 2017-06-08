@@ -15,8 +15,6 @@ from exobuilder.exo.position import Position
 from scripts.settings import *
 
 
-
-
 class CampaignRealCompare:
     def __init__(self):
         tmp_mongo_connstr = 'mongodb://tmqr:tmqr@10.0.1.2/client-gmi?authMechanism=SCRAM-SHA-1'
@@ -65,7 +63,9 @@ class CampaignRealCompare:
 
         position_dict = OrderedDict()
 
-        for pos in reversed(list(db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(num_days_back))):
+        for pos in reversed(list(
+                db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(
+                        num_days_back))):
             # print(pos)
 
             dt = pos['date_now']
@@ -84,7 +84,6 @@ class CampaignRealCompare:
         account_pnl_index = []
 
         p_dict = Position().as_dict()
-
 
         for d, pos_rec in position_dict.items():
             costs_sum = 0.0
@@ -128,7 +127,6 @@ class CampaignRealCompare:
                     costs_sum += -abs(costs_per_contract) * abs(qty)
                 else:
                     costs_sum += -abs(costs_per_option) * abs(qty)
-
 
             pnl += costs_sum
             # print("Pnl: {0}".format(pnl))
@@ -258,8 +256,7 @@ class CampaignRealCompare:
         tail_plot_real.plot()  # ax=ax1,label='At expiration', lw=2, c='blue');
         plt.show()
 
-
-    def run_return_report(self, office, account):
+    def run_return_report(self, office, account, initial_acct_value=50000):
 
         col_s = self.collection.find(
             {'Office': office, 'Account': account, 'SummaryDetailFlag': 'S', 'AccountType': '9Z'})
@@ -268,7 +265,6 @@ class CampaignRealCompare:
         table_series = []
         cumValue = 0
         for post_s in col_s:
-
             date = datetime.strptime(post_s['Batchid'], '%Y-%m-%d')
 
             change = post_s['ConvertedChangeInAccountValueAtMarket']
@@ -301,15 +297,13 @@ class CampaignRealCompare:
         tail_plot_real['Daily_Dollar_Change'] = calc_daily_dollar_change
 
         sample = pd.DataFrame()
-        sample['Real_Equity'] = tail_plot_real.Real_Equity.resample('M').last() + 50000
+        sample['Real_Equity'] = tail_plot_real.Real_Equity.resample('M').last() + initial_acct_value
         sample['Dollar_Change'] = tail_plot_real.Daily_Dollar_Change.resample('M').sum()
         sample['Real_Equity_Percent_Change'] = (sample['Real_Equity'].pct_change() * 100).apply('%{:,.2f}'.format)
         print(sample)
 
 
 if __name__ == '__main__':
-
-
     assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
     storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
