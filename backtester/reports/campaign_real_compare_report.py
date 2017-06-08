@@ -304,7 +304,7 @@ class CampaignRealCompare:
         sample['Real_Equity'] = tail_plot_real.Real_Equity.resample('M').last() + 50000
         sample['Dollar_Change'] = tail_plot_real.Daily_Dollar_Change.resample('M').sum()
         sample['Real_Equity_Percent_Change'] = (sample['Real_Equity'].pct_change() * 100).apply('%{:,.2f}'.format)
-        sample
+        print(sample)
 
 
 if __name__ == '__main__':
