@@ -324,7 +324,7 @@ class CampaignRealCompare:
                     returns.ix[years][calendar.month_name[months]] = sample['Real_Equity_Percent_Change'][
                         (sample.index.month == months) & (sample.index.year == years)].item()
 
-        returns
+        return returns
 
 
 if __name__ == '__main__':
