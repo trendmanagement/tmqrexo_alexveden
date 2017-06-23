@@ -1,6 +1,9 @@
 from collections import OrderedDict
 
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import calendar
 from pymongo import MongoClient
 from backtester.reports.campaign_report import CampaignReport
 from exobuilder.contracts.futurecontract import FutureContract
@@ -61,7 +64,9 @@ class CampaignRealCompare:
 
         position_dict = OrderedDict()
 
-        for pos in reversed(list(db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(num_days_back))):
+        for pos in reversed(list(
+                db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(
+                        num_days_back))):
             # print(pos)
 
             dt = pos['date_now']
@@ -80,7 +85,6 @@ class CampaignRealCompare:
         account_pnl_index = []
 
         p_dict = Position().as_dict()
-
 
         for d, pos_rec in position_dict.items():
             costs_sum = 0.0
@@ -125,7 +129,6 @@ class CampaignRealCompare:
                 else:
                     costs_sum += -abs(costs_per_option) * abs(qty)
 
-
             pnl += costs_sum
             # print("Pnl: {0}".format(pnl))
             prev_position = pos_rec
@@ -142,7 +145,7 @@ class CampaignRealCompare:
         )
 
     def run_compare_report(self, campaign_stats, num_days_back, office, account):
-        import matplotlib.pyplot as plt
+
         model_tail = pd.DataFrame(campaign_stats['SettleChange'].tail(num_days_back))
 
         model_tail['Model_Equity'] = pd.DataFrame(
@@ -254,10 +257,77 @@ class CampaignRealCompare:
         tail_plot_real.plot()  # ax=ax1,label='At expiration', lw=2, c='blue');
         plt.show()
 
+    def run_return_report(self, office, account, initial_acct_value=50000):
+
+        col_s = self.collection.find(
+            {'Office': office, 'Account': account, 'SummaryDetailFlag': 'S', 'AccountType': '9Z'})
+
+        series = []
+        table_series = []
+        cumValue = 0
+        for post_s in col_s:
+            date = datetime.strptime(post_s['Batchid'], '%Y-%m-%d')
+
+            change = post_s['ConvertedChangeInAccountValueAtMarket']
+            cumValue += change
+
+            series_point = {
+                'date': date,
+                'Real_Equity': cumValue
+            }
+
+            series.append(series_point)
+
+            table_series_point = {
+                'date': date,
+                # 'Costs':post_s['TransactionsCommissionsFees'],
+                'Real_Equity_Chg': change,
+                'Real_Equity': cumValue
+            }
+
+            table_series.append(table_series_point)
+
+        tail_plot_real = pd.DataFrame(series)
+        tail_plot_real.index = tail_plot_real['date']
+        del tail_plot_real['date']
+        tail_plot_real.plot()  # ax=ax1,label='At expiration', lw=2, c='blue');
+        plt.show()
+
+        x = tail_plot_real['Real_Equity']
+        calc_daily_dollar_change = np.subtract(x[1:], x[0:-1])
+        tail_plot_real['Daily_Dollar_Change'] = calc_daily_dollar_change
+
+        sample = pd.DataFrame()
+        sample['Real_Equity'] = tail_plot_real.Real_Equity.resample('M').last() + initial_acct_value
+        sample['Dollar_Change'] = tail_plot_real.Daily_Dollar_Change.resample('M').sum()
+        sample['Real_Equity_Percent_Change'] = (sample['Real_Equity'].pct_change() * 100).apply('{:,.2f}%'.format)
+        print(sample)
+
+
+        minyear = min(sample.index.year)
+        maxyear = max(sample.index.year)
+
+        row_headers = list(range(minyear, maxyear + 1))
+        returns = pd.DataFrame()
+
+        returns['year'] = row_headers
+
+        for i in range(1, 13):
+            returns[calendar.month_name[i]] = ''
+
+        returns = returns.set_index('year')
+
+        for years in row_headers:
+            for months in range(1, 13):
+                if len(sample['Real_Equity_Percent_Change'][
+                                   (sample.index.month == months) & (sample.index.year == years)].index) != 0:
+                    returns.ix[years][calendar.month_name[months]] = sample['Real_Equity_Percent_Change'][
+                        (sample.index.month == months) & (sample.index.year == years)].item()
+
+        return returns
+
 
 if __name__ == '__main__':
-
-
     assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
     storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
