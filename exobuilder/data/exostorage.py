@@ -3,6 +3,9 @@ import pymongo
 import pickle
 import re
 import pandas as pd
+from tradingcore.campaign_bridge import CampaignBridge
+import warnings
+
 
 class EXOStorage(object):
     def __init__(self, conn_str, dbname='tmldb'):
@@ -135,6 +138,20 @@ class EXOStorage(object):
 
         for s in swarm_data:
             series_dict[s['swarm_name']] = s['swarm_series']['equity']
+
+        #
+        # Adding new Framwork 2.0 campaigns to list
+        #
+        try:
+            cbr = CampaignBridge()
+            _new_series_dict, _new_swarm_data = cbr.swarms_list(instruments_list, direction, alpha_list, exo_list)
+
+            # Updating data with new records
+            swarm_data += _new_swarm_data
+            series_dict.update(_new_series_dict)
+
+        except Exception as exc:
+            warnings.warn("Failed to load new framework alphas: {0}".format(exc))
 
         return pd.DataFrame(series_dict), swarm_data
 
