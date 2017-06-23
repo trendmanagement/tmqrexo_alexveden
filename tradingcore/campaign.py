@@ -2,16 +2,22 @@ from exobuilder.exo.position import Position
 import warnings
 from exobuilder.exo.exoenginebase import ExoEngineBase
 from datetime import datetime
-
+from tradingcore.campaign_bridge import ALPHA_NEW_PREFIX, CampaignBridge
 
 class Campaign:
     def __init__(self, campaign_dict, datasource):
         self._dict = campaign_dict
         self._datasource = datasource
         self._legs = {}
+        self._has_new_framework_alphas = False
 
         if 'alphas' in self._dict:
             for alpha_name, alpha_info in self._dict['alphas'].items():
+
+                if alpha_name.startswith(ALPHA_NEW_PREFIX):
+                    # Check new alphas existence
+                    self._has_new_framework_alphas = True
+
                 if 'leg_name' in alpha_info:
                     legs = self._legs.setdefault(alpha_info['leg_name'].lower(), [])
                     legs.append(alpha_name)
@@ -62,9 +68,12 @@ class Campaign:
             return self._legs[by_leg.lower()]
 
     def alpha_is_active(self, swarm_name, date):
-        assert date is not None
-
         sett_dict = self.alphas[swarm_name]
+        return self.alpha_check_is_active_by_dict(sett_dict, date)
+
+    @staticmethod
+    def alpha_check_is_active_by_dict(sett_dict, date):
+        assert date is not None
         date_begin = sett_dict.get('begin', datetime(1900, 1, 1))
         date_end = sett_dict.get('end', datetime(2100, 1, 1))
 
@@ -92,6 +101,10 @@ class Campaign:
         else:
 
             for swarm_name, info_dict in swarm_positions.items():
+                # Skip new alphas
+                if swarm_name.startswith(ALPHA_NEW_PREFIX):
+                    continue
+
                 # Skipping retired alphas
                 if not self.alpha_is_active(swarm_name, date):
                     continue
@@ -171,6 +184,14 @@ class Campaign:
                 else:
                     break
 
+        #
+        # Handle new framework alphas
+        #
+        if self._has_new_framework_alphas:
+            cbr = CampaignBridge()
+            new_transactions = cbr.get_alphas_transactions_list(self.alphas, pos_date)
+            transactions += new_transactions
+
         # Sort transactions by date
         transactions = sorted(transactions, key=lambda k: k['date'])
 
@@ -178,6 +199,7 @@ class Campaign:
         position = Position()
         for t in transactions:
             position.add_transaction_dict(t)
+
 
         # Convert position to normal state
         # We will load all assets information from DB
@@ -195,6 +217,10 @@ class Campaign:
         net_positions = {}
 
         for exo_name, exo_exposure in self.exo_positions(date=None).items():
+
+            # Skip processing exo if alpha out of the position
+            if exo_exposure['exposure'] == 0:
+                continue
             # Load information about EXO positions
             exo_data = self._datasource.exostorage.load_exo(exo_name)
 
@@ -216,5 +242,32 @@ class Campaign:
                         del net_positions[asset_name_safe]
             else:
                 warnings.warn("EXO data not found for " + exo_name)
+
+        #
+        # Handle new framework positions
+        #
+        if self._has_new_framework_alphas:
+            cbr = CampaignBridge()
+
+            # pretend that we are EXO data
+            exo_data_dummy = {
+                'position': cbr.get_net_position(self.alphas, date=None)
+            }
+
+            # Convert position to EXO online-format
+            exo_pos = Position.get_position_qty(exo_data_dummy, self._datasource)
+
+            for assetname, pos_dict in exo_pos.items():
+                # Escape special MongoDB keys chars in key names
+                asset_name_safe = assetname.replace('.', '_').replace('$', '_')
+                position = net_positions.setdefault(asset_name_safe,
+                                                    {'asset': pos_dict['asset'], 'qty': 0.0, 'prev_qty': 0.0})
+
+                # Multiply EXO position by campaign exposure
+                position['qty'] += pos_dict['qty']  # DO NOT USE exposure: cbr.get_net_position() already has it!  * exo_exposure['exposure']
+                position['prev_qty'] += float('nan')
+
+                if position['qty'] == 0:
+                    del net_positions[asset_name_safe]
 
         return net_positions
