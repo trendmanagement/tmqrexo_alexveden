@@ -189,6 +189,38 @@ class RolloverHelper:
                     re.compile('^$'),          # Matches '' empty option code
                 ]
 
+        if self.instrument.name.upper() == "6C":
+            """
+            https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
+            @steve
+            On Feb 22 2017 CME introduced monthly futures on all of their FX products.
+            The options are only on the quarterly futures.
+            So the roll schedule for CME FX products will be monthly for the options on the quarterly futures.
+            """
+            self.rollover_months = [3, 6, 9, 12]
+            self.days_before_expiration = 2
+            if len(self.re_option_code_include) == 0:
+                self.re_option_code_include = [
+                    re.compile('^CAU$'),       # Matches end-of-month option
+                    re.compile('^$'),          # Matches '' empty option code
+                ]
+
+        if self.instrument.name.upper() == "6A":
+            """
+            https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
+            @steve
+            On Feb 22 2017 CME introduced monthly futures on all of their FX products.
+            The options are only on the quarterly futures.
+            So the roll schedule for CME FX products will be monthly for the options on the quarterly futures.
+            """
+            self.rollover_months = [3, 6, 9, 12]
+            self.days_before_expiration = 2
+            if len(self.re_option_code_include) == 0:
+                self.re_option_code_include = [
+                    re.compile('^ADU$'),       # Matches end-of-month option
+                    re.compile('^$'),          # Matches '' empty option code
+                ]
+
 
 
     def _get_recent_option_chain(self, fut):
