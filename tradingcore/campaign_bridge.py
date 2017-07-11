@@ -21,8 +21,8 @@ COLLECTION_ALPHA_DATA = 'alpha_data'
 
 ALPHA_NEW_PREFIX = "!NEW_"
 
-#MONGO_CONNSTR = 'mongodb://tmqr:tmqr@10.0.1.2/tmqr2?authMechanism=SCRAM-SHA-1'
-MONGO_CONNSTR = 'mongodb://localhost/'
+MONGO_CONNSTR = 'mongodb://tmqr:tmqr@10.0.1.2/tmqr2?authMechanism=SCRAM-SHA-1'
+#MONGO_CONNSTR = 'mongodb://localhost/'
 MONGO_DB = 'tmqr2'
 
 
