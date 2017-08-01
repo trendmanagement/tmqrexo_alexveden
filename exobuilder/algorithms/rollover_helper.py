@@ -246,7 +246,7 @@ class RolloverHelper:
         """
         for i in range(start_idx+1, len(self.instrument.futures)):
             f = self.instrument.futures[i]
-            if f.to_expiration_days > self.days_before_expiration and f.expiration.month in self.rollover_months:
+            if f.to_expiration_days > self.days_before_expiration and f.month_int in self.rollover_months:
                 return f, i
 
         return None, -1
