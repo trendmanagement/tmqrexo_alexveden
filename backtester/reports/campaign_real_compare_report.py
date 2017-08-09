@@ -66,11 +66,13 @@ class CampaignRealCompare:
         position_dict = OrderedDict()
 
         if account_name is None:
-            reversedList = reversed(list(
-                db['accounts_positions_archive'].find({'broker': broker, 'FCM_ACCT': fcm_acct}).sort([('date_now', -1)]).limit(
-                    num_days_back)))
-        else:
-            reversedList = reversed(list(
+
+            account = db['accounts'].find_one({'broker': broker, 'FCM_ACCT': fcm_acct})
+
+            account_name = account['name']
+            
+
+        reversedList = reversed(list(
                 db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(
                         num_days_back)))
 
