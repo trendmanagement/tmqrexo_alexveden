@@ -52,8 +52,9 @@ class CampaignRealCompare:
                 result[asset] = trans_qty
         return result
 
-    def get_account_positions_archive_pnl(self, account_name, instrument, costs_per_option=3.0, costs_per_contract=3.0,
-                                          num_days_back=20):
+
+    def get_account_positions_archive_pnl(self, account_name = None, instrument = None, costs_per_option=3.0, costs_per_contract=3.0,
+                                          num_days_back=20, broker = None, fcm_acct = None):
 
         mongoClient = MongoClient(MONGO_CONNSTR)
         db = mongoClient[MONGO_EXO_DB]
@@ -64,9 +65,16 @@ class CampaignRealCompare:
 
         position_dict = OrderedDict()
 
-        for pos in reversed(list(
+        if account_name is None:
+            reversedList = reversed(list(
+                db['accounts_positions_archive'].find({'broker': broker, 'FCM_ACCT': fcm_acct}).sort([('date_now', -1)]).limit(
+                    num_days_back)))
+        else:
+            reversedList = reversed(list(
                 db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(
-                        num_days_back))):
+                        num_days_back)))
+
+        for pos in reversedList:
             # print(pos)
 
             dt = pos['date_now']
