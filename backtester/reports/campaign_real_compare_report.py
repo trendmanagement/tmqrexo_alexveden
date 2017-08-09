@@ -54,7 +54,7 @@ class CampaignRealCompare:
 
 
     def get_account_positions_archive_pnl(self, account_name = None, instrument = None, costs_per_option=3.0, costs_per_contract=3.0,
-                                          num_days_back=20, broker = None, fcm_acct = None):
+                                          num_days_back=20, fcm_office = None, fcm_acct = None):
 
         mongoClient = MongoClient(MONGO_CONNSTR)
         db = mongoClient[MONGO_EXO_DB]
@@ -67,10 +67,10 @@ class CampaignRealCompare:
 
         if account_name is None:
 
-            account = db['accounts'].find_one({'broker': broker, 'FCM_ACCT': fcm_acct})
+            account = db['accounts'].find_one({'FCM_OFFICE': fcm_office, 'FCM_ACCT': fcm_acct})
 
             account_name = account['name']
-            
+
 
         reversedList = reversed(list(
                 db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(
@@ -349,14 +349,17 @@ if __name__ == '__main__':
     # datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, storage)
     datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, storage)
 
-    rpt = CampaignReport('ES_Bidirectional V3', datasource, pnl_settlement_ndays=num_of_days_back_master + 1)
+    #rpt = CampaignReport('ES_Bidirectional V3', datasource, pnl_settlement_ndays=num_of_days_back_master + 1)
 
     crc = CampaignRealCompare()
-    archive_based_pnl = crc.get_account_positions_archive_pnl(account_name="CLX60125",
+    archive_based_pnl = crc.get_account_positions_archive_pnl(#account_name="CLX60125",
                                                               instrument="ES",
                                                               # costs_per_contract=3.0 # Default
                                                               # costs_per_option=3.0 # Default
-                                                              num_days_back=num_of_days_back_master + 1
+                                                              num_days_back=num_of_days_back_master + 1,
+                                                              fcm_office="CLX", fcm_acct="60125"
                                                               )
+
+    print(archive_based_pnl)
 
     pass
