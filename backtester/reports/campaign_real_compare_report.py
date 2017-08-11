@@ -242,7 +242,7 @@ class CampaignRealCompare:
         tail_plot_real = pd.DataFrame(series)
         tail_plot_real.index = tail_plot_real['date']
         del tail_plot_real['date']
-        tail_plot_real['Model_Equity'] = model_tail['Model_Equity']
+        tail_plot_real['Model_Equity'] = model_tail['Model_Equity'] + tail_plot_real['Real_Equity'][0]
 
         tail_table_real = pd.DataFrame(table_series)
         tail_table_real.index = tail_table_real['date']
