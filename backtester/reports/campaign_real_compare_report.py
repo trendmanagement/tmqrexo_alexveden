@@ -13,7 +13,7 @@ from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.exostorage import EXOStorage
 from exobuilder.exo.transaction import Transaction
 from exobuilder.exo.position import Position
-#from scripts.settings import *
+from settings import *
 
 
 class CampaignRealCompare:
