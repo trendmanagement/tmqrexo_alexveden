@@ -105,7 +105,7 @@ class CampaignRealCompare:
 
             daily_transactions_list = transactions_dict.setdefault(d, [])
 
-            exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
+
 
             if prev_position is not None:
                 position = Position.from_dict(p_dict, datasource, decision_time_end)
@@ -119,6 +119,8 @@ class CampaignRealCompare:
                     pnl = position.pnl_settlement - tmp_prev_pnl
                 except:
                     pnl = float('nan')
+
+            exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
 
             position = Position.from_dict(p_dict, datasource, decision_time_end)
 
@@ -137,7 +139,7 @@ class CampaignRealCompare:
                 contract = datasource.get(contract_hash, decision_time_end)
                 trans_ = Transaction(contract, decision_time_end, qty)
 
-                #daily_transactions_list.append(trans_)
+                daily_transactions_list.append(trans_)
                 position.add(trans_)
 
                 if isinstance(contract, FutureContract):
