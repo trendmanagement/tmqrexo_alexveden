@@ -52,9 +52,8 @@ class CampaignRealCompare:
                 result[asset] = trans_qty
         return result
 
-
     def get_account_positions_archive_pnl(self, account_name = None, instrument = None, costs_per_option=3.0, costs_per_contract=3.0,
-                                          num_days_back=20, fcm_office = None, fcm_acct = None):
+                                          num_days_back=20, fcm_office = None, fcm_acct = None, return_transactions=False):
 
         mongoClient = MongoClient(MONGO_CONNSTR)
         db = mongoClient[MONGO_EXO_DB]
@@ -64,6 +63,8 @@ class CampaignRealCompare:
         datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, 4, 20, storage)
 
         position_dict = OrderedDict()
+
+        transactions_dict = {}
 
         if account_name is None:
 
@@ -102,6 +103,10 @@ class CampaignRealCompare:
 
             asset_info = assetindex.get_instrument_info(instrument)
 
+            daily_transactions_list = transactions_dict.setdefault(d, [])
+
+            exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
+
             if prev_position is not None:
                 position = Position.from_dict(p_dict, datasource, decision_time_end)
 
@@ -114,8 +119,6 @@ class CampaignRealCompare:
                     pnl = position.pnl_settlement - tmp_prev_pnl
                 except:
                     pnl = float('nan')
-
-            exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
 
             position = Position.from_dict(p_dict, datasource, decision_time_end)
 
@@ -132,7 +135,10 @@ class CampaignRealCompare:
                     continue
 
                 contract = datasource.get(contract_hash, decision_time_end)
-                position.add(Transaction(contract, decision_time_end, qty))
+                trans_ = Transaction(contract, decision_time_end, qty)
+
+                daily_transactions_list.append(trans_)
+                position.add(trans_)
 
                 if isinstance(contract, FutureContract):
                     costs_sum += -abs(costs_per_contract) * abs(qty)
@@ -148,11 +154,18 @@ class CampaignRealCompare:
             account_pnl_index.append(d)
             costs.append(costs_sum)
 
-        return pd.DataFrame({
-            'SettleChange': pd.Series(account_pnl, index=account_pnl_index),
-            'Costs': pd.Series(costs, index=account_pnl_index)
-        }
-        )
+        if return_transactions:
+            return pd.DataFrame({
+                'SettleChange': pd.Series(account_pnl, index=account_pnl_index),
+                'Costs': pd.Series(costs, index=account_pnl_index)
+                }
+            ), transactions_dict
+        else:
+            return pd.DataFrame({
+                'SettleChange': pd.Series(account_pnl, index=account_pnl_index),
+                'Costs': pd.Series(costs, index=account_pnl_index)
+                }
+            )
 
     def run_compare_report(self, campaign_stats, num_days_back, office, account):
 
