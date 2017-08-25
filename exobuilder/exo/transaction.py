@@ -62,3 +62,6 @@ class Transaction(object):
 
     def __str__(self):
         return "Leg: {0} / {1} x {2} Price: {3} Delta: {4}".format(self.leg_name, self.asset.name, self.qty, self.price, self.delta)
+
+    def __repr__(self):
+        return self.__str__()
