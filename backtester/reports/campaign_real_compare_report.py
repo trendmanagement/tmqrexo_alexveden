@@ -137,7 +137,7 @@ class CampaignRealCompare:
                 contract = datasource.get(contract_hash, decision_time_end)
                 trans_ = Transaction(contract, decision_time_end, qty)
 
-                daily_transactions_list.append(trans_)
+                #daily_transactions_list.append(trans_)
                 position.add(trans_)
 
                 if isinstance(contract, FutureContract):
