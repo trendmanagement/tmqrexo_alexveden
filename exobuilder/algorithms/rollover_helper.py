@@ -18,6 +18,10 @@ class RolloverHelper:
         # Roll 2-days before expiration
         self.days_before_expiration = 2
 
+        if self.instrument.name.upper() == "XAF":
+            self.rollover_months = [3, 6, 9, 12]
+            self.days_before_expiration = 5
+
         if self.instrument.name.upper() == "ZC":
             # Corn custom rollover options
             # corn spring	    0	0	1	0	1	0	1	0	0	0	0	0
