@@ -15,7 +15,7 @@ import warnings
 
 from backtester.reports.payoffs import PayoffAnalyzer
 
-from scripts.settings import *
+from settings import *
 import bdateutil
 import holidays
 
