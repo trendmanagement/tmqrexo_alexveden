@@ -12,6 +12,8 @@ from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.exostorage import EXOStorage
 
+from tradingcore.campaign_bridge import ALPHA_NEW_PREFIX
+
 
 #import matplotlib.pyplot as plt
 
@@ -127,6 +129,11 @@ class CampaignReport:
             # Skip integrity checks for inactive alphas
             if not self.cmp.alpha_is_active(k, last_date):
                 continue
+
+            if k.startswith(ALPHA_NEW_PREFIX):
+                # Skip V2 alphas
+                continue
+
             instrument = k.split('_')[0]
             seriesdf = v['swarm_series']
             asset_info = self.datasource.assetindex.get_instrument_info(instrument)
