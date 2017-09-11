@@ -197,7 +197,8 @@ class EXOStorage(object):
                 _new_series_dict, _ = cbr.swarms_list(alpha_list)
 
                 # Updating data with new records
-                result.update(_new_series_dict)
+                for k,v in _new_series_dict.items():
+                    result[k] = {'swarm_series': v}
 
             except Exception as exc:
                 warnings.warn("Failed to load new framework alphas: {0}".format(exc))
