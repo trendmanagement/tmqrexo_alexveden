@@ -198,7 +198,7 @@ class EXOStorage(object):
 
                 # Updating data with new records
                 for k,v in _new_series_dict.items():
-                    result[k] = {'swarm_series': v}
+                    result[k] = {'swarm_series': {'equity': v}}
 
             except Exception as exc:
                 warnings.warn("Failed to load new framework alphas: {0}".format(exc))
