@@ -62,18 +62,16 @@ class CampaignReport:
 
         self.cmp = Campaign(campaign_dict, self.datasource)
         self.campaign_name = campaign_name
-        self.swarms_data = storage.swarms_data(self.cmp.alphas_list())
+        self.swarms_data = storage.swarms_data(self.cmp.alphas_list(), load_v2_alphas=True)
         self.isok = True
 
         campaign_dict = {}
         campaign_deltas_dict = {}
         campaign_costs_dict = {}
 
-        swm_data = storage.swarms_data(self.cmp.alphas_list(), load_v2_alphas=True)
-
         for alpha_name, swm_exposure_dict in self.cmp.alphas.items():
             swarm_name = alpha_name
-            series = swm_data[swarm_name]['swarm_series']
+            series = self.swarms_data[swarm_name]['swarm_series']
 
             date_begin = swm_exposure_dict.get('begin', datetime(1900, 1, 1))
             date_end = swm_exposure_dict.get('end', datetime(2100, 1, 1))
@@ -321,6 +319,6 @@ if __name__ == '__main__':
     options_limit = 20
     datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, storage)
 
-    rpt = CampaignReport('ZN_Bidirectional V3', datasource)
+    rpt = CampaignReport('ZN_Bidirectional_W_Risk_Reversals V1', datasource)
     rpt.report_all()
     pass
