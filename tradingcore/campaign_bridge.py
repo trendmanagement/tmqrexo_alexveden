@@ -44,7 +44,7 @@ class CampaignBridge:
         """
         return pickle.loads(lz4.block.decompress(obj))
 
-    def swarms_list(self, instruments_list=('*',), direction=(1, -1, 0), alpha_list=('*',), exo_list=('*',)):
+    def swarms_list(self, instruments_list=('*',), alpha_list=('*',)):
         """
         Select swarms from Mongo using case INSENSITIVE filters (wildcards allowed)
         :param instruments_list: instruments list filter like '*', 'CL*', 'CL*9'
@@ -56,7 +56,7 @@ class CampaignBridge:
         def re_pattern(values_list, prepend='', append=''):
             result = ""
             for i,v in enumerate(values_list):
-                re_val = v.replace('*', '.*')
+                re_val = v.replace('*', '.*').replace(ALPHA_NEW_PREFIX, '')
 
                 if i == 0:
                     result += '{0}({1}'.format(prepend, re_val)
