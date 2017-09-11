@@ -365,6 +365,9 @@ class CampaignBridge:
                         }
                     }
                     """
+                    if pos_rec[2] * alpha_params['qty'] == 0:
+                        continue
+
                     transactions_list.append({
                         'tckr': ticker,       # Temporary field
                         'price': pos_rec[0],  # Use decision price
