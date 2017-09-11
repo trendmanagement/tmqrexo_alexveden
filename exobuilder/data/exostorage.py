@@ -194,11 +194,11 @@ class EXOStorage(object):
         if load_v2_alphas:
             try:
                 cbr = CampaignBridge()
-                _new_series_dict, _ = cbr.swarms_list(alpha_list)
+                _, _new_series_data = cbr.swarms_list(alpha_list)
 
                 # Updating data with new records
-                for k,v in _new_series_dict.items():
-                    result[k] = {'swarm_series': {'equity': v}}
+                for s in _new_series_data:
+                    result[s['swarm_name']] = s
 
             except Exception as exc:
                 warnings.warn("Failed to load new framework alphas: {0}".format(exc))
