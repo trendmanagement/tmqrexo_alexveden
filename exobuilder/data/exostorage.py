@@ -3,7 +3,7 @@ import pymongo
 import pickle
 import re
 import pandas as pd
-from tradingcore.campaign_bridge import CampaignBridge
+from tradingcore.campaign_bridge import CampaignBridge, ALPHA_NEW_PREFIX
 import warnings
 
 
@@ -144,7 +144,7 @@ class EXOStorage(object):
         #
         try:
             cbr = CampaignBridge()
-            _new_series_dict, _new_swarm_data = cbr.swarms_list(instruments_list, direction, alpha_list, exo_list)
+            _new_series_dict, _new_swarm_data = cbr.swarms_list(instruments_list, alpha_list)
 
             # Updating data with new records
             swarm_data += _new_swarm_data
@@ -172,7 +172,7 @@ class EXOStorage(object):
 
         return result
 
-    def swarms_data(self, alpha_list=None):
+    def swarms_data(self, alpha_list=None, load_v2_alphas=False):
         """
         Returns swarm positions with alpha_filter
         :param alpha_list: if None - select all, otherwize use list of alpha names ex. ['alpha1', 'alpha2']
@@ -187,6 +187,20 @@ class EXOStorage(object):
         for c in cursor:
             c['swarm_series'] = pickle.loads(c['swarm_series'])
             result[c['swarm_name']] = c
+
+        #
+        # Adding new Framwork 2.0 campaigns to list
+        #
+        if load_v2_alphas:
+            try:
+                cbr = CampaignBridge()
+                _new_series_dict, _ = cbr.swarms_list(alpha_list)
+
+                # Updating data with new records
+                result.update(_new_series_dict)
+
+            except Exception as exc:
+                warnings.warn("Failed to load new framework alphas: {0}".format(exc))
 
         return result
 

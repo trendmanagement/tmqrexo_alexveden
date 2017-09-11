@@ -69,7 +69,7 @@ class CampaignReport:
         campaign_deltas_dict = {}
         campaign_costs_dict = {}
 
-        swm_data = storage.swarms_data(self.cmp.alphas_list())
+        swm_data = storage.swarms_data(self.cmp.alphas_list(), load_v2_alphas=True)
 
         for alpha_name, swm_exposure_dict in self.cmp.alphas.items():
             swarm_name = alpha_name
