@@ -106,6 +106,7 @@ class CampaignBridge:
             'swarm_name': alpha_name,
             'swarm_series': self.object_load_decompress(alpha_data['stats']).get('series', pd.DataFrame()),
             'position': self.object_load_decompress(alpha_data['position']['data']),
+            'exposure': self.object_load_decompress(alpha_data['exposure_series']),
             'instrument': 'N/A'
         }
 

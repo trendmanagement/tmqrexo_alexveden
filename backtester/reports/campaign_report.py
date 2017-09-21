@@ -125,17 +125,26 @@ class CampaignReport:
             last_date = max(last_date, seriesdf.index[-1])
             prev_date = max(prev_date, seriesdf.index[-2])
 
+        alphas_alignment = {}
+
         for k, v in self.swarms_data.items():
             # Skip integrity checks for inactive alphas
             if not self.cmp.alpha_is_active(k, last_date):
                 continue
 
+            seriesdf = v['swarm_series']
+
+            alphas_alignment[k] = seriesdf['exposure']
+
             if k.startswith(ALPHA_NEW_PREFIX):
                 # Skip V2 alphas
+                if (last_date - seriesdf.index[-1]).days > 0:
+                    warnings.warn('[DELAYED] {0}: {1}'.format(k, seriesdf.index[-1]))
+                    isok = False
                 continue
 
+
             instrument = k.split('_')[0]
-            seriesdf = v['swarm_series']
             asset_info = self.datasource.assetindex.get_instrument_info(instrument)
             exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), asset_info)
 
@@ -157,6 +166,14 @@ class CampaignReport:
                 isok = False
 
         print('Last quote date: {0} Pevious date: {1}'.format(last_date, prev_date))
+
+        aligment_df = pd.concat(alphas_alignment, axis=1)
+
+        if aligment_df.head(10).isnull().sum().sum() > 0:
+            warnings.warn("Alphas of the campaign are not properly aligned, data holes or inconsistent index detected!")
+            isok = False
+            print(aligment_df.head(10))
+
 
         if isok:
             print('Alphas seems to be valid')
@@ -201,7 +218,6 @@ class CampaignReport:
     def report_positions(self):
         pos_last = self.cmp.positions_at_date(self.last_date)
         pos_prev = self.cmp.positions_at_date(self.prev_date)
-        pos_prev_pnl = self.cmp.positions_at_date(self.prev_date, self.last_date)
 
         positions = OrderedDict()
         for contract, exp_dict in pos_last.netpositions.items():
@@ -326,6 +342,9 @@ if __name__ == '__main__':
     options_limit = 20
     datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, storage)
 
-    rpt = CampaignReport('ZN_Bidirectional_W_Risk_Reversals V1', datasource)
-    rpt.report_all()
+    #rpt = CampaignReport('ZN_Bidirectional_W_Risk_Reversals V1', datasource)
+    #rpt.report_all()
+    campaign_dict = storage.campaign_load('ZN_Bidirectional_W_Risk_Reversals V1')
+    cmp = Campaign(campaign_dict, datasource)
+    cmp.positions_at_date()
     pass
