@@ -169,10 +169,10 @@ class CampaignReport:
 
         aligment_df = pd.concat(alphas_alignment, axis=1)
 
-        if aligment_df.head(10).isnull().sum().sum() > 0:
+        if aligment_df.tail(10).isnull().sum().sum() > 0:
             warnings.warn("Alphas of the campaign are not properly aligned, data holes or inconsistent index detected!")
             isok = False
-            print(aligment_df.head(10).T)
+            print(aligment_df.tail(10))
 
 
         if isok:
@@ -211,6 +211,22 @@ class CampaignReport:
         for alpha_name, exp_dict in self.cmp.alphas_positions(self.prev_date).items():
             edic = alphas.setdefault(alpha_name, {'LastDate': 0.0, 'PrevDate': 0.0})
             edic['PrevDate'] = exp_dict['exposure']
+
+        #
+        # Add bridged alpha v2 exposure to the report
+        #
+        for k, v in self.swarms_data.items():
+            # Skip integrity checks for inactive alphas
+            if not self.cmp.alpha_is_active(k, self.last_date):
+                continue
+
+            if not k.startswith(ALPHA_NEW_PREFIX):
+                continue
+
+            exposure_series = v['exposure']['exposure']
+
+            alphas[k] = {'LastDate': exposure_series.get(self.last_date, float('nan')),
+                         'PrevDate': exposure_series.get(self.prev_date, float('nan'))}
 
         print("\n\nAlphas Exposure report")
         print(pd.DataFrame(alphas).T.sort_index())
