@@ -174,7 +174,7 @@ class CampaignReport:
             isok = False
             print('Alphas exposure series (past 5 days):')
             for alpha_name in aligment_df:
-                print(alpha_name)
+                print("\n" + alpha_name)
                 print(aligment_df[alpha_name].tail(5))
 
 
