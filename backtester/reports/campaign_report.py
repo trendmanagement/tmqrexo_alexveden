@@ -169,10 +169,13 @@ class CampaignReport:
 
         aligment_df = pd.concat(alphas_alignment, axis=1)
 
-        if aligment_df.tail(10).isnull().sum().sum() > 0:
+        if aligment_df.tail(5).isnull().sum().sum() > 0:
             warnings.warn("Alphas of the campaign are not properly aligned, data holes or inconsistent index detected!")
             isok = False
-            print(aligment_df.tail(10))
+            print('Alphas exposure series (past 5 days):')
+            for alpha_name in aligment_df:
+                print(alpha_name)
+                print(aligment_df[alpha_name].tail(5))
 
 
         if isok:
