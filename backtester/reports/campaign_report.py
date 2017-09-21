@@ -172,7 +172,7 @@ class CampaignReport:
         if aligment_df.head(10).isnull().sum().sum() > 0:
             warnings.warn("Alphas of the campaign are not properly aligned, data holes or inconsistent index detected!")
             isok = False
-            print(aligment_df.head(10))
+            print(aligment_df.head(10).T)
 
 
         if isok:
