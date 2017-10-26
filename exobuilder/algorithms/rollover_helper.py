@@ -100,6 +100,13 @@ class RolloverHelper:
             self.rollover_months = [2, 4, 6, 8, 10, 12]
             self.days_before_expiration = 5
 
+        if self.instrument.name.upper() == "HE":
+            """
+            Lean Hogs
+            """
+            self.rollover_months = [2, 4, 5, 6, 7, 8, 10, 12]
+            self.days_before_expiration = 5
+
         if self.instrument.name.upper() == "SB":
             """
             Sugar No. 11
