@@ -308,8 +308,7 @@ class CampaignBridge:
             elif curr_values is None:
                 # Skip old closed positions
                 if prev_values[iQTY] != 0:
-                    warnings.warn("Can't get actual prices for position from positions data, using prev day price: "
-                                  "Asset: {0} Date: {1}".format(asset, date))
+                    warnings.warn("Can't get actual prices for position from positions data, using prev day price: Asset: {0} Date: {1}".format(asset, date))
                     result[asset] = (prev_values[iDPX], prev_values[iEPX], -prev_values[iQTY])
             else:
                 # Calculating transactions for existing position
