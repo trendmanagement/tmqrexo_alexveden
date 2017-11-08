@@ -41,14 +41,14 @@ EXO_LIST = [
         'name': 'ContFut',
         'class': EXOContinuousFut,
     },
-    {
-        'name': 'CollarBW',
-        'class': EXOBrokenwingCollar,
-    },
-    {
-        'name': 'VerticalSpread',
-        'class': EXOVerticalSpread,
-    },
+    # {
+    #     'name': 'CollarBW',
+    #     'class': EXOBrokenwingCollar,
+    # },
+    # {
+    #     'name': 'VerticalSpread',
+    #     'class': EXOVerticalSpread,
+    # },
     #{
     #    'name': 'SmartexoIchimokuBearStraddle150Delta',
     #    'class': SmartexoIchimokuBearStraddle150Delta,
@@ -61,22 +61,22 @@ EXO_LIST = [
     #     'name': 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread',
     #     'class': SmartEXO_Ichi_DeltaTargeting_Dec3_Bear_Bear_Spread,
     # },
-    {
-        'name': 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread',
-        'class': SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread,
-    },
+    # {
+    #     'name': 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread',
+    #     'class': SmartEXO_Ichi_DeltaTargeting_Dec3_Bi_Spread,
+    # },
     # {
     #     'name': 'SmartEXO_Ichi_DeltaTargeting_Dec3_Bull_Bull_Spread',
     #     'class': SmartEXO_Ichi_DeltaTargeting_Dec3_Bull_Bull_Spread,
     # },
-    {
-        'name': 'SmartEXO_Ichi_Class_Based_Bullish_Fence_Dec19',
-        'class': SmartEXO_Ichi_Bullish_Fence,
-    },
-    {
-        'name': 'SmartEXO_Ichi_Class_Based_Bearish_Fence_Dec19',
-        'class': SmartEXO_Ichi_Bearish_Fence,
-    },
+    # {
+    #     'name': 'SmartEXO_Ichi_Class_Based_Bullish_Fence_Dec19',
+    #     'class': SmartEXO_Ichi_Bullish_Fence,
+    # },
+    # {
+    #     'name': 'SmartEXO_Ichi_Class_Based_Bearish_Fence_Dec19',
+    #     'class': SmartEXO_Ichi_Bearish_Fence,
+    # },
     # {
     #     'name': 'SmartEXO_Bullish_Ichi__Dynamic_Wrangle_1short_3Long_Jan11',
     #     'class': SmartEXO_Bullish_Ichi__Dynamic_Wrangle_1short_3Long_Jan11,
@@ -89,18 +89,18 @@ EXO_LIST = [
     #     'name': 'SmartEXO_ichi_dynamic_1short_3long_delta_bi_puts_30_05_Jan17',
     #     'class': SmartEXO_ichi_dynamic_1short_3long_delta_bi_puts_30_05_Jan17,
     # },
-    {
-        'name': 'SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_call_side',
-        'class': SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_call_side,
-    },
-    {
-        'name': 'SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side',
-        'class': SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side,
-    },
-    {
-        'name': 'SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly',
-        'class': SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly,
-    },
+    # {
+    #     'name': 'SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_call_side',
+    #     'class': SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_call_side,
+    # },
+    # {
+    #     'name': 'SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side',
+    #     'class': SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly3X2_put_side,
+    # },
+    # {
+    #     'name': 'SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly',
+    #     'class': SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnly,
+    # },
 
 ]
 
