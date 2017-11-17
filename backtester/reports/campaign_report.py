@@ -20,7 +20,8 @@ from tradingcore.campaign_bridge import ALPHA_NEW_PREFIX
 #
 # Warnings messages formatting
 #
-def custom_formatwarning(msg, *a):
+#def custom_formatwarning(msg, *a):
+def custom_formatwarning(msg, category, filename, lineno, line=''):
     # ignore everything except the message
     return str(msg) + '\n'
 warnings.formatwarning = custom_formatwarning
