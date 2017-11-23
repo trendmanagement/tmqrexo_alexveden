@@ -25,7 +25,8 @@ db = client[MONGO_EXO_DB]
 scmp_collection = db['campaigns_smart']
 
 
-for scmp_name in scmp_collection.find({}, projection={'name': True}):
+for scmp_dict in scmp_collection.find({}, projection={'name': True}):
+    scmp_name = scmp_dict['name']
     signalapp.send(MsgStatus('RUN', 'Processing: {0}'.format(scmp_name), notify=True))
     try:
         scmp = SmartCampaignBase.load_from_v1(scmp_name, storage, scmp_collection)
