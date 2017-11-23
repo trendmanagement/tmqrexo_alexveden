@@ -4,6 +4,7 @@ from exobuilder.exo.exoenginebase import ExoEngineBase
 from datetime import datetime
 from tradingcore.campaign_bridge import ALPHA_NEW_PREFIX, CampaignBridge
 
+
 class Campaign:
     def __init__(self, campaign_dict, datasource):
         self._dict = campaign_dict
@@ -25,6 +26,12 @@ class Campaign:
                     legs = self._legs.setdefault('', [])
                     legs.append(alpha_name)
 
+    def __setitem__(self, key, item):
+        raise ValueError("Campaign dictionary is read-only")
+
+    def __getitem__(self, key):
+        return self._dict[key]
+
     @property
     def name(self):
         return self._dict['name']
@@ -43,6 +50,11 @@ class Campaign:
 
     def as_dict(self):
         return self._dict
+
+    @property
+    def ctype(self):
+        return self._dict.get('type', None)
+
 
     @property
     def alphas(self):
