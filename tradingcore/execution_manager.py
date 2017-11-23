@@ -4,7 +4,7 @@ from tradingcore.account import Account
 from tradingcore.moneymanagement import MM_CLASSES
 from datetime import datetime
 from io import StringIO
-
+import warnings
 
 class ExecutionManager:
     def __init__(self, conn_str, datasource, dbname='tmldb'):
@@ -161,12 +161,13 @@ class ExecutionManager:
         account_positions = {}
 
         for acc_dict in acc_list:
-            # Create new account instance
-            acc = self.account_process(acc_dict)
-            if not acc.isactive:
-                continue
 
             try:
+                # Create new account instance
+                acc = self.account_process(acc_dict)
+                if not acc.isactive:
+                    continue
+
                 # Get account positions processed by MM algorithm
                 acc_pos = acc.positions
 

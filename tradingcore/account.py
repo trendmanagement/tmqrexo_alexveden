@@ -1,5 +1,6 @@
 import warnings
 
+
 class Account:
     def __init__(self, acc_dict, campaign, mmclass, isactive=True):
         self.name = acc_dict['name']
@@ -17,7 +18,7 @@ class Account:
 
     @property
     def positions(self):
-        return self.mmclass.get_positions(self.campaign.positions)
+        return self.mmclass.get_positions(self.campaign)
 
     def as_dict(self):
         result = {}
