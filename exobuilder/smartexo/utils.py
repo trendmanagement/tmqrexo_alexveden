@@ -16,7 +16,7 @@ import warnings
 from backtester.reports.payoffs import PayoffAnalyzer
 
 from scripts.settings import *
-from scripts.holidays import TMQRHolidays
+from scripts.tmqrholidays import TMQRHolidays
 import bdateutil
 import holidays
 
