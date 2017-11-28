@@ -82,7 +82,7 @@ except SystemError:
         pass
     pass
 from tradingcore.execution_manager import ExecutionManager
-from scripts.holidays import TMQRHolidays
+from scripts.tmqrholidays import TMQRHolidays
 
 
 class EXOScript:

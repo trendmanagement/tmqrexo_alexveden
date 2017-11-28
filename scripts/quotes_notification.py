@@ -35,7 +35,7 @@ except SystemError:
         pass
     pass
 
-from scripts.holidays import TMQRHolidays
+from scripts.tmqrholidays import TMQRHolidays
 
 NULL_DATE = datetime(1900, 1, 1, 0, 0, 0)
 

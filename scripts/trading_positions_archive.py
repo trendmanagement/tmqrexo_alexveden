@@ -30,7 +30,7 @@ from tradingcore.messages import *
 import pprint
 import datetime
 import holidays
-from scripts.holidays import TMQRHolidays
+from scripts.tmqrholidays import TMQRHolidays
 import bdateutil
 
 class TradingPositionsArchiveScript:
