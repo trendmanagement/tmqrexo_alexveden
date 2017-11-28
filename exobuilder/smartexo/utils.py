@@ -16,6 +16,7 @@ import warnings
 from backtester.reports.payoffs import PayoffAnalyzer
 
 from scripts.settings import *
+from scripts.holidays import TMQRHolidays
 import bdateutil
 import holidays
 
@@ -71,7 +72,7 @@ class SmartEXOUtils:
 
     def build_smartexo(self, start_date, **smartexo_kwargs):
         def check_bday_or_holiday(date):
-            if date.weekday() >= 5 or not bdateutil.isbday(date, holidays=holidays.US()):
+            if date.weekday() >= 5 or not bdateutil.isbday(date, holidays=TMQRHolidays()):
                 # Skipping weekends and US holidays
                 # date.weekday() >= 5 - 5 is Saturday!
                 return False
