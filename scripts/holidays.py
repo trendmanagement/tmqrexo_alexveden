@@ -1,8 +1,8 @@
-import holidays
+from holidays import UnitedStates
 from datetime import date
 
 
-class TMQRHolidays(holidays.US):
+class TMQRHolidays(UnitedStates):
     """
     Custom holidays for half-days in US exchanges
     """
