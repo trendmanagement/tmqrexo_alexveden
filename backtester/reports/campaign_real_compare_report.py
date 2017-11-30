@@ -228,7 +228,7 @@ class CampaignRealCompare:
                 'p_dict': Position().as_dict(),
                 'decision_time_end': None,
                 'exec_time_end': None,
-                'transactions_dict': {},
+                'transactions_dict': OrderedDict(),
             }
 
         for d, pos_rec in position_dict.items():
@@ -497,7 +497,7 @@ if __name__ == '__main__':
     #rpt = CampaignReport('ES_Bidirectional V3', datasource, pnl_settlement_ndays=num_of_days_back_master + 1)
 
     crc = CampaignRealCompare()
-    archive_based_pnl = crc.get_account_positions_archive_pnl(#account_name="CLX60125",
+    archive_based_pnl = crc.get_account_positions_archive_pnl_multiproduct(#account_name="CLX60125",
                                                                instrument="CL",
                                                               # costs_per_contract=3.0 # Default
                                                               # costs_per_option=3.0 # Default
