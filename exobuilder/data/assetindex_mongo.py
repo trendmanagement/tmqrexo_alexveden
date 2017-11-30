@@ -11,13 +11,17 @@ class AssetIndexMongo(AssetIndexBase):
         self.db.options.create_index([("idoption", pymongo.DESCENDING)])
         self.db.options.create_index([("idcontract", pymongo.DESCENDING)])
 
-    def get_instrument_info(self, symbol):
+    def get_instrument_info(self, symbol=None, idinstrument=None):
         """
         Returns underlying instrument information
         :param symbol: underlying ticker name
         :return: dict of underlying metadata
         """
-        return self.db.instruments.find({'exchangesymbol': symbol}).next()
+        if symbol is not None:
+            return self.db.instruments.find({'exchangesymbol': symbol}).next()
+        elif idinstrument is not None:
+            return self.db.instruments.find({'idinstrument': idinstrument}).next()
+
 
     def get_futures_list(self, date, instrument, limit):
         """
