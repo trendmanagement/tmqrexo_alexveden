@@ -14,6 +14,7 @@ from exobuilder.data.exostorage import EXOStorage
 from exobuilder.exo.transaction import Transaction
 from exobuilder.exo.position import Position
 from scripts.settings import *
+import warnings
 
 
 class CampaignRealCompare:
@@ -26,7 +27,7 @@ class CampaignRealCompare:
         self.collection = db.accountsummarycollection
 
     @staticmethod
-    def _calc_transactions(date, current_pos, prev_pos):
+    def _calc_transactions(date, current_pos, prev_pos, idinstrument=None):
         result = {}
         assert current_pos is not None, 'current_pos must be initialized'
 
@@ -39,15 +40,21 @@ class CampaignRealCompare:
             prev_values = prev_pos.get(asset, None) if prev_pos is not None else None
             curr_values = current_pos.get(asset, None)
 
+            if idinstrument is not None:
+                if prev_values is not None and prev_values['idinstrument'] != idinstrument:
+                    continue
+                if curr_values is not None and curr_values['idinstrument'] != idinstrument:
+                    continue
+
             if prev_values is None:
-                result[asset] = curr_values
+                result[asset] = curr_values['qty']
             elif curr_values is None:
                 # Skip old closed positions
-                if prev_values != 0:
-                    result[asset] = -prev_values
+                if prev_values['qty'] != 0:
+                    result[asset] = -prev_values['qty']
             else:
                 # Calculating transactions for existing position
-                trans_qty = curr_values - prev_values
+                trans_qty = curr_values['qty'] - prev_values['qty']
 
                 result[asset] = trans_qty
         return result
@@ -87,7 +94,8 @@ class CampaignRealCompare:
                 if '_hash' not in p['asset']:
                     break
 
-                pos_rec[p['asset']['_hash']] = p['qty']
+                #pos_rec[p['asset']['_hash']] = p['qty']
+                pos_rec[p['asset']['_hash']] = {'qty': p['qty'], 'idinstrument': p['asset']['idinstrument']}
 
         prev_position = None
 
@@ -105,20 +113,18 @@ class CampaignRealCompare:
 
             daily_transactions_list = transactions_dict.setdefault(d, [])
 
-
-
             if prev_position is not None:
                 position = Position.from_dict(p_dict, datasource, decision_time_end)
 
                 new_exec_time_end, new_decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
-
-                tmp_prev_pnl = position.pnl_settlement
-                position.set_date(datasource, new_decision_time_end)
-
                 try:
-                    pnl = position.pnl_settlement - tmp_prev_pnl
-                except:
-                    pnl = float('nan')
+                   tmp_prev_pnl = position.pnl_settlement
+                   position.set_date(datasource, new_decision_time_end)
+
+                   pnl = position.pnl_settlement - tmp_prev_pnl
+                except Exception as exc:
+                   pnl = float('nan')
+                   warnings.warn("Error getting settlements: {0}".format(exc))
 
             exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
 
@@ -168,6 +174,130 @@ class CampaignRealCompare:
                 'Costs': pd.Series(costs, index=account_pnl_index)
                 }
             )
+
+    def get_account_positions_archive_pnl_multiproduct(self, account_name = None, instrument = None, costs_per_option=3.0, costs_per_contract=3.0,
+                                                       num_days_back=20, fcm_office = None, fcm_acct = None, return_transactions=False):
+
+        mongoClient = MongoClient(MONGO_CONNSTR)
+        db = mongoClient[MONGO_EXO_DB]
+
+        storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+        datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, 4, 20, storage)
+
+        position_dict = OrderedDict()
+
+
+
+        if account_name is None:
+
+            account = db['accounts'].find_one({'FCM_OFFICE': fcm_office, 'FCM_ACCT': fcm_acct})
+
+            account_name = account['name']
+
+
+        reversedList = reversed(list(
+                db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(
+                        num_days_back)))
+
+        instrument_id_set = set()
+        instrument_info_dict = {}
+
+        for pos in reversedList:
+            # print(pos)
+
+            dt = pos['date_now']
+            pos_rec = position_dict.setdefault(dt, {})
+
+            for p in pos['positions']:
+                if '_hash' not in p['asset']:
+                    break
+
+                instrument_id_set.add(p['asset']['idinstrument'])
+
+                pos_rec[p['asset']['_hash']] = {'qty': p['qty'], 'idinstrument': p['asset']['idinstrument']}
+
+        # Setting up instruments
+        for _ins_id in instrument_id_set:
+            instrument_info_dict[_ins_id] = {
+                'instrument_info': assetindex.get_instrument_info(idinstrument=_ins_id),
+                'prev_position': None,
+                'account_pnl': [],
+                'costs': [],
+                'account_pnl_index': [],
+                'p_dict': Position().as_dict(),
+                'decision_time_end': None,
+                'exec_time_end': None,
+                'transactions_dict': {},
+            }
+
+        for d, pos_rec in position_dict.items():
+            for instr, instr_values in instrument_info_dict.items():
+                costs_sum = 0.0
+                pnl = 0.0
+
+                asset_info = instr_values['instrument_info']
+
+                daily_transactions_list = instr_values['transactions_dict'].setdefault(d, [])
+
+                if instr_values['prev_position'] is not None:
+                    position = Position.from_dict(instr_values['p_dict'], datasource, instr_values['decision_time_end'])
+
+                    new_exec_time_end, new_decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
+
+                    try:
+                        tmp_prev_pnl = position.pnl_settlement
+                        position.set_date(datasource, new_decision_time_end)
+                        pnl = position.pnl_settlement - tmp_prev_pnl
+                    except Exception as exc:
+                        pnl = float('nan')
+                        warnings.warn("Error getting settlements: {0}".format(exc))
+
+                instr_values['exec_time_end'], instr_values['decision_time_end'] = AssetIndexMongo.get_exec_time(d, asset_info)
+
+                position = Position.from_dict(instr_values['p_dict'], datasource, instr_values['decision_time_end'])
+
+                transactions = self._calc_transactions(d, pos_rec, instr_values['prev_position'], idinstrument=instr)
+
+                for contract_hash, qty in transactions.items():
+                    if qty == 0:
+                        continue
+
+                    contract = datasource.get(contract_hash, instr_values['decision_time_end'])
+
+                    assert contract.instrument.dbid == instr
+
+                    trans_ = Transaction(contract, instr_values['decision_time_end'], qty)
+
+                    daily_transactions_list.append(trans_)
+                    position.add(trans_)
+
+                    if isinstance(contract, FutureContract):
+                        costs_sum += -abs(costs_per_contract) * abs(qty)
+                    else:
+                        costs_sum += -abs(costs_per_option) * abs(qty)
+
+                pnl += costs_sum
+                # print("Pnl: {0}".format(pnl))
+                instr_values['prev_position'] = pos_rec
+
+                instr_values['p_dict'] = position.as_dict()
+                instr_values['account_pnl'].append(pnl)
+                instr_values['account_pnl_index'].append(d)
+                instr_values['costs'].append(costs_sum)
+        pass
+
+        result = {}
+        for instr, instr_values in instrument_info_dict.items():
+            result[instr_values['instrument_info']['exchangesymbol']] = {
+                'pnls': pd.DataFrame({
+                    'SettleChange': pd.Series(instr_values['account_pnl'], index=instr_values['account_pnl_index']),
+                    'Costs': pd.Series(instr_values['costs'], index=instr_values['account_pnl_index'])
+                }),
+                'transactions': instr_values['transactions_dict']
+            }
+
+        return result
 
     def run_compare_report(self, campaign_stats, num_days_back, office, account):
 
@@ -368,11 +498,11 @@ if __name__ == '__main__':
 
     crc = CampaignRealCompare()
     archive_based_pnl = crc.get_account_positions_archive_pnl(#account_name="CLX60125",
-                                                              instrument="ES",
+                                                               instrument="CL",
                                                               # costs_per_contract=3.0 # Default
                                                               # costs_per_option=3.0 # Default
                                                               num_days_back=num_of_days_back_master + 1,
-                                                              fcm_office="CLX", fcm_acct="60125"
+                                                              fcm_office="369", fcm_acct="10161"
                                                               )
 
     print(archive_based_pnl)
