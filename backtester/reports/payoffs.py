@@ -91,7 +91,7 @@ class PayoffAnalyzer:
         self.analysis_date = pos_date
 
 
-    def load_campaign(self, campaign_name, date=None):
+    def load_campaign(self, campaign_name, date=None, ticker=None):
         """
         Load campaign net positions for further analysis
         :param campaign_name:
@@ -108,7 +108,8 @@ class PayoffAnalyzer:
             return
 
         cmp = Campaign(campaign_dict, self.datasource)
-        ticker = campaign_name.split('_')[0]
+        if ticker is None:
+            ticker = campaign_name.split('_')[0]
         asset_info = self.datasource.assetindex.get_instrument_info(ticker)
         exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(datetime.now() if date is None else date,
                                                                          asset_info)
