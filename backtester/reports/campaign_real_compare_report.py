@@ -193,6 +193,9 @@ class CampaignRealCompare:
 
             account = db['accounts'].find_one({'FCM_OFFICE': fcm_office, 'FCM_ACCT': fcm_acct})
 
+            if account is None:
+                raise KeyError("Account is not found. FCM_OFFICE:{0} FCM_ACCT:{1}".format(fcm_office, fcm_acct))
+
             account_name = account['name']
 
 
