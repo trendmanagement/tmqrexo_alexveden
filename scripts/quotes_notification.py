@@ -35,6 +35,7 @@ except SystemError:
         pass
     pass
 
+from scripts.tmqrholidays import TMQRHolidays
 
 NULL_DATE = datetime(1900, 1, 1, 0, 0, 0)
 
@@ -113,7 +114,7 @@ class QuotesNotifyScript:
 
     def is_quote_delayed(self, last_bar_time):
         dtnow = self.date_now()
-        if bdateutil.isbday(dtnow, holidays=holidays.US()) and dtnow.hour > 8 and dtnow.hour < 13:
+        if bdateutil.isbday(dtnow, holidays=TMQRHolidays()) and dtnow.hour > 8 and dtnow.hour < 13:
             if int(abs((dtnow-last_bar_time).total_seconds() / 60.0)) > self.args.delay:
                 return True
 

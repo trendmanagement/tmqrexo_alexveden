@@ -82,6 +82,8 @@ except SystemError:
         pass
     pass
 from tradingcore.execution_manager import ExecutionManager
+from scripts.tmqrholidays import TMQRHolidays
+
 
 class EXOScript:
     def __init__(self, args, loglevel):
@@ -122,7 +124,7 @@ class EXOScript:
         return True
 
     def check_bday_or_holiday(self, date):
-        if date.weekday() >= 5 or not bdateutil.isbday(date, holidays=holidays.US()):
+        if date.weekday() >= 5 or not bdateutil.isbday(date, holidays=TMQRHolidays()):
             # Skipping weekends and US holidays
             # date.weekday() >= 5 - 5 is Saturday!
             return False
