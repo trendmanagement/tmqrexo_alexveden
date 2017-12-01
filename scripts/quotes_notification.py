@@ -210,7 +210,7 @@ if __name__ == '__main__':
         "--delay",
         help="Delay warning interval in minutes default: %(default)s minutes",
         action="store",
-        default=3)
+        default=13)
 
 
     parser.add_argument('instrument', type=str,
