@@ -59,8 +59,9 @@ class CampaignRealCompare:
                 result[asset] = trans_qty
         return result
 
-    def get_account_positions_archive_pnl(self, account_name = None, instrument = None, costs_per_option=3.0, costs_per_contract=3.0,
-                                          num_days_back=20, fcm_office = None, fcm_acct = None, return_transactions=False):
+    def get_account_positions_archive_pnl(self, account_name=None, instrument=None, costs_per_option=3.0,
+                                          costs_per_contract=3.0,
+                                          num_days_back=20, fcm_office=None, fcm_acct=None, return_transactions=False):
 
         mongoClient = MongoClient(MONGO_CONNSTR)
         db = mongoClient[MONGO_EXO_DB]
@@ -82,10 +83,9 @@ class CampaignRealCompare:
 
             account_name = account['name']
 
-
         reversedList = reversed(list(
-                db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(
-                        num_days_back)))
+            db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(
+                num_days_back)))
 
         for pos in reversedList:
             # print(pos)
@@ -97,7 +97,7 @@ class CampaignRealCompare:
                 if '_hash' not in p['asset']:
                     break
 
-                #pos_rec[p['asset']['_hash']] = p['qty']
+                # pos_rec[p['asset']['_hash']] = p['qty']
                 pos_rec[p['asset']['_hash']] = {'qty': p['qty'], 'idinstrument': p['asset']['idinstrument']}
 
         prev_position = None
@@ -121,13 +121,13 @@ class CampaignRealCompare:
 
                 new_exec_time_end, new_decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
                 try:
-                   tmp_prev_pnl = position.pnl_settlement
-                   position.set_date(datasource, new_decision_time_end)
+                    tmp_prev_pnl = position.pnl_settlement
+                    position.set_date(datasource, new_decision_time_end)
 
-                   pnl = position.pnl_settlement - tmp_prev_pnl
+                    pnl = position.pnl_settlement - tmp_prev_pnl
                 except Exception as exc:
-                   pnl = float('nan')
-                   warnings.warn("Error getting settlements: {0}".format(exc))
+                    pnl = float('nan')
+                    warnings.warn("Error getting settlements: {0}".format(exc))
 
             exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
 
@@ -169,17 +169,19 @@ class CampaignRealCompare:
             return pd.DataFrame({
                 'SettleChange': pd.Series(account_pnl, index=account_pnl_index),
                 'Costs': pd.Series(costs, index=account_pnl_index)
-                }
+            }
             ), transactions_dict
         else:
             return pd.DataFrame({
                 'SettleChange': pd.Series(account_pnl, index=account_pnl_index),
                 'Costs': pd.Series(costs, index=account_pnl_index)
-                }
+            }
             )
 
-    def get_account_positions_archive_pnl_multiproduct(self, account_name = None, instrument = None, costs_per_option=3.0, costs_per_contract=3.0,
-                                                       num_days_back=20, fcm_office = None, fcm_acct = None, return_transactions=False):
+    def get_account_positions_archive_pnl_multiproduct(self, account_name=None, instrument=None, costs_per_option=3.0,
+                                                       costs_per_contract=3.0,
+                                                       num_days_back=20, fcm_office=None, fcm_acct=None,
+                                                       return_transactions=False):
 
         mongoClient = MongoClient(MONGO_CONNSTR)
         db = mongoClient[MONGO_EXO_DB]
@@ -190,8 +192,6 @@ class CampaignRealCompare:
 
         position_dict = OrderedDict()
 
-
-
         if account_name is None:
 
             account = db['accounts'].find_one({'FCM_OFFICE': fcm_office, 'FCM_ACCT': fcm_acct})
@@ -201,10 +201,9 @@ class CampaignRealCompare:
 
             account_name = account['name']
 
-
         reversedList = reversed(list(
-                db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(
-                        num_days_back)))
+            db['accounts_positions_archive'].find({'name': account_name}).sort([('date_now', -1)]).limit(
+                num_days_back)))
 
         instrument_id_set = set()
         instrument_info_dict = {}
@@ -259,7 +258,8 @@ class CampaignRealCompare:
                         pnl = float('nan')
                         warnings.warn("Error getting settlements: {0}".format(exc))
 
-                instr_values['exec_time_end'], instr_values['decision_time_end'] = AssetIndexMongo.get_exec_time(d, asset_info)
+                instr_values['exec_time_end'], instr_values['decision_time_end'] = AssetIndexMongo.get_exec_time(d,
+                                                                                                                 asset_info)
 
                 position = Position.from_dict(instr_values['p_dict'], datasource, instr_values['decision_time_end'])
 
@@ -360,8 +360,10 @@ class CampaignRealCompare:
             table_series_cost.append(table_series_cost_point)
 
         tail_table_cost_real = pd.DataFrame(table_series_cost)
-        tail_table_cost_real.index = tail_table_cost_real['date']
-        del tail_table_cost_real['date']
+
+        if not tail_table_cost_real.empty:
+            tail_table_cost_real.index = tail_table_cost_real['date']
+            del tail_table_cost_real['date']
 
         series = []
         table_series = []
@@ -391,21 +393,36 @@ class CampaignRealCompare:
             table_series.append(table_series_point)
 
         tail_plot_real = pd.DataFrame(series)
-        tail_plot_real.index = tail_plot_real['date']
-        del tail_plot_real['date']
-        tail_plot_real['Model_Equity'] = model_tail['Model_Equity'] + tail_plot_real['Real_Equity'][0]
+
+        if not tail_plot_real.empty:
+            tail_plot_real.index = tail_plot_real['date']
+            del tail_plot_real['date']
+            tail_plot_real['Model_Equity'] = model_tail['Model_Equity'] + tail_plot_real['Real_Equity'][0]
+        else:
+            tail_plot_real['Model_Equity'] = model_tail['Model_Equity']
 
         tail_table_real = pd.DataFrame(table_series)
-        tail_table_real.index = tail_table_real['date']
-        del tail_table_real['date']
+
+        if not tail_table_real.empty:
+            tail_table_real.index = tail_table_real['date']
+            del tail_table_real['date']
+
         tail_table_real['Model_Equity'] = model_tail['Model_Equity']
         tail_table_real['Model_Change'] = model_tail['SettleChange']
-        tail_table_real['Real_Buys'] = tail_table_cost_real['TradedQuantityBuy']
-        tail_table_real['Real_Sells'] = tail_table_cost_real['TradedQuantitySell']
-        tail_table_real['Real_Costs'] = tail_table_cost_real['Real_Costs']
+
+        if not tail_table_cost_real.empty:
+            tail_table_real['Real_Buys'] = tail_table_cost_real['TradedQuantityBuy']
+            tail_table_real['Real_Sells'] = tail_table_cost_real['TradedQuantitySell']
+            tail_table_real['Real_Costs'] = tail_table_cost_real['Real_Costs']
+        else:
+            tail_table_real['Real_Buys'] = 0
+            tail_table_real['Real_Sells'] = 0
+            tail_table_real['Real_Costs'] = 0
+
         tail_table_real['Model_Costs'] = model_tail['Model_Costs']
 
         sum_row = tail_table_real.sum(axis=0)
+        print(sum_row)
 
         # print( tail_table_real)
         # tail_table_real=tail_table_real.append(sum_row)
@@ -416,6 +433,7 @@ class CampaignRealCompare:
         print('Total_Model_Costs', sum_row['Model_Costs'])
 
         tail_plot_real.plot()  # ax=ax1,label='At expiration', lw=2, c='blue');
+        #         model_tail.plot()
         plt.show()
 
     def run_return_report(self, office, account, initial_acct_value=50000):
@@ -449,44 +467,47 @@ class CampaignRealCompare:
             table_series.append(table_series_point)
 
         tail_plot_real = pd.DataFrame(series)
-        tail_plot_real.index = tail_plot_real['date']
-        del tail_plot_real['date']
-        tail_plot_real.plot()  # ax=ax1,label='At expiration', lw=2, c='blue');
-        plt.show()
 
-        x = tail_plot_real['Real_Equity']
-        calc_daily_dollar_change = np.subtract(x[1:], x[0:-1])
-        tail_plot_real['Daily_Dollar_Change'] = calc_daily_dollar_change
-
-        sample = pd.DataFrame()
-        sample['Real_Equity'] = tail_plot_real.Real_Equity.resample('M').last() + initial_acct_value
-        sample['Dollar_Change'] = tail_plot_real.Daily_Dollar_Change.resample('M').sum()
-        sample['Real_Equity_Percent_Change'] = (sample['Real_Equity'].pct_change() * 100).apply('{:,.2f}%'.format)
-        print(sample)
-
-
-        minyear = min(sample.index.year)
-        maxyear = max(sample.index.year)
-
-        row_headers = list(range(minyear, maxyear + 1))
         returns = pd.DataFrame()
 
-        returns['year'] = row_headers
+        if not tail_plot_real.empty:
+            tail_plot_real.index = tail_plot_real['date']
+            del tail_plot_real['date']
 
-        for i in range(1, 13):
-            returns[calendar.month_name[i]] = ''
+            tail_plot_real.plot()  # ax=ax1,label='At expiration', lw=2, c='blue');
+            plt.show()
 
-        returns = returns.set_index('year')
+            x = tail_plot_real['Real_Equity']
+            calc_daily_dollar_change = np.subtract(x[1:], x[0:-1])
+            tail_plot_real['Daily_Dollar_Change'] = calc_daily_dollar_change
 
-        for years in row_headers:
-            for months in range(1, 13):
-                if len(sample['Real_Equity_Percent_Change'][
-                                   (sample.index.month == months) & (sample.index.year == years)].index) != 0:
-                    returns.ix[years][calendar.month_name[months]] = sample['Real_Equity_Percent_Change'][
-                        (sample.index.month == months) & (sample.index.year == years)].item()
+            sample = pd.DataFrame()
+            sample['Real_Equity'] = tail_plot_real.Real_Equity.resample('M').last() + initial_acct_value
+            sample['Dollar_Change'] = tail_plot_real.Daily_Dollar_Change.resample('M').sum()
+            sample['Real_Equity_Percent_Change'] = (sample['Real_Equity'].pct_change() * 100).apply('{:,.2f}%'.format)
+            print(sample)
+
+            minyear = min(sample.index.year)
+            maxyear = max(sample.index.year)
+
+            row_headers = list(range(minyear, maxyear + 1))
+            #             returns = pd.DataFrame()
+
+            returns['year'] = row_headers
+
+            for i in range(1, 13):
+                returns[calendar.month_name[i]] = ''
+
+            returns = returns.set_index('year')
+
+            for years in row_headers:
+                for months in range(1, 13):
+                    if len(sample['Real_Equity_Percent_Change'][
+                                       (sample.index.month == months) & (sample.index.year == years)].index) != 0:
+                        returns.ix[years][calendar.month_name[months]] = sample['Real_Equity_Percent_Change'][
+                            (sample.index.month == months) & (sample.index.year == years)].item()
 
         return returns
-
 
 if __name__ == '__main__':
     assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
