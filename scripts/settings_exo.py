@@ -23,7 +23,7 @@ from exobuilder.algorithms.SmartEXO_SWP_DeltaTargeting_1X1_Bi_2_3_2_2_neutralOnl
 # Instruments list
 #
 INSTRUMENTS_LIST = ['ES','CL','NG','ZN','ZS','ZW','ZC','6E','LBS','GC','CC','6J',
-                    'ZL','6B','LE','SB','6C','6A','RB','HO','XAF','DC','HE']
+                    'ZL','6B','LE','SB','6C','6A','RB','HO','XAF','DC','HE','SI']
                     #'XAY', 'XAP', 'XAE', 'XAF', 'XAV', 'XAI', 'XAB', 'XAK', 'XAU']
 
 # Alphas list (generic)
