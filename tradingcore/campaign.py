@@ -105,6 +105,10 @@ class Campaign:
             # If date is not defined return actual swarm exposures
             # Old behavior (for compatibility)
             for swarm_name, info_dict in swarm_positions.items():
+                # Skip new alphas
+                if swarm_name.startswith(ALPHA_NEW_PREFIX):
+                    continue
+                    
                 if self.alpha_is_active(swarm_name, datetime.now()):
                     alpha_exposure[swarm_name] = {
                         'exposure': info_dict['last_exposure'] * self.alphas[swarm_name]['qty'],
