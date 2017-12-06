@@ -2,7 +2,7 @@ import os
 import sys
 import warnings
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, date
 
 import pandas as pd
 
@@ -220,10 +220,12 @@ class CampaignReport:
             if not k.startswith(ALPHA_NEW_PREFIX):
                 continue
 
-            exposure_series = v['exposure']['exposure']
+            exposure_series = v['exposure']['exposure'].copy()
 
-            alphas[k] = {'LastDate': exposure_series.get(self.last_date, float('nan')),
-                         'PrevDate': exposure_series.get(self.prev_date, float('nan'))}
+            exposure_series.index = exposure_series.index.map(lambda d: date(d.year, d.month, d.day))
+
+            alphas[k] = {'LastDate': exposure_series.get(self.last_date.date(), float('nan')),
+                         'PrevDate': exposure_series.get(self.prev_date.date(), float('nan'))}
 
         print("\n\nAlphas Exposure report")
         with pd.option_context('display.max_rows', None):
