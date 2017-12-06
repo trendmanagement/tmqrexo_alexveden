@@ -192,7 +192,7 @@ class Campaign:
 
             for trans in exo_data['transactions']:
                 if trans['date'].date() <= pos_date.date():
-                    if trans['qty'] == 0:
+                    if round(trans['qty'] * 10000) == 0:
                         continue
                     trans['qty'] *= exp_dict['exposure']
                     trans['usdvalue'] *= exp_dict['exposure']
