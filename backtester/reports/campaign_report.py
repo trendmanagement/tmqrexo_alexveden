@@ -17,6 +17,7 @@ from tradingcore.campaign_bridge import ALPHA_NEW_PREFIX
 
 #import matplotlib.pyplot as plt
 
+
 #
 # Warnings messages formatting
 #
@@ -162,13 +163,15 @@ class CampaignReport:
 
         aligment_df = pd.concat(alphas_alignment, axis=1)
 
+        from IPython.display import display, HTML
+
         if aligment_df.tail(5).isnull().sum().sum() > 0:
             warnings.warn("Alphas of the campaign are not properly aligned, data holes or inconsistent index detected!")
             isok = False
             with pd.option_context('display.max_rows', None):
                 print('Exposure alignment (past 5 days):')
                 _alignment_df1 = aligment_df.tail(5).T.sort_index()
-                print(_alignment_df1)
+                display(_alignment_df1)
 
 
         if isok:
