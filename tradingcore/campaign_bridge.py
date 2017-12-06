@@ -9,7 +9,7 @@ import pandas as pd
 import pickle
 import lz4
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import warnings
 from exobuilder.contracts.futurecontract import FUT_HASH_ROOT
 from exobuilder.contracts.optioncontract import OPT_HASH_ROOT
@@ -309,8 +309,9 @@ class CampaignBridge:
                 # Skip old closed positions
                 if prev_values[iQTY] != 0:
                     try:
-                        warnings.warn("Can't get actual prices for position from positions data, using prev day price: "
-                                  "Asset: {0} Date: {1}".format(asset, date))
+                        if date > datetime.now() - timedelta(days=3):
+                            warnings.warn("Can't get actual prices for position from positions data, using prev day price: "
+                                      "Asset: {0} Date: {1}".format(asset, date))
                     except:
                         pass
 
