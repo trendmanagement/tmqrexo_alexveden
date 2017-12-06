@@ -2,7 +2,7 @@ import os
 import sys
 import warnings
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, date
 
 import pandas as pd
 
@@ -16,6 +16,7 @@ from tradingcore.campaign_bridge import ALPHA_NEW_PREFIX
 
 
 #import matplotlib.pyplot as plt
+
 
 #
 # Warnings messages formatting
@@ -119,7 +120,6 @@ class CampaignReport:
         last_date = datetime(1900, 1, 1)
         prev_date = datetime(1900, 1, 1)
         decision_time = datetime(1900, 1, 1, 0, 0, 0)
-        instrument_name = None
 
         for k, v in self.swarms_data.items():
             seriesdf = v['swarm_series']
@@ -149,13 +149,6 @@ class CampaignReport:
             asset_info = self.datasource.assetindex.get_instrument_info(instrument)
             exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), asset_info)
 
-
-            if instrument_name is None:
-                instrument_name = instrument
-            else:
-                if instrument_name != instrument:
-                    raise ValueError("The campaign has different products, only mono-product campaigns are supported")
-
             if (last_date - v['last_date']).days > 0:
                 warnings.warn('[DELAYED] {0}: {1}'.format(k, v['last_date']))
                 isok = False
@@ -170,13 +163,18 @@ class CampaignReport:
 
         aligment_df = pd.concat(alphas_alignment, axis=1)
 
+        from IPython.display import display, HTML
+
         if aligment_df.tail(5).isnull().sum().sum() > 0:
             warnings.warn("Alphas of the campaign are not properly aligned, data holes or inconsistent index detected!")
             isok = False
-            print('Alphas exposure series (past 5 days):')
-            for alpha_name in aligment_df:
-                print("\n" + alpha_name)
-                print(aligment_df[alpha_name].tail(5))
+            with pd.option_context('display.max_rows', None):
+                print('Exposure alignment (past 5 days):')
+                _alignment_df1 = aligment_df.tail(5)
+
+                not_aligned = _alignment_df1.isnull().any(axis=0)
+
+                display(_alignment_df1[not_aligned.index[not_aligned]].T.sort_index())
 
 
         if isok:
@@ -201,7 +199,8 @@ class CampaignReport:
             edic['PrevDate'] = exp_dict['exposure']
 
         print("\n\nEXO Exposure report")
-        print(pd.DataFrame(exos).T.sort_index())
+        with pd.option_context('display.max_rows', None):
+            print(pd.DataFrame(exos).T.sort_index())
 
     def report_alpha_exposure(self):
         pd.set_option('display.max_colwidth', 90)
@@ -227,13 +226,16 @@ class CampaignReport:
             if not k.startswith(ALPHA_NEW_PREFIX):
                 continue
 
-            exposure_series = v['exposure']['exposure']
+            exposure_series = v['exposure']['exposure'].copy()
 
-            alphas[k] = {'LastDate': exposure_series.get(self.last_date, float('nan')),
-                         'PrevDate': exposure_series.get(self.prev_date, float('nan'))}
+            exposure_series.index = exposure_series.index.map(lambda d: date(d.year, d.month, d.day))
+
+            alphas[k] = {'LastDate': exposure_series.get(self.last_date.date(), float('nan')),
+                         'PrevDate': exposure_series.get(self.prev_date.date(), float('nan'))}
 
         print("\n\nAlphas Exposure report")
-        print(pd.DataFrame(alphas).T.sort_index())
+        with pd.option_context('display.max_rows', None):
+            print(pd.DataFrame(alphas).T.sort_index())
 
     def report_positions(self):
         pos_last = self.cmp.positions_at_date(self.last_date)
@@ -254,24 +256,25 @@ class CampaignReport:
             except QuoteNotFoundException:
                 warnings.warn("QuoteNotFound for: {0}".format(contract.name))
 
-        print("\n\nPositions Exposure report")
-        df = pd.DataFrame(positions).T.sort_index()
-        if len(df) > 0:
-            print(df[['LastDate', 'PrevDate']])
-        else:
-            print('No positions opened')
+        with pd.option_context('display.max_rows', None):
+            print("\n\nPositions Exposure report")
+            df = pd.DataFrame(positions).T.sort_index()
+            if len(df) > 0:
+                print(df[['LastDate', 'PrevDate']])
+            else:
+                print('No positions opened')
 
-        print("\nTrades report")
-        if len(df) > 0:
-            df['Qty'] = df['LastDate'] - df['PrevDate']
-            df['Price'] = df['Contract'].apply(lambda x: x.price)
-            trades_df = df[df['Qty'] != 0]
-            if len(trades_df) > 0:
-                print(trades_df[['Qty', 'Price']])
+            print("\nTrades report")
+            if len(df) > 0:
+                df['Qty'] = df['LastDate'] - df['PrevDate']
+                df['Price'] = df['Contract'].apply(lambda x: x.price)
+                trades_df = df[df['Qty'] != 0]
+                if len(trades_df) > 0:
+                    print(trades_df[['Qty', 'Price']])
+                else:
+                    print("No trades occurred")
             else:
                 print("No trades occurred")
-        else:
-            print("No trades occurred")
 
     def report_pnl(self):
         print(self.campaign_stats.tail(self.pnl_settlement_ndays))

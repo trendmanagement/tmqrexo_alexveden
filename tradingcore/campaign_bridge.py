@@ -9,7 +9,7 @@ import pandas as pd
 import pickle
 import lz4
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import warnings
 from exobuilder.contracts.futurecontract import FUT_HASH_ROOT
 from exobuilder.contracts.optioncontract import OPT_HASH_ROOT
@@ -309,8 +309,9 @@ class CampaignBridge:
                 # Skip old closed positions
                 if prev_values[iQTY] != 0:
                     try:
-                        warnings.warn("Can't get actual prices for position from positions data, using prev day price: "
-                                  "Asset: {0} Date: {1}".format(asset, date))
+                        if date > datetime.now() - timedelta(days=3):
+                            warnings.warn("Can't get actual prices for position from positions data, using prev day price: "
+                                      "Asset: {0} Date: {1}".format(asset, date))
                     except:
                         pass
 
@@ -370,7 +371,9 @@ class CampaignBridge:
                         }
                     }
                     """
-                    if pos_rec[2] * alpha_params['qty'] == 0:
+
+                    # Rounding up to 5 decimal place to avoid positions like 0.02e-16
+                    if round(pos_rec[2] * alpha_params['qty'] * 10000) == 0:
                         continue
 
                     transactions_list.append({
