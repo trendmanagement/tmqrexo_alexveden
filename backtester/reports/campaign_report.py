@@ -193,7 +193,8 @@ class CampaignReport:
             edic['PrevDate'] = exp_dict['exposure']
 
         print("\n\nEXO Exposure report")
-        print(pd.DataFrame(exos).T.sort_index())
+        with pd.option_context('display.max_rows', None):
+            print(pd.DataFrame(exos).T.sort_index())
 
     def report_alpha_exposure(self):
         pd.set_option('display.max_colwidth', 90)
@@ -225,7 +226,8 @@ class CampaignReport:
                          'PrevDate': exposure_series.get(self.prev_date, float('nan'))}
 
         print("\n\nAlphas Exposure report")
-        print(pd.DataFrame(alphas).T.sort_index())
+        with pd.option_context('display.max_rows', None):
+            print(pd.DataFrame(alphas).T.sort_index())
 
     def report_positions(self):
         pos_last = self.cmp.positions_at_date(self.last_date)
