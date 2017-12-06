@@ -170,8 +170,11 @@ class CampaignReport:
             isok = False
             with pd.option_context('display.max_rows', None):
                 print('Exposure alignment (past 5 days):')
-                _alignment_df1 = aligment_df.tail(5).T.sort_index()
-                display(_alignment_df1)
+                _alignment_df1 = aligment_df.tail(5)
+
+                not_aligned = _alignment_df1.isnull().any(axis=0)
+
+                display(_alignment_df1[not_aligned.index[not_aligned]].T.sort_index())
 
 
         if isok:
