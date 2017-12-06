@@ -119,7 +119,6 @@ class CampaignReport:
         last_date = datetime(1900, 1, 1)
         prev_date = datetime(1900, 1, 1)
         decision_time = datetime(1900, 1, 1, 0, 0, 0)
-        instrument_name = None
 
         for k, v in self.swarms_data.items():
             seriesdf = v['swarm_series']
@@ -148,13 +147,6 @@ class CampaignReport:
             instrument = k.split('_')[0]
             asset_info = self.datasource.assetindex.get_instrument_info(instrument)
             exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), asset_info)
-
-
-            if instrument_name is None:
-                instrument_name = instrument
-            else:
-                if instrument_name != instrument:
-                    raise ValueError("The campaign has different products, only mono-product campaigns are supported")
 
             if (last_date - v['last_date']).days > 0:
                 warnings.warn('[DELAYED] {0}: {1}'.format(k, v['last_date']))
