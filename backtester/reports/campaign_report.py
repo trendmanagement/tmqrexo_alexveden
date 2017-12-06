@@ -246,24 +246,25 @@ class CampaignReport:
             except QuoteNotFoundException:
                 warnings.warn("QuoteNotFound for: {0}".format(contract.name))
 
-        print("\n\nPositions Exposure report")
-        df = pd.DataFrame(positions).T.sort_index()
-        if len(df) > 0:
-            print(df[['LastDate', 'PrevDate']])
-        else:
-            print('No positions opened')
+        with pd.option_context('display.max_rows', None):
+            print("\n\nPositions Exposure report")
+            df = pd.DataFrame(positions).T.sort_index()
+            if len(df) > 0:
+                print(df[['LastDate', 'PrevDate']])
+            else:
+                print('No positions opened')
 
-        print("\nTrades report")
-        if len(df) > 0:
-            df['Qty'] = df['LastDate'] - df['PrevDate']
-            df['Price'] = df['Contract'].apply(lambda x: x.price)
-            trades_df = df[df['Qty'] != 0]
-            if len(trades_df) > 0:
-                print(trades_df[['Qty', 'Price']])
+            print("\nTrades report")
+            if len(df) > 0:
+                df['Qty'] = df['LastDate'] - df['PrevDate']
+                df['Price'] = df['Contract'].apply(lambda x: x.price)
+                trades_df = df[df['Qty'] != 0]
+                if len(trades_df) > 0:
+                    print(trades_df[['Qty', 'Price']])
+                else:
+                    print("No trades occurred")
             else:
                 print("No trades occurred")
-        else:
-            print("No trades occurred")
 
     def report_pnl(self):
         print(self.campaign_stats.tail(self.pnl_settlement_ndays))
