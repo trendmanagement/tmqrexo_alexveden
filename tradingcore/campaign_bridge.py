@@ -371,7 +371,9 @@ class CampaignBridge:
                         }
                     }
                     """
-                    if pos_rec[2] * alpha_params['qty'] == 0:
+
+                    # Rounding up to 5 decimal place to avoid positions like 0.02e-16
+                    if round(pos_rec[2] * alpha_params['qty'] * 10000) == 0:
                         continue
 
                     transactions_list.append({
