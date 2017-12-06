@@ -152,6 +152,20 @@ class RolloverHelper:
             self.rollover_months = [2,4,6,8,10,12]
             self.days_before_expiration = 5
 
+        if self.instrument.name.upper() == "SI":
+            """
+            Silver
+            """
+            self.rollover_months = [1,3,5,7,9,12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "HG":
+            """
+            Copper
+            """
+            self.rollover_months = [3,5,7,9,12]
+            self.days_before_expiration = 5
+
         if self.instrument.name.upper() == "6E":
             """
             https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
