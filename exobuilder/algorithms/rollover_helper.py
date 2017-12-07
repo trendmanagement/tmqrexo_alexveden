@@ -112,7 +112,7 @@ class RolloverHelper:
             Sugar No. 11
             """
             self.rollover_months = [3, 5, 7, 10]
-            self.days_before_expiration = 5
+            self.days_before_expiration = 7
 
         if self.instrument.name.upper() == "LBS":
             """
