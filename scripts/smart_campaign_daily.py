@@ -14,8 +14,11 @@ from datetime import datetime, date, timedelta, time as dttime
 from tradingcore.messages import *
 from tradingcore.signalapp import SignalApp, APPCLASS_UTILS
 
-signalapp = SignalApp("SmartCampaignDaily", APPCLASS_UTILS, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
-signalapp.send(MsgStatus('INIT', 'Updating Smart Campaign Weights', notify=True))
+try:
+    signalapp = SignalApp("SmartCampaignDaily", APPCLASS_UTILS, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
+    signalapp.send(MsgStatus('INIT', 'Updating Smart Campaign Weights', notify=True))
+except Exception as exc:
+    print(exc)
 
 storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
@@ -29,8 +32,12 @@ accounts_collection = db['accounts']
 accounts_equity_collection = db['accounts_equity']
 
 # Update accounts linked with SmartCampaigns
-for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
-    signalapp.send(MsgStatus('RUN', 'Processing: {0}'.format(acct_dict), notify=False))
+for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}): #,'campaign_name':'ES_SmartCampaign_V5_RelStr_Concept'
+
+    try:
+        signalapp.send(MsgStatus('RUN', 'Processing: {0}'.format(acct_dict), notify=False))
+    except Exception as exc:
+        print(exc)
 
     # *******************************************************************
     '''
@@ -41,13 +48,14 @@ for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
         num_of_days_back_master = 1
 
         client = MongoClient(MONGO_CONNSTR)
-        db = client[MONGO_EXO_DB]
-        accounts_collection = db['accounts']
-        accounts_equity_collection = db['accounts_equity']
+        # db = client[MONGO_EXO_DB]
+        # accounts_collection = db['accounts']
+        # accounts_equity_collection = db['accounts_equity']
 
         crc = CampaignRealCompare()
 
-        for acct_dict in accounts_collection.find({'mmclass_name': 'smart', 'client_name': 'TEST'}):
+        # for acct_dict in accounts_collection.find({'mmclass_name': 'smart', 'client_name': 'TEST'}):
+        if acct_dict['client_name'] == 'TEST':
 
             archive_based_pnl_dict = crc.get_account_positions_archive_pnl_multiproduct(
                 # costs_per_contract=3.0 # Default
@@ -95,7 +103,10 @@ for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
                 #       .format(acct_dict['name'], dt, last_account_equity))
 
     except Exception as exc:
-        signalapp.send(MsgStatus('ERR', "Exception: \n\n" + traceback.format_exc(), notify=True))
+        try:
+            signalapp.send(MsgStatus('ERR', "Exception: \n\n" + traceback.format_exc(), notify=True))
+        except Exception as exc:
+            print(exc)
     # *******************************************************************
 
     account_equity_val = 100000
@@ -106,10 +117,16 @@ for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
         if account_equity:
             account_equity_val = account_equity[0]['equity_list'][0]['equity']
         else:
-            signalapp.send(MsgStatus('ERR', "There is not an equity entry for : \n\n" + acct_dict['name'], notify=True))
+            try:
+                signalapp.send(MsgStatus('ERR', "There is not an equity entry for : \n\n" + acct_dict['name'], notify=True))
+            except Exception as exc:
+                print(exc)
 
     except Exception as exc:
-        signalapp.send(MsgStatus('ERR', "Exception: \n\n" + traceback.format_exc(), notify=True))
+        try:
+            signalapp.send(MsgStatus('ERR', "Exception: \n\n" + traceback.format_exc(), notify=True))
+        except Exception as exc:
+            print(exc)
 
 
     try:
@@ -122,12 +139,17 @@ for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
                                    });
 
     except Exception as exc:
-        signalapp.send(MsgStatus('ERR', "Exception: \n\n" + traceback.format_exc(), notify=True))
+        try:
+            signalapp.send(MsgStatus('ERR', "Exception: \n\n" + traceback.format_exc(), notify=True))
+        except Exception as exc:
+            print(exc)
 
 
 
 
 
 
-
-signalapp.send(MsgStatus('RUN', 'Smart campaign updates finished', notify=True))
+try:
+    signalapp.send(MsgStatus('RUN', 'Smart campaign updates finished', notify=True))
+except Exception as exc:
+    print(exc)
