@@ -32,7 +32,7 @@ accounts_collection = db['accounts']
 accounts_equity_collection = db['accounts_equity']
 
 # Update accounts linked with SmartCampaigns
-for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}): #,'campaign_name':'ES_SmartCampaign_V5_RelStr_Concept'
+for acct_dict in accounts_collection.find({'mmclass_name': 'smart','campaign_name':'ES_SmartCampaign_V5_RelStr_Concept'}):
 
     try:
         signalapp.send(MsgStatus('RUN', 'Processing: {0}'.format(acct_dict), notify=False))
@@ -60,14 +60,18 @@ for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}): #,'campaig
             archive_based_pnl_dict = crc.get_account_positions_archive_pnl_multiproduct(
                 # costs_per_contract=3.0 # Default
                 # costs_per_option=3.0 # Default                                                          .
-                num_days_back=num_of_days_back_master,
+                num_days_back=1,
                 fcm_office=acct_dict['FCM_OFFICE'], fcm_acct=acct_dict['FCM_ACCT'],
                 return_transactions=True,
             )
 
-            total_pl_change = 0
-            for instrument, pnl_values in archive_based_pnl_dict.items():
-                total_pl_change += pnl_values['pnls']['SettleChange'][-1]
+            total_pl_change = 0.0
+            try:
+                for instrument, pnl_values in archive_based_pnl_dict.items():
+                    total_pl_change = pnl_values['pnls']['SettleChange'].iloc[-1]
+            except Exception as exc:
+                print(exc)
+
 
             account_equity = list(
                 accounts_equity_collection.find({'name': acct_dict['name']}, {'equity_list': {'$slice': -2}}))
