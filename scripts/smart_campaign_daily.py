@@ -32,7 +32,7 @@ accounts_collection = db['accounts']
 accounts_equity_collection = db['accounts_equity']
 
 # Update accounts linked with SmartCampaigns
-for acct_dict in accounts_collection.find({'mmclass_name': 'smart','campaign_name':'ES_SmartCampaign_V5_RelStr_Concept'}):
+for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
 
     try:
         signalapp.send(MsgStatus('RUN', 'Processing: {0}'.format(acct_dict), notify=False))
