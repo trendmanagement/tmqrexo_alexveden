@@ -254,7 +254,7 @@ class Campaign:
                     position['qty'] += pos_dict['qty'] * exo_exposure['exposure']
                     position['prev_qty'] += float('nan')
 
-                    if position['qty'] == 0:
+                    if position['qty'] == 0 or round(position['qty'] * 1000) == 0:
                         del net_positions[asset_name_safe]
             else:
                 warnings.warn("EXO data not found for " + exo_name)
@@ -283,7 +283,7 @@ class Campaign:
                 position['qty'] += pos_dict['qty']  # DO NOT USE exposure: cbr.get_net_position() already has it!  * exo_exposure['exposure']
                 position['prev_qty'] += float('nan')
 
-                if position['qty'] == 0:
+                if position['qty'] == 0 or round(position['qty'] * 1000) == 0:
                     del net_positions[asset_name_safe]
 
         return net_positions
