@@ -226,7 +226,7 @@ class CampaignReport:
             if not k.startswith(ALPHA_NEW_PREFIX):
                 continue
 
-            exposure_series = v['exposure']['exposure'].copy()
+            exposure_series = v['exposure'].sum(axis=1).copy()
 
             exposure_series.index = exposure_series.index.map(lambda d: date(d.year, d.month, d.day))
 
