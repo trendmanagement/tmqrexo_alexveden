@@ -230,8 +230,8 @@ class CampaignReport:
 
             exposure_series.index = exposure_series.index.map(lambda d: date(d.year, d.month, d.day))
 
-            alphas[k] = {'LastDate': exposure_series.get(self.last_date.date(), float('nan')),
-                         'PrevDate': exposure_series.get(self.prev_date.date(), float('nan'))}
+            alphas[k] = {'LastDate': exposure_series.get(self.last_date.date(), float('nan')) * self.cmp.alphas[k]['qty'],
+                         'PrevDate': exposure_series.get(self.prev_date.date(), float('nan')) * self.cmp.alphas[k]['qty']}
 
         print("\n\nAlphas Exposure report")
         with pd.option_context('display.max_rows', None):
@@ -244,15 +244,22 @@ class CampaignReport:
         positions = OrderedDict()
         for contract, exp_dict in pos_last.netpositions.items():
             try:
+                q = round(exp_dict['qty']*100)/100
+                if q == 0:
+                    continue
                 edic = positions.setdefault(contract.name, {'LastDate': 0.0, 'PrevDate': 0.0, 'Contract': contract})
-                edic['LastDate'] = exp_dict['qty']
+                edic['LastDate'] = q 
             except QuoteNotFoundException:
                 warnings.warn("QuoteNotFound for: {0}".format(contract.name))
 
         for contract, exp_dict in pos_prev.netpositions.items():
             try:
+                q = round(exp_dict['qty'] * 100) / 100
+                if q == 0:
+                    continue
+                    
                 edic = positions.setdefault(contract.name, {'LastDate': 0.0, 'PrevDate': 0.0, 'Contract': contract})
-                edic['PrevDate'] = exp_dict['qty']
+                edic['PrevDate'] = q
             except QuoteNotFoundException:
                 warnings.warn("QuoteNotFound for: {0}".format(contract.name))
 
