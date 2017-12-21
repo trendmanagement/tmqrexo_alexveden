@@ -131,7 +131,7 @@ class Position(object):
                 pdic['qty'] += transaction_qty
                 pdic['value'] += transation_usdvalue
 
-            if pdic['qty'] == 0:
+            if pdic['qty'] == 0 or round(pdic['qty'] * 1000) == 0:
                 # Delete closed positions
                 del self._positions[asset_hash]
 
@@ -181,7 +181,7 @@ class Position(object):
                 pdic['qty'] += transaction.qty
                 pdic['value'] += transaction.usdvalue
 
-            if pdic['qty'] == 0:
+            if pdic['qty'] == 0 or round(pdic['qty'] * 1000) == 0:
                 # Delete closed positions
                 del self._positions[transaction.asset]
                 if pdic['leg_name'] != '' and pdic['leg_name'] in self._legs:
