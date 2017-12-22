@@ -229,6 +229,23 @@ class Position(object):
 
         self._positions = new_positions
 
+    def adjust_and_round(self, coef):
+        new_positions = {}
+
+        for asset, pos_dict in self.netpositions.items():
+            #{'qty': transaction.qty, 'value': transaction.usdvalue, 'leg_name': transaction.leg_name}
+            new_qty = round(pos_dict['qty'] * coef)
+
+            if new_qty == 0:
+                continue
+
+            adj_coef = new_qty / pos_dict['qty']
+
+            new_positions[asset] = {'qty': new_qty, 'value': pos_dict['value'] * adj_coef, 'leg_name': pos_dict.get('leg_name', '')}
+
+        self._positions = new_positions
+        return self
+
 
     def as_dict(self):
         """
