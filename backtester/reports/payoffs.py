@@ -9,6 +9,8 @@ import pandas as pd
 import numpy as np
 from exobuilder.exo.exoenginebase import ExoEngineBase
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
+from tradingcore.execution_manager import ExecutionManager
+from scripts.settings import  *
 
 class PayoffAnalyzer:
     def __init__(self, datasource, **kwargs):
@@ -90,8 +92,7 @@ class PayoffAnalyzer:
         self.position_name = exo_name
         self.analysis_date = pos_date
 
-
-    def load_campaign(self, campaign_name, date=None, ticker=None):
+    def load_campaign(self, campaign_name, date=None, ticker=None, campaign_dict=None, account_name=None ):
         """
         Load campaign net positions for further analysis
         :param campaign_name:
@@ -99,24 +100,34 @@ class PayoffAnalyzer:
         :return:
         """
         # Load campaign positions
-        campaign_dict = self.datasource.exostorage.campaign_load(campaign_name)
         if campaign_dict is None:
-            if self.raise_exceptions:
-                raise Exception("Campaign not found: " + campaign_name)
-            else:
-                warnings.warn("Campaign not found: " + campaign_name)
-            return
+            campaign_dict = self.datasource.exostorage.campaign_load(campaign_name)
+            if campaign_dict is None:
+                if self.raise_exceptions:
+                    raise Exception("Campaign not found: " + campaign_name)
+                else:
+                    warnings.warn("Campaign not found: " + campaign_name)
+                return
 
         cmp = Campaign(campaign_dict, self.datasource)
         if ticker is None:
             ticker = campaign_name.split('_')[0]
+
         asset_info = self.datasource.assetindex.get_instrument_info(ticker)
         exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(datetime.now() if date is None else date,
                                                                          asset_info)
 
         # Calculate campaign's net exo position on particular date
         pos_date = decision_time_end
-        self.position = cmp.positions_at_date(pos_date)
+        if account_name is None:
+            self.position = cmp.positions_at_date(pos_date)
+        else:
+            #
+            # Load the account and compose position based on account MM scheme at specific date
+            #
+            exc_mgr = ExecutionManager(MONGO_CONNSTR, self.datasource, MONGO_EXO_DB)
+            acct = exc_mgr.account_load(account_name)
+            self.position = acct.positions_at_date(date)
 
         # Store positions values for analysis
         self.position_type = 'Campaign'

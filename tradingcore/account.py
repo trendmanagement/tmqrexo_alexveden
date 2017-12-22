@@ -20,6 +20,9 @@ class Account:
     def positions(self):
         return self.mmclass.get_positions(self.campaign)
 
+    def positions_at_date(self, date=None):
+        return self.mmclass.get_position_at_date(self.campaign, date)
+
     def as_dict(self):
         result = {}
         result['campaign_name'] = self.campaign.name
