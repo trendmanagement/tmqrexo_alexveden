@@ -8,7 +8,6 @@ import time
 from datetime import timedelta
 
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
-from exobuilder.data.datasource_hybrid import DataSourceHybrid
 from exobuilder.data.datasource_sql import DataSourceSQL
 from exobuilder.data.exostorage import EXOStorage
 from tradingcore.messages import *

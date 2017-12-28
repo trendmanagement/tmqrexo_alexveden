@@ -57,7 +57,6 @@ import time
 from datetime import timedelta
 
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
-from exobuilder.data.datasource_hybrid import DataSourceHybrid
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.exostorage import EXOStorage
 from tradingcore.messages import *
@@ -193,20 +192,11 @@ class EXOScript:
             assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
             exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
-
-
             futures_limit = 4
             options_limit = 20
 
-            #datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
-            #datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
-            #
-            # Test DB temporary credentials
-            #
-            tmp_mongo_connstr = 'mongodb://tml:tml@10.0.1.2/tmldb_test?authMechanism=SCRAM-SHA-1'
-            tmp_mongo_db = 'tmldb_test'
-            datasource = DataSourceHybrid(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, tmp_mongo_connstr, tmp_mongo_db,
-                                          futures_limit, options_limit, exostorage)
+            datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, exostorage)
+            
 
             # Run EXO calculation
             self.run_exo_calc(datasource, decision_time, symbol, backfill_dict=None)
