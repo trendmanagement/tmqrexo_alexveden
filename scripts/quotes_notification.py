@@ -76,7 +76,7 @@ class QuotesNotifyScript:
 
 
     def get_last_bar_time(self):
-        last_bar_time = self.db['futurebarcol'].find({'errorbar': False}).sort('bartime', pymongo.DESCENDING).limit(1).next()['bartime']
+        last_bar_time = self.db['contracts_bars'].find().sort('datetime', pymongo.DESCENDING).limit(1).next()['datetime']
         return last_bar_time
 
     def date_now(self):
@@ -93,13 +93,10 @@ class QuotesNotifyScript:
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         self.asset_info = assetindex.get_instrument_info(args.instrument)
 
-        # TODO: replace DB name after release
-        mongo_db_name = 'tmldb_test'
-        tmp_mongo_connstr = 'mongodb://tml:tml@10.0.1.2/tmldb_test?authMechanism=SCRAM-SHA-1'
-        client = MongoClient(tmp_mongo_connstr)
-        self.db = client[mongo_db_name]
+        client = MongoClient(MONGO_CONNSTR)
+        self.db = client[MONGO_EXO_DB]
         # Creating index for 'bartime'
-        self.db['futurebarcol'].create_index([('bartime', pymongo.DESCENDING)], background=True)
+        self.db['contracts_bars'].create_index([('datetime', pymongo.DESCENDING)], background=True)
 
         status_client = MongoClient(MONGO_CONNSTR)
         self.status_db = status_client[MONGO_EXO_DB]
