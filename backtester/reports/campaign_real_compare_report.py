@@ -15,6 +15,8 @@ from exobuilder.exo.transaction import Transaction
 from exobuilder.exo.position import Position
 from scripts.settings import *
 import warnings
+import pickle
+import lz4
 
 
 class CampaignRealCompare:
@@ -305,6 +307,197 @@ class CampaignRealCompare:
 
         return result
 
+    def get_account_positions_archive_pnl_multiproduct_no_trans(self, account_name=None, instrument=None, costs_per_option=3.0,
+                                                       costs_per_contract=3.0,
+                                                       num_days_back=2, fcm_office=None, fcm_acct=None,
+                                                       return_transactions=False):
+
+        mongoClient = MongoClient(MONGO_CONNSTR)
+        db = mongoClient[MONGO_EXO_DB]
+
+        storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+        datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, 4, 20, storage)
+
+        position_dict = OrderedDict()
+
+        if account_name is None:
+
+            account = db['accounts'].find_one({'FCM_OFFICE': fcm_office, 'FCM_ACCT': fcm_acct})
+
+            if account is None:
+                raise KeyError("Account is not found. FCM_OFFICE:{0} FCM_ACCT:{1}".format(fcm_office, fcm_acct))
+
+            account_name = account['name']
+
+        reversedList = reversed(list(
+            db['accounts_positions_archive_copy'].find({'name': account_name}).sort([('date_now', -1)]).limit(
+                num_days_back)))
+
+        instrument_id_set = set()
+        instrument_info_dict = {}
+        instrument_info_dict_current_day = {}
+
+        for pos in reversedList:
+            # print(pos)
+
+            dt = pos['date_now']
+            pos_rec = position_dict.setdefault(dt, {})
+
+            for p in pos['positions']:
+                if '_hash' not in p['asset']:
+                    break
+
+                instrument_id_set.add(p['asset']['idinstrument'])
+
+                pos_rec[p['asset']['_hash']] = {'qty': p['qty'], 'idinstrument': p['asset']['idinstrument']}
+
+        # Setting up instruments
+        for _ins_id in instrument_id_set:
+            instrument_info_dict[_ins_id] = {
+                'instrument_info': assetindex.get_instrument_info(idinstrument=_ins_id),
+                'prev_position': None,
+                'account_pnl': [],
+                'costs': [],
+                'account_pnl_index': [],
+                'p_dict': Position().as_dict(),
+                'decision_time_end': None,
+                'exec_time_end': None,
+                'transactions_dict': OrderedDict(),
+            }
+
+            instrument_info_dict_current_day[_ins_id] = {
+                'instrument_info': assetindex.get_instrument_info(idinstrument=_ins_id),
+                'prev_position': None,
+                'account_pnl': [],
+                'costs': [],
+                'account_pnl_index': [],
+                'p_dict': Position().as_dict(),
+                'decision_time_end': None,
+                'exec_time_end': None,
+                'transactions_dict': OrderedDict(),
+            }
+
+
+
+        for d, pos_rec in position_dict.items():
+
+            instrument_info = db['accounts_positions_archive_copy'].find_one({'name': account_name, 'date_now': d})
+
+            if 'position_by_instrument' in instrument_info:
+                mongo_unpickled_position = pickle.loads(lz4.block.decompress(instrument_info['position_by_instrument']))
+
+                for instr, instr_values in instrument_info_dict.items():
+                    # instrument_info_dict_current_day[instr]['prev_position'] = pos_rec
+                    # instrument_info_dict_current_day[instr]['p_dict'] = position.as_dict()
+                    # instrument_info_dict_current_day[instr]['account_pnl'] = pnl
+                    # instrument_info_dict_current_day[instr]['account_pnl_index'] = d
+                    # instrument_info_dict_current_day[instr]['costs'] = costs_sum
+                    # instrument_info_dict_current_day[instr]['transactions_dict'] = daily_transactions_list_dt.as_dict()
+                    # **********************
+
+                    instr_values['prev_position'] = mongo_unpickled_position[instr]['prev_position']
+                    instr_values['p_dict'] = mongo_unpickled_position[instr]['p_dict']
+                    instr_values['account_pnl'].append(mongo_unpickled_position[instr]['account_pnl'])
+                    instr_values['account_pnl_index'].append(mongo_unpickled_position[instr]['account_pnl_index'])
+                    instr_values['costs'].append(mongo_unpickled_position[instr]['costs'])
+
+            else:
+                for instr, instr_values in instrument_info_dict.items():
+                    costs_sum = 0.0
+                    pnl = 0.0
+
+                    asset_info = instr_values['instrument_info']
+
+                    daily_transactions_list = instr_values['transactions_dict'].setdefault(d, [])
+
+                    daily_transactions_list_dt = []
+
+                    if instr_values['prev_position'] is not None:
+                        position = Position.from_dict(instr_values['p_dict'], datasource, instr_values['decision_time_end'])
+
+                        new_exec_time_end, new_decision_time_end = AssetIndexMongo.get_exec_time(d, asset_info)
+
+                        try:
+                            tmp_prev_pnl = position.pnl_settlement
+                            position.set_date(datasource, new_decision_time_end)
+                            pnl = position.pnl_settlement - tmp_prev_pnl
+                        except Exception as exc:
+                            pnl = float('nan')
+                            warnings.warn("Error getting settlements: {0}".format(exc))
+
+                    instr_values['exec_time_end'], instr_values['decision_time_end'] = AssetIndexMongo.get_exec_time(d,
+                                                                                                                     asset_info)
+
+                    position = Position.from_dict(instr_values['p_dict'], datasource, instr_values['decision_time_end'])
+
+                    transactions = self._calc_transactions(d, pos_rec, instr_values['prev_position'], idinstrument=instr)
+
+                    for contract_hash, qty in transactions.items():
+                        if qty == 0:
+                            continue
+
+                        contract = datasource.get(contract_hash, instr_values['decision_time_end'])
+
+                        assert contract.instrument.dbid == instr
+
+                        trans_ = Transaction(contract, instr_values['decision_time_end'], qty)
+
+                        daily_transactions_list_dt.append(trans_)
+                        daily_transactions_list.append(trans_)
+                        position.add(trans_)
+
+                        if isinstance(contract, FutureContract):
+                            costs_sum += -abs(costs_per_contract) * abs(qty)
+                        else:
+                            costs_sum += -abs(costs_per_option) * abs(qty)
+
+                    pnl += costs_sum
+                    # print("Pnl: {0}".format(pnl))
+                    #**********************
+                    instrument_info_dict_current_day[instr]['prev_position'] = pos_rec
+                    instrument_info_dict_current_day[instr]['p_dict'] = position.as_dict()
+                    instrument_info_dict_current_day[instr]['account_pnl'] = pnl
+                    instrument_info_dict_current_day[instr]['account_pnl_index'] = d
+                    instrument_info_dict_current_day[instr]['costs'] = costs_sum
+                    # instrument_info_dict_current_day[instr]['transactions_dict'] = daily_transactions_list_dt.as_dict()
+                    #**********************
+
+                    instr_values['prev_position'] = pos_rec
+
+                    instr_values['p_dict'] = position.as_dict()
+                    instr_values['account_pnl'].append(pnl)
+                    instr_values['account_pnl_index'].append(d)
+                    instr_values['costs'].append(costs_sum)
+
+
+                mongo_input = lz4.block.compress(pickle.dumps(instrument_info_dict_current_day))
+                db['accounts_positions_archive_copy'].update_one({'name': account_name, 'date_now': d},
+                                                                 {'$set': {'position_by_instrument': mongo_input}})
+
+                # instrument_info = db['accounts_positions_archive_copy'].find_one({'name': account_name, 'date_now': d})
+                #
+                # mongo_input = pickle.loads(lz4.block.decompress(instrument_info['instrument_info']))
+
+        pass
+
+
+
+
+
+
+        result = {}
+        for instr, instr_values in instrument_info_dict.items():
+            result[instr_values['instrument_info']['exchangesymbol']] = {
+                'pnls': pd.DataFrame({
+                    'SettleChange': pd.Series(instr_values['account_pnl'], index=instr_values['account_pnl_index']),
+                    'Costs': pd.Series(instr_values['costs'], index=instr_values['account_pnl_index'])
+                })
+                #, 'transactions': instr_values['transactions_dict']
+            }
+
+        return result
+
     def run_compare_report(self, campaign_stats, num_days_back, office, account):
 
         model_tail = pd.DataFrame(campaign_stats['SettleChange'].tail(num_days_back))
@@ -516,7 +709,7 @@ if __name__ == '__main__':
     futures_limit = 3
     options_limit = 10
 
-    num_of_days_back_master = 10
+    num_of_days_back_master = 2
 
     # datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, storage)
     datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, storage)
@@ -524,12 +717,12 @@ if __name__ == '__main__':
     #rpt = CampaignReport('ES_Bidirectional V3', datasource, pnl_settlement_ndays=num_of_days_back_master + 1)
 
     crc = CampaignRealCompare()
-    archive_based_pnl = crc.get_account_positions_archive_pnl_multiproduct(#account_name="CLX60125",
+    archive_based_pnl = crc.get_account_positions_archive_pnl_multiproduct_no_trans(#account_name="CLX60125",
                                                                instrument="CL",
                                                               # costs_per_contract=3.0 # Default
                                                               # costs_per_option=3.0 # Default
                                                               num_days_back=num_of_days_back_master + 1,
-                                                              fcm_office="369", fcm_acct="10161"
+                                                              fcm_office="TEST", fcm_acct="SC_DIV_NO_GC_1"
                                                               )
 
     print(archive_based_pnl)
