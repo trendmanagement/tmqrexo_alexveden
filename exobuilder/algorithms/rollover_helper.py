@@ -18,6 +18,10 @@ class RolloverHelper:
         # Roll 2-days before expiration
         self.days_before_expiration = 2
 
+        if self.instrument.name.upper() == "N9L":
+            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            self.days_before_expiration = 7
+
         if self.instrument.name.upper() == "XAF":
             self.rollover_months = [3, 6, 9, 12]
             self.days_before_expiration = 5
