@@ -58,3 +58,9 @@ def blackscholes_greeks(callputflag, ulprice, strike, toexpiry, riskfreerate, iv
             return (put_delta, )
     except:
         return (0.0,)
+
+def blackscholes_gamma(callputflag, ulprice, strike, toexpiry, riskfreerate, iv):
+    d1 = (math.log(ulprice / strike) + (riskfreerate + iv * iv / 2) * toexpiry) / (iv * math.sqrt(toexpiry))
+    nd = math.exp(-d1 * d1 / 2) / 2.5066282746310002
+
+    return nd / (ulprice * iv * math.sqrt(toexpiry))
