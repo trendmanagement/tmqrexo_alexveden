@@ -18,6 +18,7 @@ class RolloverHelper:
         # Roll 2-days before expiration
         self.days_before_expiration = 2
 
+        #################################
         if self.instrument.name.upper() == "N9L":
             self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             self.days_before_expiration = 5
@@ -26,7 +27,6 @@ class RolloverHelper:
             self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             self.days_before_expiration = 5
 
-        #################################
         if self.instrument.name.upper() == "B6L":
             self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             self.days_before_expiration = 5
@@ -47,17 +47,17 @@ class RolloverHelper:
             self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             self.days_before_expiration = 5
 
-        if self.instrument.name.upper() == "WOL":
-            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-            self.days_before_expiration = 5
+        # if self.instrument.name.upper() == "WOL":
+        #     self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        #     self.days_before_expiration = 5
 
         if self.instrument.name.upper() == "AW6":
             self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             self.days_before_expiration = 5
 
-        if self.instrument.name.upper() == "POL":
-            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-            self.days_before_expiration = 5
+        # if self.instrument.name.upper() == "POL":
+        #     self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        #     self.days_before_expiration = 5
 
         #################################
 
