@@ -19,7 +19,8 @@ from exobuilder.algorithms.rollover_helper import RolloverHelper
 
 class EXOContinuousFut(ExoEngineBase):
     ASSET_LIST = ['ES','CL','NG','ZN','ZS','ZW','ZC','6E','LBS','GC','CC','6J',
-                  'ZL','6B','LE','SB','6C','6A','RB','HO','XAF','DC','HE','SI','HG','KC','N9L','E4L']
+                  'ZL','6B','LE','SB','6C','6A','RB','HO','XAF','DC','HE','SI','HG','KC',
+                  'N9L','E4L','B6L','L3L','V3L','AL1','R7L','WOL','AW6','POL']
                   #'XAY','XAP','XAE','XAF','XAV','XAI','XAB','XAK','XAU']
 
     def __init__(self, symbol, direction, date, datasource, log_file_path=''):
