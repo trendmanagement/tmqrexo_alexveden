@@ -59,8 +59,41 @@ def blackscholes_greeks(callputflag, ulprice, strike, toexpiry, riskfreerate, iv
     except:
         return (0.0,)
 
-def blackscholes_gamma(callputflag, ulprice, strike, toexpiry, riskfreerate, iv):
+def blackscholes_gamma(ulprice, strike, toexpiry, riskfreerate, iv):
     d1 = (math.log(ulprice / strike) + (riskfreerate + iv * iv / 2) * toexpiry) / (iv * math.sqrt(toexpiry))
     nd = math.exp(-d1 * d1 / 2) / 2.5066282746310002
 
     return nd / (ulprice * iv * math.sqrt(toexpiry))
+
+def blackscholes_theta(callputflag, ulprice, strike, toexpiry, riskfreerate, iv):
+    try:
+        if toexpiry <= 0:
+            # Calculate greeks at expiration
+            if callputflag == 'C' or callputflag == 'c':
+                delta = 1.0 if ulprice > strike else 0.0
+            else:
+                delta = -1.0 if ulprice < strike else 0.0
+            return (delta, )
+
+        d1 = (math.log(ulprice / strike) + (riskfreerate + iv * iv / 2) * toexpiry) / (iv * math.sqrt(toexpiry))
+        d2 = d1 - iv * math.sqrt(toexpiry)
+        nd = math.exp(-d1 * d1 / 2) / 2.5066282746310002
+        if callputflag == 'C' or callputflag == 'c':
+            # Call greeks
+            return -ulprice *nd * iv / (2 * math.sqrt(toexpiry)) \
+                   - toexpiry * strike * math.exp(-riskfreerate * toexpiry) * cnd(d2);
+        else:
+            # put greeks
+            return -ulprice * nd * iv / (2 * math.sqrt(toexpiry)) \
+                   + toexpiry * strike * math.exp(-riskfreerate * toexpiry) * cnd(d2);
+    except:
+        return 0.0
+
+def blackscholes_vega(ulprice, strike, toexpiry, riskfreerate, iv):
+    try:
+        d1 = (math.log(ulprice / strike) + (riskfreerate + iv * iv / 2) * toexpiry) / (iv * math.sqrt(toexpiry))
+        nd = math.exp(-d1 * d1 / 2) / 2.5066282746310002
+        return ulprice * nd * math.sqrt(toexpiry)
+
+    except:
+        return 0.0
