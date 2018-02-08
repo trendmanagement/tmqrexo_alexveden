@@ -11,8 +11,8 @@ class Strategy_MA_Plus_SD(StrategyBase):
         # Initialize parent class
         super().__init__(strategy_context)
 
-    def calc_entryexit_rules(self, fast_periods, slow_periods, sd_points):
-        long_or_short = -1
+    def calc_entryexit_rules(self, direction, fast_periods, slow_periods, sd_points):
+        long_or_short = direction
 
         px_ser = self.data.exo
         sd_points /= 10000
@@ -21,9 +21,6 @@ class Strategy_MA_Plus_SD(StrategyBase):
 
         slow = self.data.exo.rolling(center=False, window=slow_periods).mean()
 
-        # temp = pd.DataFrame()
-        # temp['px_ser'] = px_ser
-        # temp['fast'] = fast
         perc_diff = pd.DataFrame()
         perc_diff['slow'] = slow
 
@@ -54,10 +51,8 @@ class Strategy_MA_Plus_SD(StrategyBase):
             perc_diff['slow_shifted_entry_short'] = perc_diff['slow'].shift() * perc_diff['cond_entry_short']
             perc_diff['slow_shifted_exit_short'] = perc_diff['slow'].shift() * perc_diff['cond_exit_short']
 
-            entry_rule = fast.shift() > perc_diff['slow_shifted_entry_long'] and fast.shift() < perc_diff[
-                'slow_shifted_entry_short']
-            exit_rule = fast.shift() < perc_diff['slow_shifted_exit_long'] and fast.shift() > perc_diff[
-                'slow_shifted_exit_short']
+            entry_rule = fast.shift() > perc_diff['slow_shifted_entry_long'] and fast.shift() < perc_diff['slow_shifted_entry_short']
+            exit_rule = fast.shift() < perc_diff['slow_shifted_exit_long'] and fast.shift() > perc_diff['slow_shifted_exit_short']
             return entry_rule, exit_rule
 
     # def calc_entryexit_rules(self, window_period, n_lags, rules_index):
@@ -154,7 +149,7 @@ class Strategy_MA_Plus_SD(StrategyBase):
         px = self.data.exo
 
         # Enry/exit rules
-        entry_rule, exit_rule = self.calc_entryexit_rules(fast_periods, slow_periods, sd_points)
+        entry_rule, exit_rule = self.calc_entryexit_rules(direction, fast_periods, slow_periods, sd_points)
 
         # Swarm_member_name must be *unique* for every swarm member
         # We use params values for uniqueness
