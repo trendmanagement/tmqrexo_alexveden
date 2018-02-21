@@ -77,12 +77,12 @@ for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
                     total_pl_change += pnl_values['pnls']['SettleChange'].iloc[-1]
 
                     log.info(
-                        f"PNL {acct_dict['name']}: {instrument} : {pnl_values['pnls']['SettleChange'].iloc[-1]}")
+                        "PNL {}: {} : {}".format(acct_dict['name'],instrument,pnl_values['pnls']['SettleChange'].iloc[-1]))
                 log.info(
-                    f"Total PNL {acct_dict['name']}: {total_pl_change}")
+                    "Total PNL {}: {}".format(acct_dict['name'],total_pl_change))
             except Exception as exc:
                 log.warning(
-                    f"{exc}")
+                    "{}".format(exc))
                 print(exc)
 
 
