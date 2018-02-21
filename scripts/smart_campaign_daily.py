@@ -8,6 +8,8 @@ from scripts.settings import *
 from smartcampaign import SmartCampaignBase
 import traceback
 
+from tmqr.logs import log
+
 from backtester.reports.campaign_real_compare_report import CampaignRealCompare
 from datetime import datetime, date, timedelta, time as dttime
 
@@ -30,6 +32,9 @@ client = MongoClient(MONGO_CONNSTR)
 db = client[MONGO_EXO_DB]
 accounts_collection = db['accounts']
 accounts_equity_collection = db['accounts_equity']
+
+log.setup('scripts', 'Smart_Campaign_Equity_Alloc', to_file=True)
+log.info('Running Smart_Campaign_Equity_Alloc')
 
 # Update accounts linked with SmartCampaigns
 for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
@@ -61,15 +66,23 @@ for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
                 # costs_per_contract=3.0 # Default
                 # costs_per_option=3.0 # Default                                                          .
                 num_days_back=1,
-                fcm_office=acct_dict['FCM_OFFICE'], fcm_acct=acct_dict['FCM_ACCT'],
+                account_name=acct_dict['name'],
+                # fcm_office=acct_dict['FCM_OFFICE'], fcm_acct=acct_dict['FCM_ACCT'],
                 return_transactions=True,
             )
 
             total_pl_change = 0.0
             try:
                 for instrument, pnl_values in archive_based_pnl_dict.items():
-                    total_pl_change = pnl_values['pnls']['SettleChange'].iloc[-1]
+                    total_pl_change += pnl_values['pnls']['SettleChange'].iloc[-1]
+
+                    log.info(
+                        f"PNL {acct_dict['name']}: {instrument} : {pnl_values['pnls']['SettleChange'].iloc[-1]}")
+                log.info(
+                    f"Total PNL {acct_dict['name']}: {total_pl_change}")
             except Exception as exc:
+                log.warning(
+                    f"{exc}")
                 print(exc)
 
 
