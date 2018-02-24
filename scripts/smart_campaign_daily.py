@@ -65,7 +65,7 @@ for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
             archive_based_pnl_dict = crc.get_account_positions_archive_pnl_multiproduct(
                 # costs_per_contract=3.0 # Default
                 # costs_per_option=3.0 # Default                                                          .
-                num_days_back=1,
+                num_days_back=2,
                 account_name=acct_dict['name'],
                 # fcm_office=acct_dict['FCM_OFFICE'], fcm_acct=acct_dict['FCM_ACCT'],
                 return_transactions=True,
