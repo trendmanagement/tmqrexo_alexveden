@@ -72,9 +72,11 @@ for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
             )
 
             total_pl_change = 0.0
+            chg_date = datetime.now()
             try:
                 for instrument, pnl_values in archive_based_pnl_dict.items():
                     total_pl_change += pnl_values['pnls']['SettleChange'].iloc[-1]
+                    chg_date = pnl_values['pnls']['SettleChange'].index[-1]
 
                 #     log.info(
                 #         "PNL {}: {} : {}".format(acct_dict['name'],instrument,pnl_values['pnls']['SettleChange'].iloc[-1]))
@@ -95,9 +97,11 @@ for acct_dict in accounts_collection.find({'mmclass_name': 'smart'}):
                 last_account_equity = account_equity[0]['equity_list'][-1]['equity']
 
                 if account_equity[0]['equity_list'][-1]['date'].date() != datetime.now().date():
-                    last_account_equity += total_pl_change
+                    if account_equity[0]['equity_list'][-1]['date'].date() == chg_date.date():
+                        last_account_equity += total_pl_change
                 elif len(equity_list) > 1:
-                    last_account_equity = account_equity[0]['equity_list'][-2]['equity'] + total_pl_change
+                    if account_equity[0]['equity_list'][-2]['date'].date() == chg_date.date():
+                        last_account_equity = account_equity[0]['equity_list'][-2]['equity'] + total_pl_change
 
                 dt = datetime.combine(datetime.now().date(), dttime(0, 0, 0))
 
