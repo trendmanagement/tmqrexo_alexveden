@@ -18,6 +18,11 @@ from exobuilder.algorithms.rollover_helper import RolloverHelper
 
 
 class EXOContinuousFut(ExoEngineBase):
+    ASSET_LIST = ['ES','CL','NG','ZN','ZS','ZW','ZC','6E','LBS','GC','CC','6J',
+                  'ZL','6B','LE','SB','6C','6A','RB','HO','XAF','DC','HE','SI','HG','KC',
+                  'N9L','E4L','B6L','L3L','V3L','AL1','R7L','AW6','ZB']
+                  #'XAY','XAP','XAE','XAF','XAV','XAI','XAB','XAK','XAU']
+
     def __init__(self, symbol, direction, date, datasource, log_file_path=''):
         self._symbol = symbol
 
@@ -87,57 +92,3 @@ class EXOContinuousFut(ExoEngineBase):
 
 
 
-
-
-if __name__ == "__main__":
-    try:
-        from .settings import *
-    except SystemError:
-        from scripts.settings import *
-
-    try:
-        from .settings_local import *
-    except SystemError:
-        try:
-            from scripts.settings_local import *
-        except ImportError:
-            pass
-        pass
-
-
-    mongo_db_name = 'tmldb'
-    assetindex = AssetIndexMongo(MONGO_CONNSTR, mongo_db_name)
-    exostorage = EXOStorage(MONGO_CONNSTR, mongo_db_name)
-
-    base_date = datetime(2011, 3, 1, 10, 15, 0)
-
-    futures_limit = 3
-    options_limit = 10
-
-    DEBUG = '.'
-
-    datasource = DataSourceMongo(MONGO_CONNSTR, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
-
-    server = 'h9ggwlagd1.database.windows.net'
-    user = 'modelread'
-    password = '4fSHRXwd4u'
-    datasource = DataSourceSQL(server, user, password, assetindex, futures_limit, options_limit, exostorage)
-
-    enddate = datetime.combine( datetime.now().date(), dttime(10, 15, 0))
-    currdate = base_date
-
-    #for i in range(100):
-    while currdate <= enddate:
-        start_time = time.time()
-        #date = base_date + timedelta(days=i)
-        date = currdate
-
-        exo_engine = EXOContinuousFut('ES', 0, date, datasource, log_file_path=DEBUG)
-        # Load EXO information from mongo
-        exo_engine.load()
-        exo_engine.calculate()
-        end_time = time.time()
-        print("{0} Elasped: {1}".format(date, end_time-start_time))
-
-        currdate += timedelta(days=1)
-    print('Done')

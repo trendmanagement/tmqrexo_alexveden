@@ -1,6 +1,21 @@
 import unittest
 from exobuilder.algorithms.rollover_helper import RolloverHelper
 from datetime import datetime
+import argparse
+import logging
+import sys
+import time
+from datetime import timedelta
+
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
+from exobuilder.data.datasource_sql import DataSourceSQL
+from exobuilder.data.exostorage import EXOStorage
+from tradingcore.messages import *
+from tradingcore.signalapp import SignalApp, APPCLASS_DATA, APPCLASS_EXO
+import warnings
+from scripts.settings_exo import *
+
+from scripts.settings import *
 
 
 
@@ -480,9 +495,53 @@ class RolloverHelperTestCase(unittest.TestCase):
 
         self.assertEqual(rh.is_rollover(contr), True)
 
+    def test_es_weeklys_handling_real(self):
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+        exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+
+        futures_limit = 3
+        options_limit = 20
+        # datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
+        datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
+
+
+        dt = datetime(2016, 10, 10)
+
+        while dt < datetime(2016, 12, 30):
+            instr = datasource.get("ES", dt)
+            rh = RolloverHelper(instr)
+            fut, opt_chain = rh.get_active_chains()
+
+            self.assertTrue(opt_chain.option_code == '' or opt_chain.option_code == 'EW')
+            dt += timedelta(days=5)
+        pass
+
+    def test_6e_handling_real(self):
+        assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
+        exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
+
+        futures_limit = 4
+        options_limit = 20
+        # datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
+        datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
+
+
+        dt = datetime(2017, 3, 1)
+
+        while dt < datetime(2017, 3, 10):
+            instr = datasource.get("6E", dt)
+            rh = RolloverHelper(instr)
+            fut, opt_chain = rh.get_active_chains()
+
+            self.assertTrue(fut is not None)
+            self.assertTrue(opt_chain is not None)
+            dt += timedelta(days=5)
+        pass
+
 
 
 
 
 if __name__ == '__main__':
     unittest.main()
+

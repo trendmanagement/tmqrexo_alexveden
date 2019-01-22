@@ -40,6 +40,8 @@ jupyter_notebook                                                               R
 
         msg.status = 'RUN'
         self.assertEqual(True, wdb.check_antiflood('test', 'test', msg, datetime(2015, 1, 1, 13, 31)))
+        msg.message = "Another text should be passed by flood control"
+        self.assertEqual(True, wdb.check_antiflood('test', 'test', msg, datetime(2015, 1, 1, 13, 31)))
 
 if __name__ == '__main__':
     unittest.main()

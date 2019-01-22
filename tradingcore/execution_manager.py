@@ -3,7 +3,8 @@ from tradingcore.campaign import Campaign
 from tradingcore.account import Account
 from tradingcore.moneymanagement import MM_CLASSES
 from datetime import datetime
-
+from io import StringIO
+import warnings
 
 class ExecutionManager:
     def __init__(self, conn_str, datasource, dbname='tmldb'):
@@ -12,14 +13,50 @@ class ExecutionManager:
         self.datasource = datasource
         self._campaign_cache = {}
 
-    def campaign_save(self, campaign):
+    def campaign_save(self, campaign, force=False):
         """
         Saves campaign instance to MongoDB
         :param campaign: Campaign class instance
+        :param force: Skip sanity checks and force campaign write to DB
         :return: None
         """
         campaign_collection = self.db['campaigns']
-        campaign_collection.replace_one({'name': campaign.name}, campaign.as_dict(), upsert=True)
+
+        existing_campaign = campaign_collection.find_one({'name': campaign.name})
+
+        sanity_passed = True
+
+        if existing_campaign and not force:
+            # Do sanity checks
+            for exesting_alpha, existing_val in existing_campaign['alphas'].items():
+                if 'begin' in existing_val:
+                    if 'begin' not in campaign.alphas[exesting_alpha] or existing_val['begin'] != \
+                            campaign.alphas[exesting_alpha]['begin']:
+                        sanity_passed = False
+                        print(
+                            "WARNING: {0} have 'begin' setting in the DB, but it's not set in new records or not equal".format(
+                                exesting_alpha))
+
+                if 'end' in existing_val:
+                    if 'end' not in campaign.alphas[exesting_alpha] or existing_val['end'] != \
+                            campaign.alphas[exesting_alpha]['end']:
+                        print(
+                            "WARNING: {0} have 'end' setting in the DB, but it's not set in new records or not equal".format(
+                                exesting_alpha))
+                        sanity_passed = False
+
+            for alpha_name, alpha_dict in campaign.alphas.items():
+                if alpha_name not in existing_campaign['alphas']:
+                    if 'end' in alpha_dict:
+                        print("WARNING: {0} new alpha has 'end' parameter set, expected to be 'begin' ?".format(alpha_name))
+                        sanity_passed = False
+
+
+        if sanity_passed:
+            campaign_collection.replace_one({'name': campaign.name}, campaign.as_dict(), upsert=True)
+            print("Done")
+        else:
+            print("(!) Sanity checks are failed, check the campaign settings and run campaign_save() with force=True")
 
     def campaign_load(self, campaign_name):
         """
@@ -110,6 +147,8 @@ class ExecutionManager:
         """
         account_collection = self.db['accounts']
         acc_list = account_collection.find()
+        acc_exc_messages = StringIO()
+        has_exception = False
 
         # Populate campaign list cache
         self.campaign_load_all()
@@ -122,22 +161,33 @@ class ExecutionManager:
         account_positions = {}
 
         for acc_dict in acc_list:
-            # Create new account instance
-            acc = self.account_process(acc_dict)
-            if not acc.isactive:
-                continue
-            # Get account positions processed by MM algorithm
-            acc_pos = acc.positions
 
-            # Add position dict to MongoDB bulk write operation
-            result_dict = acc_dict
-            result_dict['positions'] = acc_pos
-            result_dict['date_now'] = datetime.now()
-            bulk.insert(result_dict)
-            account_positions[acc.name] = result_dict
+            try:
+                # Create new account instance
+                acc = self.account_process(acc_dict)
+                if not acc.isactive:
+                    continue
+
+                # Get account positions processed by MM algorithm
+                acc_pos = acc.positions
+
+                # Add position dict to MongoDB bulk write operation
+                result_dict = acc_dict
+                result_dict['positions'] = acc_pos
+                result_dict['date_now'] = datetime.now()
+                bulk.insert(result_dict)
+                account_positions[acc.name] = result_dict
+            except Exception as exc:
+                acc_exc_messages.write("Account {0} error: {1}\n".format(acc.name,
+                                                                       str(exc)))
+                has_exception = True
+
 
         if write_to_db:
             # Execute bulk insert into MongoDB
             bulk.execute()
-        return account_positions
 
+        if has_exception:
+            raise Exception(acc_exc_messages.getvalue())
+
+        return account_positions

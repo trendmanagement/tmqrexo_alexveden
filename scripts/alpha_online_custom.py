@@ -26,6 +26,7 @@ import importlib
 from tradingcore.swarmonlinemanager import SwarmOnlineManager
 from tradingcore.messages import *
 import pprint
+import time
 
 
 class AlphaOnlineScript:
@@ -76,6 +77,11 @@ class AlphaOnlineScript:
             module = msg.exo_name.lower()
             if module == self.args.exoname.lower():
                 self.log.debug('on_exo_quote_callback: {0}.{1} Data: {2}'.format(appname, appclass, msg))
+
+                alphas_processed = 0
+                alphas_failed = 0
+                time_begin = time.time()
+
                 if os.path.isdir(os.path.join('alphas', module)):
                     self.log.info('Processing EXO quote: {0} at {1}'.format(msg.exo_name, msg.exo_date))
                     for custom_file in os.listdir(os.path.join('alphas', module)):
@@ -94,16 +100,28 @@ class AlphaOnlineScript:
 
                                 swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, context)
                                 # Update and save swarm with new day data (and run callback)
-                                swmonline.process(exo_name, swm_callback=self.swarm_updated_callback)
-                                self.signal_app.send(MsgStatus("RUN", 'Processing custom alpha'))
-                            except:
+                                swmonline.process_custom(exo_name, swm_callback=self.swarm_updated_callback)
+                                self.signal_app.send_to("Custom_{0}".format(exo_name.split('_')[0]),
+                                                        APPCLASS_ALPHA,
+                                                        MsgStatus("RUN", 'Processing custom alpha', notify=True))
+                                alphas_processed += 1
+                            except Exception as exc:
                                 self.log.exception("Failed to process EXO quote: {0}".format(msg.exo_name))
                                 self.signal_app.send(MsgStatus("ERROR",
-                                                               "Error while processing EXO quote: {0} for alpha {1}".format(
-                                                                   msg.exo_name, module + '.' + custom_file),
+                                                               "Error: {0} for alpha {1} Reason: {2}".format(
+                                                                   msg.exo_name,
+                                                                   module + '.' + custom_file,
+                                                                   exc
+                                                               ),
                                                                notify=True,
                                                                )
                                                      )
+                                alphas_failed += 1
+                self.signal_app.send(MsgStatus("RUN",
+                                               "Status: Succeed {1} Failed {2} Calctime {3:0.2f}s".format(
+                                                   msg.exo_name, alphas_processed, alphas_failed, time.time() - time_begin),
+                                               notify=False,
+                                               ))
 
     def main(self):
         """

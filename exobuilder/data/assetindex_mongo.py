@@ -11,13 +11,17 @@ class AssetIndexMongo(AssetIndexBase):
         self.db.options.create_index([("idoption", pymongo.DESCENDING)])
         self.db.options.create_index([("idcontract", pymongo.DESCENDING)])
 
-    def get_instrument_info(self, symbol):
+    def get_instrument_info(self, symbol=None, idinstrument=None):
         """
         Returns underlying instrument information
         :param symbol: underlying ticker name
         :return: dict of underlying metadata
         """
-        return self.db.instruments.find({'exchangesymbol': symbol}).next()
+        if symbol is not None:
+            return self.db.instruments.find({'exchangesymbol': symbol}).next()
+        elif idinstrument is not None:
+            return self.db.instruments.find({'idinstrument': idinstrument}).next()
+
 
     def get_futures_list(self, date, instrument, limit):
         """
@@ -57,10 +61,17 @@ class AssetIndexMongo(AssetIndexBase):
         return self.db.instruments.find({'idinstrument': dbid}).next()
 
     def get_future_contract(self, dbid):
-        return self.db.contracts.find({'idcontract': dbid}).next()
+        contr_data = self.db.contracts.find_one({'idcontract': dbid})
+        if contr_data is None:
+            raise KeyError("Future contract ID: {0} is not found in the DB".format(dbid))
+        return contr_data
 
     def get_option_contract(self, dbid):
-        return self.db.options.find({'idoption': dbid}).next()
+        contr_data = self.db.options.find_one({'idoption': dbid})
+        if contr_data is None:
+            raise KeyError("Option contract ID: {0} is not found in the DB".format(dbid))
+
+        return contr_data
 
 
 

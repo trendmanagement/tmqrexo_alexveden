@@ -2,6 +2,7 @@ import os
 import requests
 import time
 from lxml import etree
+from remotemargincalls.margincalls.margin_settings import *
 from configparser import ConfigParser
 
 #this is the main function to call
@@ -17,13 +18,13 @@ def get_setup_config_variables():
 
     config_vars = {'baseurl': '', 'username': '', 'password':''}
 
-    config = ConfigParser()
-    dir_path = os.path.dirname(os.path.realpath(__file__))
+    #config = ConfigParser()
+    #dir_path = os.path.dirname(os.path.realpath(__file__))
     #print(dir_path)
-    config.read(dir_path + '\\app.ini')
-    config_vars['baseurl'] = config.get('CME_CORE_SETUP', 'baseurl')
-    config_vars['username'] = config.get('CME_CORE_SETUP', 'username')
-    config_vars['password'] = config.get('CME_CORE_SETUP', 'password')
+    #config.read(dir_path + '\\app.ini')
+    config_vars['baseurl'] = BASEURL #config.get('CME_CORE_SETUP', 'baseurl')
+    config_vars['username'] = MARGIN_USERNAME #config.get('CME_CORE_SETUP', 'username')
+    config_vars['password'] = MARGIN_PASSWORD #config.get('CME_CORE_SETUP', 'password')
 
     return config_vars
 

@@ -57,13 +57,15 @@ import time
 from datetime import timedelta
 
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
-from exobuilder.data.datasource_hybrid import DataSourceHybrid
-from exobuilder.data.datasource_sql import DataSourceSQL
+from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.exostorage import EXOStorage
 from tradingcore.messages import *
 from tradingcore.signalapp import SignalApp, APPCLASS_DATA, APPCLASS_EXO
 import warnings
 from scripts.settings_exo import *
+import bdateutil
+import holidays
+import os
 
 try:
     from .settings import *
@@ -78,6 +80,8 @@ except SystemError:
     except ImportError:
         pass
     pass
+from tradingcore.execution_manager import ExecutionManager
+from scripts.tmqrholidays import TMQRHolidays
 
 
 class EXOScript:
@@ -91,14 +95,22 @@ class EXOScript:
         self.logger = logging.getLogger('EXOBuilder')
         self.logger.setLevel(loglevel)
 
-        # create console handler with a higher log level
-        ch = logging.StreamHandler(sys.stdout)
-        ch.setLevel(loglevel)
-
         # create formatter and add it to the handlers
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        # create console handler with a higher log level
+        ch = logging.StreamHandler(sys.stdout)
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
+
+        if self.args.logfile != '':
+            if os.path.exists(os.path.dirname(self.args.logfile)):
+                fh = logging.FileHandler(self.args.logfile, mode='w')
+                fh.setFormatter(formatter)
+                self.logger.addHandler(fh)
+            else:
+                self.logger.error("Can't find logfile path in {0}".format(self.args.logfile))
+
 
     def check_quote_data(self, appname, appclass, data):
         if appclass != APPCLASS_DATA:
@@ -108,16 +120,13 @@ class EXOScript:
         if data is None:
             self.logger.error("Empty message")
             return False
-        else:
-            if 'date' not in data:
-                self.logger.error("Bad message format")
-                return False
-            if 'mtype' not in data:
-                self.logger.error("Bad message format, no 'mtype'")
-                return False
-            else:
-                if data['mtype'] != 'quote':
-                    return False
+        return True
+
+    def check_bday_or_holiday(self, date):
+        if date.weekday() >= 5 or not bdateutil.isbday(date, holidays=TMQRHolidays()):
+            # Skipping weekends and US holidays
+            # date.weekday() >= 5 - 5 is Saturday!
+            return False
 
         return True
 
@@ -148,15 +157,34 @@ class EXOScript:
 
         # Check data integrity
         if not self.check_quote_data(appname, appclass, data):
+            self.logger.warning("Quote signal message integrity checks failed")
+            self.logger.warning("AppName: {0} AppClass: {1} MsgData: {2}".format(appname, appclass, data))
+
+            self.signalapp.send(MsgStatus('ERROR',
+                                          'Quote signal message integrity checks failed. Check logs...',
+                                          notify=True
+                                          )
+                                )
             return
+
 
         exec_time, decision_time = AssetIndexMongo.get_exec_time(datetime.now(), self.asset_info)
         start_time = time.time()
 
-        quote_date = data['date']
+        if not self.check_bday_or_holiday(exec_time):
+            self.logger.warning("Skipping EXO quote calculation due to weekend or holiday")
+
+            self.signalapp.send(MsgStatus('SKIPPED',
+                                          'Skipping EXO quote calculation due to weekend or holiday',
+                                          notify=True
+                                          )
+                                )
+            return
+
+        quote_date = data.date
         symbol = appname
 
-        if quote_date > decision_time:
+        if quote_date >= decision_time:
             # TODO: Check to avoid dupe launch
             # Run first EXO calculation for this day
             self.logger.info("Run EXO calculation, at decision time: {0}".format(decision_time))
@@ -164,25 +192,20 @@ class EXOScript:
             assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
             exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
-            futures_limit = 3
-            options_limit = 10
+            futures_limit = 4
+            options_limit = 20
 
-            #datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
-            #datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
-            #
-            # Test DB temporary credentials
-            #
-            tmp_mongo_connstr = 'mongodb://tml:tml@10.0.1.2/tmldb_test?authMechanism=SCRAM-SHA-1'
-            tmp_mongo_db = 'tmldb_test'
-            datasource = DataSourceHybrid(SQL_HOST, SQL_USER, SQL_PASS, assetindex, tmp_mongo_connstr, tmp_mongo_db,
-                                          futures_limit, options_limit, exostorage)
+            datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, exostorage)
+            
 
             # Run EXO calculation
             self.run_exo_calc(datasource, decision_time, symbol, backfill_dict=None)
 
             end_time = time.time()
-            self.signalapp.send(MsgStatus('OK',
-                                          'EXO processed for {0} at {1}'.format(symbol, quote_date),
+            self.signalapp.send(MsgStatus('RUN',
+                                          'EXOs processed for {0} at {1} (CalcTime: {2:0.2f}s)'.format(symbol,
+                                                                                                       quote_date,
+                                                                                                       end_time-start_time),
                                           context={'instrument': symbol,
                                                    'date': quote_date,
                                                    'exec_time': end_time-start_time},
@@ -190,7 +213,27 @@ class EXOScript:
                                           )
                                 )
 
+            try:
+                # This code expected to execute only after all alphas have been processed
+                #       because self.run_exo_calc has blocking call of signalapp message sending
+                # And it will be executed only once for each product at decision time
+                # TODO: change this, self.run_exo_calc IS NOT blocking call!!!
+                time.sleep(60)
+                exmgr = ExecutionManager(MONGO_CONNSTR, datasource, MONGO_EXO_DB)
+                exmgr.account_positions_process(write_to_db=True)
+                self.signalapp.send(MsgStatus("RUN", "Processing positions.", notify=True))
+            except Exception as exc:
+                self.logger.exception("Failed processing account positions for {0}".format(symbol))
+                self.signalapp.send(MsgStatus("ERROR",
+                                              "Failed processing account positions for {0} Reason: {1}".format(symbol,
+                                                                                                               exc),
+                                              notify=True))
         else:
+            self.signalapp.send(MsgStatus('SKIPPED',
+                                          'EXO calculation skipped for {0} at {1}, quote date < decision_time'.format(symbol, quote_date),
+                                          notify=True
+                                          )
+                                )
             self.logger.debug("Waiting next decision time")
 
 
@@ -235,14 +278,28 @@ class EXOScript:
                             self.logger.debug("Running EXO instance: " + exo_engine.name)
                             # Load EXO information from mongo
                             exo_engine.load()
+                            if backfill_dict is None:
+                                #
+                                # Check quotes lengths in Online mode (prevent filling by recent quotes unbackfilled EXOs)
+                                #
+                                if len(exo_engine.series) < 200 or (datetime.now() - exo_engine.series.index[-1]).days > 7:
+                                    self.logger.exception("EXO backfill required: {0} on {1}".format(ExoClass, symbol))
+                                    self.signalapp.send(MsgStatus("ERROR",
+                                                                  "EXO backfill required: {0}".format(exo_engine.name),
+                                                                  notify=True)
+                                                        )
+                                    continue
+
                             exo_engine.calculate()
                             if backfill_dict is None:
                                 # Sending signal to alphas that EXO price is ready
                                 self.signalapp.send(MsgEXOQuote(exo_engine.exo_name, decision_time))
-                    except:
+                    except Exception as exc:
                         self.logger.exception("Failed processing EXO: {0} on {1}".format(ExoClass, symbol))
                         self.signalapp.send(MsgStatus("ERROR",
-                                                      "Failed processing EXO: {0} on {1}".format(ExoClass, symbol),
+                                                      "Failed processing EXO: {0} on {1} Reason: {2}".format(ExoClass,
+                                                                                                             symbol,
+                                                                                                             exc),
                                                       notify=True)
                                             )
 
@@ -255,10 +312,10 @@ class EXOScript:
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
-        futures_limit = 3
+        futures_limit = 4
         options_limit = 20
-        # datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
-        datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
+        datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit, options_limit, exostorage)
+        #datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, assetindex, futures_limit, options_limit, exostorage)
 
         exos = exostorage.exo_list(exo_filter=self.args.instrument+'_', return_names=True)
 
@@ -285,7 +342,8 @@ class EXOScript:
         while current_time <= decision_time_end:
             self.logger.info("Backfilling: {0}".format(current_time))
 
-            self.run_exo_calc(datasource, current_time, args.instrument, backfill_dict=exo_start_dates)
+            if self.check_bday_or_holiday(current_time):
+                self.run_exo_calc(datasource, current_time, args.instrument, backfill_dict=exo_start_dates)
 
             current_time += timedelta(days=1)
             exec_time += timedelta(days=1)
@@ -305,8 +363,12 @@ class EXOScript:
 
         if self.args.backfill is not None:
             # Backfill mode enabled
+            self.signalapp.send(MsgStatus("RUN",
+                                          "Starting EXO backfill.".format(self.args.instrument),
+                                          notify=True)
+                                )
             self.do_backfill()
-            self.signalapp.send(MsgStatus("OK",
+            self.signalapp.send(MsgStatus("RUN",
                                           "EXO backfill for {0} has been finished.".format(self.args.instrument),
                                           notify=True)
                                 )
@@ -349,6 +411,14 @@ if __name__ == '__main__':
         '-D',
         '--debug',
         help="Debug log files folder path if set",
+        action="store",
+        default=''
+    )
+
+    parser.add_argument(
+        '-L',
+        '--logfile',
+        help="Log file for EXO builder script output",
         action="store",
         default=''
     )

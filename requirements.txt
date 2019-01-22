@@ -2,3 +2,7 @@ pymongo
 pika
 slackclient
 tqdm
+numpy
+quandl
+pandas
+lz4

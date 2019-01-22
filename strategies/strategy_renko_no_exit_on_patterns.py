@@ -1,7 +1,9 @@
 from backtester.analysis import *
-from backtester.strategy import StrategyBase
+from backtester.strategy import StrategyBase, OptParam
+
 import pandas as pd
 import numpy as np
+import scipy
 
 
 class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
@@ -10,7 +12,6 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
     def __init__(self, strategy_context):
         # Initialize parent class
         super().__init__(strategy_context)
-
 
     def calc_entry_rules(self, box_size, move_count, rules_index):
 
@@ -124,6 +125,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
             signals_df = self.data.join(df)
 
             if rules_index == 0:
+                signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
                 return signals_df.peak == True
 
         if (rules_index == 1) or (rules_index == 14) or (rules_index == 15) or (rules_index == 16):  # !!!!!!!!!! OR
@@ -134,8 +136,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
             renko_df['fall'] = renko_fall
 
             renko_df['renko_fall_price'] = renko_df.close[renko_df.fall.shift(-2) == True]
-            renko_df.renko_fall_price = renko_df.renko_fall_price.shift(
-                2)  # This needed for avoiding future reference problem
+            renko_df.renko_fall_price = renko_df.renko_fall_price.shift(2)  # This needed for avoiding future reference problem
             renko_df.renko_fall_price = renko_df.renko_fall_price.fillna(method='ffill')
 
             df = df.join(renko_df.set_index('date')[['fall']])
@@ -144,6 +145,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
             signals_df = self.data.join(df)
 
             if rules_index == 1:
+                signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
                 return signals_df.fall == True
 
         ## Flat and trend patterns
@@ -160,6 +162,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
             df = df.fillna(False)
 
             signals_df = self.data.join(df)
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.flat == True
 
@@ -172,6 +175,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
             df = df.fillna(False)
 
             signals_df = self.data.join(df)
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.trend_up == True
 
@@ -185,6 +189,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
             df = df.fillna(False)
 
             signals_df = self.data.join(df)
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.trend_down == True
 
@@ -199,6 +204,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
             df = df.fillna(False)
 
             signals_df = self.data.join(df)
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.small_double_top == True
 
@@ -214,6 +220,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
             df = df.fillna(False)
 
             signals_df = self.data.join(df)
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.small_double_bottom == True
 
@@ -228,6 +235,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
             df = df.fillna(False)
 
             signals_df = self.data.join(df)
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.up_trend_correction == True
 
@@ -242,6 +250,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
             df = df.fillna(False)
 
             signals_df = self.data.join(df)
+            signals_df = signals_df.fillna(False).groupby(signals_df.index).any()
 
             return signals_df.down_trend_correction == True
 
@@ -295,6 +304,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
             df = df.fillna(False)
 
             signals_df = self.data.join(df)
+            signals_df = signals_df.ffill().groupby(signals_df.index).last()
 
             if rules_index == 9:
                 return signals_df.up_count == move_count
@@ -323,9 +333,8 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
                         renko_peak_price_move[i] = 'same'
 
             renko_df = renko_df.join(
-                pd.Series(renko_peak_price_move, index=renko_peak_df.index, name='renko_peak_price_move').replace(
-                    [None],
-                    np.NaN))
+                pd.Series(renko_peak_price_move, index=renko_peak_df.index,
+                          name='renko_peak_price_move').replace([None], np.NaN))
 
             del renko_peak_df
 
@@ -415,6 +424,7 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
                                                      'renko_peak_price_same_move_count']])
 
             signals_df = self.data.join(df)
+            signals_df = signals_df.ffill().groupby(signals_df.index).last()
 
             if rules_index == 11:
                 return signals_df.renko_peak_price_up_move_count == move_count
@@ -527,11 +537,11 @@ class StrategyRenkoPatterns_no_exit_on_patterns(StrategyBase):
                                                                      index=renko_fall_price_move_ser.index,
                                                                      name='renko_fall_price_same_move_count')
 
-            df = df.join(
-                renko_df.set_index('date')[['renko_fall_price_up_move_count', 'renko_fall_price_down_move_count',
+            df = df.join(renko_df.set_index('date')[['renko_fall_price_up_move_count', 'renko_fall_price_down_move_count',
                                             'renko_fall_price_same_move_count']])
 
             signals_df = self.data.join(df)
+            signals_df = signals_df.ffill().groupby(signals_df.index).last()
 
             if rules_index == 14:
                 return signals_df.renko_fall_price_up_move_count == move_count

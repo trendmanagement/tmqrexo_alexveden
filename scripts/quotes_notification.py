@@ -35,6 +35,7 @@ except SystemError:
         pass
     pass
 
+from scripts.tmqrholidays import TMQRHolidays
 
 NULL_DATE = datetime(1900, 1, 1, 0, 0, 0)
 
@@ -55,8 +56,8 @@ class QuotesNotifyScript:
 
     def get_last_quote_date(self):
         document = self.status_db[STATUS_QUOTES_COLLECTION].find_one({'instrument': self.args.instrument})
-        if document is not None and 'last_bar_time' in document:
-            return document['last_bar_time']
+        if document is not None and 'last_run_date' in document:
+            return document['last_run_date']
         else:
             return NULL_DATE
 
@@ -75,7 +76,7 @@ class QuotesNotifyScript:
 
 
     def get_last_bar_time(self):
-        last_bar_time = self.db['futurebarcol'].find({'errorbar': False}).sort('bartime', pymongo.DESCENDING).limit(1).next()['bartime']
+        last_bar_time = self.db['contracts_bars'].find().sort('datetime', pymongo.DESCENDING).limit(1).next()['datetime']
         return last_bar_time
 
     def date_now(self):
@@ -92,13 +93,10 @@ class QuotesNotifyScript:
         assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         self.asset_info = assetindex.get_instrument_info(args.instrument)
 
-        # TODO: replace DB name after release
-        mongo_db_name = 'tmldb_test'
-        tmp_mongo_connstr = 'mongodb://tml:tml@10.0.1.2/tmldb_test?authMechanism=SCRAM-SHA-1'
-        client = MongoClient(tmp_mongo_connstr)
-        self.db = client[mongo_db_name]
+        client = MongoClient(MONGO_CONNSTR)
+        self.db = client[MONGO_EXO_DB]
         # Creating index for 'bartime'
-        self.db['futurebarcol'].create_index([('bartime', pymongo.DESCENDING)], background=True)
+        self.db['contracts_bars'].create_index([('datetime', pymongo.DESCENDING)], background=True)
 
         status_client = MongoClient(MONGO_CONNSTR)
         self.status_db = status_client[MONGO_EXO_DB]
@@ -113,7 +111,7 @@ class QuotesNotifyScript:
 
     def is_quote_delayed(self, last_bar_time):
         dtnow = self.date_now()
-        if bdateutil.isbday(dtnow, holidays=holidays.US()) and dtnow.hour > 8 and dtnow.hour < 13:
+        if bdateutil.isbday(dtnow, holidays=TMQRHolidays()) and dtnow.hour > 8 and dtnow.hour < 13:
             if int(abs((dtnow-last_bar_time).total_seconds() / 60.0)) > self.args.delay:
                 return True
 
@@ -137,11 +135,9 @@ class QuotesNotifyScript:
                                                                           dtnow))
 
                 self.signalapp.send(MsgStatus('DELAY',
-                                              'Quote delayed more than {0} minutes '
-                                              'for {1} LastBarTimeDB: {2} Now: {3}'.format(self.args.delay,
-                                                                                           self.args.instrument,
-                                                                                           last_bar_time,
-                                                                                           dtnow), notify=True))
+                                              'Quote delayed more than {0} minutes for {1}'.format(self.args.delay,
+                                                                                                   self.args.instrument),
+                                              notify=True))
                 quote_status = 'DELAY'
 
         # Fire new quote notification if last_bar_time > decision_time
@@ -149,11 +145,11 @@ class QuotesNotifyScript:
             if quote_status != 'DELAY':
                 quote_status = 'RUN'
             # Reporting current status
-            self.signalapp.send(MsgStatus('RUN', 'Processing new bar {0}'.format(last_bar_time)))
+            self.signalapp.send(MsgStatus('RUN', 'New bar {0}'.format(last_bar_time), notify=True))
             logging.info('Running new bar. Bar time: {0}'.format(last_bar_time))
             self.last_quote_date = last_bar_time
             context = {
-                'last_bar_time': last_bar_time,
+                'last_bar_time': self.last_quote_date,
                 'now': dtnow,
                 'last_run_date': self.last_quote_date,
                 'decision_time': decision_time,
@@ -212,7 +208,7 @@ if __name__ == '__main__':
         "--delay",
         help="Delay warning interval in minutes default: %(default)s minutes",
         action="store",
-        default=3)
+        default=18)
 
 
     parser.add_argument('instrument', type=str,

@@ -16,7 +16,10 @@ class SmartEXOBase(ExoEngineBase):
 
     @staticmethod
     def direction_type():
-        return 0
+        # Fixed at 2017-03-14 (return value was 0)
+        # SmartEXOs has unified direction, direction = 0 lead to double SmartEXO calculation in smart exo script
+        # Returning 1 we are sure that SmartEXO calculates only once
+        return 1
 
     @classmethod
     def names_list(cls, symbol):
@@ -100,8 +103,7 @@ class SmartEXOBase(ExoEngineBase):
         return []
 
 
-    @staticmethod
-    def manage_opened_position(date, fut, opt_chain, regime, opened_position):
+    def manage_opened_position(self, date, fut, opt_chain, regime, opened_position):
         """
         Return transactions list to manage opened positions, it could be used for delta rebalancing or dynamic delta hedging
 
@@ -128,12 +130,22 @@ class SmartEXOBase(ExoEngineBase):
 
         trans_list = []
 
+        #
+        # Writing custom values to store inside DB
+        #
+        self.custom_values = {
+            'regime': regime if regime is not None else float('nan')
+        }
+
         if regime is None and len(self.position) > 0:
             return self.position.close_all_translist()
 
         instr = self.datasource.get(self._symbol, self.date)
         rh = RolloverHelper(instr)
         fut, opt_chain = rh.get_active_chains()
+
+        if fut is None or opt_chain is None:
+            raise ValueError("Active option chain is not found for {0}".format(self._symbol))
 
         if regime == 1 and 'bullish' not in self.position.legs:
             # Close all
@@ -168,12 +180,7 @@ class SmartEXOBase(ExoEngineBase):
             self._log_transactions(trans_list)
             return trans_list
 
-        #
-        # Writing custom values to store inside DB
-        #
-        self.custom_values = {
-            'regime': regime if regime is not None else float('nan')
-        }
+
 
         #
         # Manage opened position

@@ -1,5 +1,6 @@
 from exobuilder.exo.transaction import Transaction
 import copy
+import warnings
 
 class Position(object):
     def __init__(self):
@@ -8,6 +9,11 @@ class Position(object):
         self._legs = {}
 
         self.transaction_mode = None
+        self._last_trans_date = None
+
+    @property
+    def last_trans_date(self):
+        return self._last_trans_date
 
     @property
     def netpositions(self):
@@ -43,11 +49,25 @@ class Position(object):
 
     @property
     def pnl(self):
-        """PnL of position"""
+        """
+        PnL of position at the decision time
+        """
         pnl = 0.0
         for asset, netposition in self.netpositions.items():
             # calculate unrealized profit based on current price
             pnl += asset.pointvalue * asset.price * netposition['qty'] - netposition['value']
+        return pnl + self._realized_pnl
+
+    @property
+    def pnl_settlement(self):
+        """
+        PnL of position at the settlement time
+        :return:
+        """
+        pnl = 0.0
+        for asset, netposition in self.netpositions.items():
+            # calculate unrealized profit based on current price
+            pnl += asset.pointvalue * asset.price_settlement * netposition['qty'] - netposition['value']
         return pnl + self._realized_pnl
 
     def close_all_translist(self):
@@ -57,7 +77,8 @@ class Position(object):
         """
         transactions = []
         for asset, netposition in self.netpositions.items():
-            transactions.append(Transaction(asset, asset.date, -netposition['qty'], asset.price, leg_name=netposition['leg_name']))
+            if netposition['qty'] != 0:
+                transactions.append(Transaction(asset, asset.date, -netposition['qty'], asset.price, leg_name=netposition['leg_name']))
 
         return transactions
 
@@ -84,6 +105,11 @@ class Position(object):
         transaction_qty = trans_dict['qty']
         transation_usdvalue = trans_dict['usdvalue']
 
+        if transaction_qty == 0:
+            raise ValueError("Transaction Qty must be non-zero")
+
+        self._last_trans_date = trans_dict['date']
+
         if asset_hash not in self._positions:
             self._positions[asset_hash] = {'qty': transaction_qty, 'value': transation_usdvalue}
         else:
@@ -105,7 +131,7 @@ class Position(object):
                 pdic['qty'] += transaction_qty
                 pdic['value'] += transation_usdvalue
 
-            if pdic['qty'] == 0:
+            if pdic['qty'] == 0 or round(pdic['qty'] * 1000) == 0:
                 # Delete closed positions
                 del self._positions[asset_hash]
 
@@ -122,6 +148,11 @@ class Position(object):
         else:
             # Set Position instance to Transaction mode (works with Transaction class instances)
             self.transaction_mode = "T"
+
+        if transaction.qty == 0:
+            raise ValueError("Transaction Qty must be non-zero")
+
+        self._last_trans_date = transaction.date
 
         if transaction.asset not in self._positions:
             self._positions[transaction.asset] = {'qty': transaction.qty, 'value': transaction.usdvalue, 'leg_name': transaction.leg_name}
@@ -150,7 +181,7 @@ class Position(object):
                 pdic['qty'] += transaction.qty
                 pdic['value'] += transaction.usdvalue
 
-            if pdic['qty'] == 0:
+            if pdic['qty'] == 0 or round(pdic['qty'] * 1000) == 0:
                 # Delete closed positions
                 del self._positions[transaction.asset]
                 if pdic['leg_name'] != '' and pdic['leg_name'] in self._legs:
@@ -179,6 +210,42 @@ class Position(object):
         # this will deny to call add_transaction_dict(), and allow us to use position pricing and add()
         self.transaction_mode = 'T'
 
+    def set_date(self, datasource, date):
+        """
+        Set position date for PnL calculations
+        :param date:
+        :return:
+        """
+        if len(self.netpositions) > 0 and self.transaction_mode != 'T':
+            raise Exception(
+                "Conversion is not allowed, current position instance must be initiated using add_transaction_dict()"
+            )
+
+        new_positions = {}
+        for asset, pos_dict in self.netpositions.items():
+            asset_hash = asset.__hash__()
+            asset_instance = datasource.get(int(asset_hash), date)
+            new_positions[asset_instance] = pos_dict
+
+        self._positions = new_positions
+
+    def adjust_and_round(self, coef):
+        new_positions = {}
+
+        for asset, pos_dict in self.netpositions.items():
+            #{'qty': transaction.qty, 'value': transaction.usdvalue, 'leg_name': transaction.leg_name}
+            new_qty = round(pos_dict['qty'] * coef)
+
+            if new_qty == 0:
+                continue
+
+            adj_coef = new_qty / pos_dict['qty']
+
+            new_positions[asset] = {'qty': new_qty, 'value': pos_dict['value'] * adj_coef, 'leg_name': pos_dict.get('leg_name', '')}
+
+        self._positions = new_positions
+        return self
+
 
     def as_dict(self):
         """
@@ -192,7 +259,8 @@ class Position(object):
 
         return {
             'positions': positions,
-            '_realized_pnl': self._realized_pnl
+            '_realized_pnl': self._realized_pnl,
+            '_last_trans_date': self.last_trans_date,
             }
 
     @staticmethod
@@ -226,6 +294,10 @@ class Position(object):
         for asset, posdic in positions.items():
             if 'leg_name' in posdic and posdic['leg_name'] != '':
                 p._legs[posdic['leg_name']] = asset
+
+        if '_last_trans_date' in position_dict:
+            p._last_trans_date = position_dict['_last_trans_date']
+
         return p
 
     @staticmethod
@@ -381,8 +453,8 @@ class Position(object):
                                       asset.name,
                                       pdic['qty'],
                                       round(asset.pointvalue * asset.price * pdic['qty'] - pdic['value'], 2),
-                                      round(pdic['value'] / asset.pointvalue / pdic['qty'], 2),
-                                      round(asset.price, 2),
+                                      round(pdic['value'] / asset.pointvalue / pdic['qty'], 3),
+                                      round(asset.price, 3),
                                       round(asset.delta * pdic['qty'], 2))
 
         return result

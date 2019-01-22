@@ -30,6 +30,7 @@ from tradingcore.messages import *
 import pprint
 import datetime
 import holidays
+from scripts.tmqrholidays import TMQRHolidays
 import bdateutil
 
 class TradingPositionsArchiveScript:
@@ -73,8 +74,13 @@ class TradingPositionsArchiveScript:
         Application main()
         :return:
         """
-        if not bdateutil.isbday(datetime.datetime.now(), holidays=holidays.US()):
+        if not bdateutil.isbday(datetime.datetime.now(), holidays=TMQRHolidays()):
             self.log.info("Run is skipped due to non business day")
+            self.signal_app.send(MsgStatus("SKIPPED",
+                                           "Run is skipped due to non business day",
+                                           notify=False,
+                                           )
+                                 )
             return
 
         # Populating account positions
@@ -102,7 +108,7 @@ class TradingPositionsArchiveScript:
             bulk_result = self.mongo_db['accounts_positions_archive'].bulk_write(operations, ordered=False)
             self.log.info("Bulk write result succeed: \n{0}".format(pp.pformat(bulk_result.bulk_api_result)))
 
-            self.signal_app.send(MsgStatus("OK",
+            self.signal_app.send(MsgStatus("RUN",
                                            "Positions archive created",
                                            notify=True,
                                            )

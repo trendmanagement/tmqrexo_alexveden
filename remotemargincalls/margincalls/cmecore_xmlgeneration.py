@@ -83,7 +83,7 @@ def fill_data_line_object(accountId, exchangeSymbol, contractType, spanFutureCod
         portfolioLine += '"' + str(optionYear) + str(optionMonth).zfill(2) + '",'
         portfolioLine += '"' + contractType.upper() + '",'
         portfolioLine += '"' + str(optionStrike) + '",'
-        portfolioLine += '"' + str(optionYear) + str(optionMonth).zfill(2) + '",'
+        portfolioLine += '"' + str(futureContractYear) + str(futureContractMonth).zfill(2) + '",'
 
     portfolioLine += '"' + str(numberOfLots) + '",'
     portfolioLine += '"' + '",'
@@ -91,6 +91,14 @@ def fill_data_line_object(accountId, exchangeSymbol, contractType, spanFutureCod
 
     return portfolioLine
 
+def format_strike_for_cme_core(idinstrument, strike_price):
+
+    if idinstrument == 11:
+        return str(int(strike_price))
+    elif idinstrument == 31:
+        return str(strike_price/100)
+    else:
+        return str(strike_price)
 
 # def createXMLtest():
 #     # <membership/>

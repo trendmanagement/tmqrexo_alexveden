@@ -7,7 +7,7 @@ from pymongo import MongoClient
 
 from exobuilder.algorithms.rollover_helper import RolloverHelper
 from exobuilder.data.assetindex_mongo import AssetIndexMongo
-from exobuilder.data.datasource_sql import DataSourceSQL
+from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.exostorage import EXOStorage
 import matplotlib.pyplot as plt
 importlib.reload(logging);
@@ -16,6 +16,10 @@ import warnings
 from backtester.reports.payoffs import PayoffAnalyzer
 
 from scripts.settings import *
+from scripts.tmqrholidays import TMQRHolidays
+import bdateutil
+import holidays
+
 
 #try:
 #    from scripts.settings_local import *
@@ -39,9 +43,12 @@ class SmartEXOUtils:
         self.assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
         self.exostorage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
 
-        self.datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, self.assetindex,
-                                        self.futures_limit, self.options_limit,
-                                        self.exostorage)
+        #self.datasource = DataSourceSQL(SQL_HOST, SQL_USER, SQL_PASS, self.assetindex,
+        #                                self.futures_limit, self.options_limit,
+        #                                self.exostorage)
+        self.datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, self.assetindex,
+                                          self.futures_limit, self.options_limit,
+                                          self.exostorage)
 
     def plot_transactions_payoff(self, smart_exo_position_func, analysis_date, analysis_instrument, **whatif_kwargs):
 
@@ -64,6 +71,13 @@ class SmartEXOUtils:
         db['exo_data'].delete_many({'name': {'$regex': '.*{0}*.'.format(self.smartexo_class.EXO_NAME)}})
 
     def build_smartexo(self, start_date, **smartexo_kwargs):
+        def check_bday_or_holiday(date):
+            if date.weekday() >= 5 or not bdateutil.isbday(date, holidays=TMQRHolidays()):
+                # Skipping weekends and US holidays
+                # date.weekday() >= 5 - 5 is Saturday!
+                return False
+
+            return True
         self.clear_smartexo()
 
         logging.info("Starting EXO calculation process from: {0}".format(start_date))
@@ -84,23 +98,25 @@ class SmartEXOUtils:
                 asset_info = self.assetindex.get_instrument_info(ticker)
                 exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(date, asset_info)
 
-                logging.info("\t\tRun on {0}".format(decision_time_end))
-
-                with self.smartexo_class(ticker, 0, decision_time_end, self.datasource, **smartexo_kwargs) as exo_engine:
-                    try:
-                        asset_list = exo_engine.ASSET_LIST
-                        # Checking if current symbol is present in EXO class ASSET_LIST
-                        if asset_list is not None:
-                            if ticker not in asset_list:
-                                # Skipping assets which are not in the list
-                                continue
-                    except AttributeError:
-                        warnings.warn(
-                            "EXO class {0} doesn't contain ASSET_LIST attribute filter, calculating all assets".format(self.smartexo_class))
-
-                    # Load EXO information from mongo
-                    exo_engine.load()
-                    exo_engine.calculate()
+                if check_bday_or_holiday(decision_time_end):
+                    logging.debug("\t\tRun on {0}".format(decision_time_end))
+                    with self.smartexo_class(ticker, 0, decision_time_end, self.datasource, **smartexo_kwargs) as exo_engine:
+                        try:
+                            asset_list = exo_engine.ASSET_LIST
+                            # Checking if current symbol is present in EXO class ASSET_LIST
+                            if asset_list is not None:
+                                if ticker not in asset_list:
+                                    # Skipping assets which are not in the list
+                                    continue
+                        except AttributeError:
+                            warnings.warn(
+                                "EXO class {0} doesn't contain ASSET_LIST attribute filter, calculating all assets".format(self.smartexo_class))
+                        try:
+                            # Load EXO information from mongo
+                            exo_engine.load()
+                            exo_engine.calculate()
+                        except Exception as exc:
+                            logging.error("ERROR!: {0}".format(exc))
 
                 end_time = time.time()
                 currdate += timedelta(days=1)
@@ -118,9 +134,11 @@ class SmartEXOUtils:
             f, (ax1, ax2) = plt.subplots(2, gridspec_kw={'height_ratios': [3, 1]})
 
             exo_df['exo'].plot(ax=ax1, title='{0}_{1}'.format(ticker, self.smartexo_class.EXO_NAME))
-            ax = exo_df['regime'].plot(ax=ax1, secondary_y=True)
-            ax.set_ylim(-2, 2)
+
+            if 'regime' in exo_df:
+                ax = exo_df['regime'].plot(ax=ax1, secondary_y=True)
+                ax.set_ylim(-2, 2)
 
             exo_df['delta'].plot(ax=ax2);
             ax2.set_title('Delta');
-            plt.show()
+            plt.show();

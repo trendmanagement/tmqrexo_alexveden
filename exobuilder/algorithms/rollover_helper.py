@@ -1,12 +1,77 @@
-
-
-
-
+import re
 
 
 class RolloverHelper:
-    def __init__(self, instrument, roll_regime_name='default'):
+    def __init__(self, instrument, **kwargs):
         self.instrument = instrument
+
+        re_include = kwargs.get('option_code_include', [])
+
+        self.re_option_code_include = []
+
+        for pattern in re_include:
+            self.re_option_code_include.append(re.compile(pattern))
+
+        # Default
+        # Roll every month
+        self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        # Roll 2-days before expiration
+        self.days_before_expiration = 2
+
+        if self.instrument.name.upper() == "ZB":
+            self.rollover_months = [3,6,9,12]
+            self.days_before_expiration = 2
+
+        if self.instrument.name.upper() == "ZN":
+            self.rollover_months = [3, 6, 9, 12]
+            self.days_before_expiration = 2
+
+        #################################
+        if self.instrument.name.upper() == "N9L":
+            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "E4L":
+            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "B6L":
+            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "L3L":
+            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "V3L":
+            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "AL1":
+            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "R7L":
+            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            self.days_before_expiration = 5
+
+        # if self.instrument.name.upper() == "WOL":
+        #     self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        #     self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "AW6":
+            self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            self.days_before_expiration = 5
+
+        # if self.instrument.name.upper() == "POL":
+        #     self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        #     self.days_before_expiration = 5
+
+        #################################
+
+        if self.instrument.name.upper() == "XAF":
+            self.rollover_months = [3, 6, 9, 12]
+            self.days_before_expiration = 5
 
         if self.instrument.name.upper() == "ZC":
             # Corn custom rollover options
@@ -57,12 +122,189 @@ class RolloverHelper:
             self.rollover_months = [1, 3, 5, 7, 8, 9, 11]
             self.days_before_expiration = 5
 
-        else:
-            # Default
-            # Roll every month
+        if self.instrument.name.upper() == "CC":
+            """
+            Cocoa
+
+            Option	Future
+
+            Jan	Mar
+            Feb	Mar
+            Mar	Mar
+            Apr	May
+            May	May
+            Jun	Jul
+            Jul	Jul
+            Aug	Sep
+            Sep	Sep
+            Oct	Dec
+            Nov	Dec
+            Dec	Dec
+            """
+            self.rollover_months = [3, 5, 7, 9, 12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "LE":
+            """
+            Live Cattle
+            """
+            self.rollover_months = [2, 4, 6, 8, 10, 12]
+            self.days_before_expiration = 7
+
+        if self.instrument.name.upper() == "HE":
+            """
+            Lean Hogs
+            """
+            self.rollover_months = [2, 4, 5, 6, 7, 8, 10, 12]
+            self.days_before_expiration = 7
+
+        if self.instrument.name.upper() == "SB":
+            """
+            Sugar No. 11
+            """
+            self.rollover_months = [3, 5, 7, 10]
+            self.days_before_expiration = 7
+
+        if self.instrument.name.upper() == "KC":
+            """
+            Coffee
+            """
+            self.rollover_months = [3, 5, 7, 9, 12]
+            self.days_before_expiration = 7
+
+        if self.instrument.name.upper() == "LBS":
+            """
+            Lumber
+
+            Option	Future
+
+            Jan	Jan
+            Feb	Mar
+            Mar	Mar
+            Apr	May
+            May	May
+            Jun	Jul
+            Jul	Jul
+            Aug	Sep
+            Sep	Sep
+            Oct	Nov
+            Nov	Nov
+            Dec	Jan
+            """
+            self.rollover_months = [1, 3, 5, 7, 9, 11]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "ES":
             self.rollover_months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-            # Roll 2-days before expiration
             self.days_before_expiration = 2
+            if len(self.re_option_code_include) == 0:
+                self.re_option_code_include = [
+                    re.compile('^EW$'),       # Matches end-of-month option
+                    re.compile('^$'),         # Matches '' empty option code
+                ]
+
+        if self.instrument.name.upper() == "GC":
+            """
+            Gold
+            """
+            self.rollover_months = [2,4,6,8,10,12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "SI":
+            """
+            Silver
+            """
+            self.rollover_months = [1,3,5,7,9,12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "HG":
+            """
+            Copper
+            """
+            self.rollover_months = [3,5,7,9,12]
+            self.days_before_expiration = 5
+
+        if self.instrument.name.upper() == "6E":
+            """
+            https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
+            @steve
+            On Feb 22 2017 CME introduced monthly futures on all of their FX products.
+            The options are only on the quarterly futures.
+            So the roll schedule for CME FX products will be monthly for the options on the quarterly futures.
+            """
+            self.rollover_months = [3, 6, 9, 12]
+            self.days_before_expiration = 2
+            if len(self.re_option_code_include) == 0:
+                self.re_option_code_include = [
+                    re.compile('^EUU$'),       # Matches end-of-month option
+                    re.compile('^$'),          # Matches '' empty option code
+                ]
+
+        if self.instrument.name.upper() == "6J":
+            """
+            https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
+            @steve
+            On Feb 22 2017 CME introduced monthly futures on all of their FX products.
+            The options are only on the quarterly futures.
+            So the roll schedule for CME FX products will be monthly for the options on the quarterly futures.
+            """
+            self.rollover_months = [3, 6, 9, 12]
+            self.days_before_expiration = 2
+            if len(self.re_option_code_include) == 0:
+                self.re_option_code_include = [
+                    re.compile('^JPU$'),       # Matches end-of-month option
+                    re.compile('^$'),          # Matches '' empty option code
+                ]
+
+        if self.instrument.name.upper() == "6B":
+            """
+            https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
+            @steve
+            On Feb 22 2017 CME introduced monthly futures on all of their FX products.
+            The options are only on the quarterly futures.
+            So the roll schedule for CME FX products will be monthly for the options on the quarterly futures.
+            """
+            self.rollover_months = [3, 6, 9, 12]
+            self.days_before_expiration = 2
+            if len(self.re_option_code_include) == 0:
+                self.re_option_code_include = [
+                    re.compile('^GBU$'),       # Matches end-of-month option
+                    re.compile('^$'),          # Matches '' empty option code
+                ]
+
+        if self.instrument.name.upper() == "6C":
+            """
+            https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
+            @steve
+            On Feb 22 2017 CME introduced monthly futures on all of their FX products.
+            The options are only on the quarterly futures.
+            So the roll schedule for CME FX products will be monthly for the options on the quarterly futures.
+            """
+            self.rollover_months = [3, 6, 9, 12]
+            self.days_before_expiration = 2
+            if len(self.re_option_code_include) == 0:
+                self.re_option_code_include = [
+                    re.compile('^CAU$'),       # Matches end-of-month option
+                    re.compile('^$'),          # Matches '' empty option code
+                ]
+
+        if self.instrument.name.upper() == "6A":
+            """
+            https://github.com/trendmanagement/tmqrexo_alexveden/issues/134
+            @steve
+            On Feb 22 2017 CME introduced monthly futures on all of their FX products.
+            The options are only on the quarterly futures.
+            So the roll schedule for CME FX products will be monthly for the options on the quarterly futures.
+            """
+            self.rollover_months = [3, 6, 9, 12]
+            self.days_before_expiration = 2
+            if len(self.re_option_code_include) == 0:
+                self.re_option_code_include = [
+                    re.compile('^ADU$'),       # Matches end-of-month option
+                    re.compile('^$'),          # Matches '' empty option code
+                ]
+
+
 
     def _get_recent_option_chain(self, fut):
         """
@@ -75,7 +317,8 @@ class RolloverHelper:
 
         for opt in fut.options:
             if opt.to_expiration_days > self.days_before_expiration:
-                return opt
+                if self.check_option_code_included(opt.option_code):
+                    return opt
         return None
 
     def _get_next_future(self, start_idx=-1):
@@ -86,7 +329,7 @@ class RolloverHelper:
         """
         for i in range(start_idx+1, len(self.instrument.futures)):
             f = self.instrument.futures[i]
-            if f.to_expiration_days > self.days_before_expiration and f.expiration.month in self.rollover_months:
+            if f.to_expiration_days > self.days_before_expiration and f.month_int in self.rollover_months:
                 return f, i
 
         return None, -1
@@ -94,8 +337,23 @@ class RolloverHelper:
     def is_rollover(self, asset):
         if asset.to_expiration_days <= self.days_before_expiration:
             return True
+        return False
+
+    def check_option_code_included(self, option_code):
+        """
+        Checks regular expressions passed by 'option_code_include' kwarg in constructor,
+        if option code doesn't match just ignore, if 'option_code_include' always return True
+        :return:
+        """
+        if len(self.re_option_code_include) == 0:
+            return True
+
+        for re_include in self.re_option_code_include:
+            if re_include.fullmatch(option_code) is not None:
+                return True
 
         return False
+
 
 
     def get_active_chains(self):

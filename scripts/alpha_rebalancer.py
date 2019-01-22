@@ -38,6 +38,7 @@ from tradingcore.swarmonlinemanager import SwarmOnlineManager
 import sys, argparse, logging
 from tradingcore.messages import *
 from tradingcore.signalapp import SignalApp, APPCLASS_ALPHA
+from datetime import datetime
 
 
 TMQRPATH = os.getenv("TMQRPATH", '')
@@ -61,23 +62,26 @@ def get_exo_names():
 
     for instrument in INSTRUMENTS_LIST:
         for exo in EXO_LIST:
-            print("Processing : " + exo['name'])
-
             ExoClass = exo['class']
+            try:
+                asset_list = ExoClass.ASSET_LIST
+                # Checking if current symbol is present in EXO class ASSET_LIST
+                if asset_list is not None:
+                    if instrument not in asset_list:
+                        # Skipping assets which are not in the list
+                        continue
+            except AttributeError:
+                logging.warning(
+                    "EXO class {0} doesn't contain ASSET_LIST attribute filter, calculating all assets".format(
+                        ExoClass))
+                pass
+
             for exo_name in ExoClass.names_list(instrument):
                 exo_names_list.append(exo_name)
 
-    return exo_names_list
-
-
-def get_exo_names_mat():
-    exo_names_list = []
-
-    for file in os.listdir(os.path.join(TMQRPATH, "mat")):
-        if 'strategy_' in file and '.mat' in file:
-            exo_names_list.append(file)
 
     return exo_names_list
+
 
 def get_alpha_modules(base_dir, exo_names):
     results = {}
@@ -107,17 +111,41 @@ def main(args, loglevel):
         logging.basicConfig(filename=args.logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                             level=loglevel)
     signalapp = SignalApp("AlphaRebalancer", APPCLASS_ALPHA, RABBIT_HOST, RABBIT_USER, RABBIT_PASSW)
-    signalapp.send(MsgStatus('INIT', 'Initiating alpha rebalancer script'))
+    signalapp.send(MsgStatus('INIT', 'Initiating alpha rebalancer script', notify=True))
 
     #exo_names = get_exo_names_mat()
     logging.getLogger("pika").setLevel(logging.WARNING)
     logging.info("Starting...")
 
     exo_storage = EXOStorage(MONGO_CONNSTR, MONGO_EXO_DB)
-    exo_names = exo_storage.exo_list()
+    # Generating EXO names
+    if args.all:
+        exo_names = exo_storage.exo_list()
+    else:
+        exo_names = get_exo_names()
 
     for exo in exo_names:
         logging.info("Processing EXO: " + exo)
+
+        # Check for EXO data validity
+        exo_df, exo_info = exo_storage.load_series(exo)
+
+        if exo_df is None:
+            logging.error('Can\'t find exo data  {0}'.format(exo))
+            signalapp.send(MsgStatus('ERROR',
+                                     'Can\'t find exo data  {0}'.format(exo),
+                                     notify=True))
+
+            continue
+
+        if len(exo_df) == 0 or len(exo_df) < 200 or (datetime.now() - exo_df.index[-1]).days > 4:
+            logging.error("Not actual EXO data found in {0} last date: \n{1}".format(exo, exo_df.tail()))
+            last_exo_date = 'N/A' if len(exo_df) == 0 else exo_df.index[-1]
+            signalapp.send(MsgStatus('ERROR',
+                                     'Not actual or empty EXO data found in {0} last date {1}'.format(exo, last_exo_date),
+                                     notify=True))
+            continue
+
         # Load alpha modules to process
         for module in os.listdir('alphas'):
             #
@@ -152,9 +180,11 @@ def main(args, loglevel):
                             #
                             # Saving last EXO state to online DB
                             #
+
                             swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
                             logging.debug('Saving: {0}'.format(swm.name))
                             swmonline.save(swm)
+
                         except:
                             logging.exception('Exception occurred:')
                             signalapp.send(MsgStatus('ERROR',
@@ -185,21 +215,16 @@ def main(args, loglevel):
                         swmonline = SwarmOnlineManager(MONGO_CONNSTR, MONGO_EXO_DB, m.STRATEGY_CONTEXT)
                         logging.debug('Saving: {0}'.format(swm.name))
                         swmonline.save(swm)
-                except:
+                except Exception as exc:
                     logging.exception('Exception occurred:')
                     signalapp.send(MsgStatus('ERROR',
-                                             'Exception in {0}'.format(
-                                                 Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX)),
+                                             'Exception in {0} Message: {1}'.format(
+                                                 Swarm.get_name(m.STRATEGY_CONTEXT, m.STRATEGY_SUFFIX),
+                                                 exc,
+                                             ),
                                              notify=True))
 
-    logging.info("Processing accounts positions")
-    assetindex = AssetIndexMongo(MONGO_CONNSTR, MONGO_EXO_DB)
-    datasource = DataSourceMongo(MONGO_CONNSTR, MONGO_EXO_DB, assetindex, futures_limit=10, options_limit=10,
-                                 exostorage=exo_storage)
-    exmgr = ExecutionManager(MONGO_CONNSTR, datasource, dbname=MONGO_EXO_DB)
-    exmgr.account_positions_process(write_to_db=True)
-
-    signalapp.send(MsgStatus('DONE', 'Alpha rebalancer script', notify=True))
+    signalapp.send(MsgStatus('RUN', 'Alpha rebalancer script', notify=True))
     logging.info("Done.")
 
 if __name__ == '__main__':
@@ -220,6 +245,13 @@ if __name__ == '__main__':
         help="Log file path",
         action="store",
         default='')
+
+    parser.add_argument(
+        "-A",
+        "--all",
+        help="Use all EXOs in the DB instead of settings_exo.py module",
+        action="store_true",
+    )
 
     args = parser.parse_args()
 

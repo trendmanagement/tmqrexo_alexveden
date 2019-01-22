@@ -18,6 +18,7 @@ class OptionContract(object):
         self._option_price_data = None
         self._option_price = float('nan')
         self._options_greeks = None
+        self._option_price_settlement = float('nan')
 
     @property
     def name(self):
@@ -60,6 +61,21 @@ class OptionContract(object):
         return self.instrument.date
 
     @property
+    def option_code(self):
+        """
+        There is a field optioncode in tbloptions that is filled with
+        EOM: EW
+        WEEKLY: EW1, EW2, EW3, EW4
+        WED: E1C, E2C, E3C, E4C, E5C
+        The quarterly american options are just filled with ' '
+        :return:
+        """
+        if 'optioncode' not in self._data:
+            return ''
+        else:
+            return self._data['optioncode'].strip()
+
+    @property
     def to_expiration_years(self):
         return (self.expiration.date() - self.date.date()).total_seconds() / 31536000.0 # == (365.0 * 24 * 60 * 60)
 
@@ -86,6 +102,17 @@ class OptionContract(object):
             self._option_price = blackscholes(self.callorput, self.underlying.price, self.strike, self.to_expiration_years, self.riskfreerate, self.iv)
 
         return self._option_price
+
+    @property
+    def price_settlement(self):
+        """
+        Option's settlement price
+        :return: float
+        """
+        if np.isnan(self._option_price_settlement):
+            self._option_price_settlement = self.instrument.datasource.get_option_settlement(self.dbid, self.date)
+
+        return self._option_price_settlement
 
     def price_whatif(self, underlying_price=None, iv_change=0.0, days_to_expiration=None, riskfreerate=None):
         """
@@ -150,7 +177,10 @@ class OptionContract(object):
         return not self.__eq__(other)
 
     def __str__(self):
-        return '{0} [IV:{1:0.3f} Delta:{2:0.2f}]'.format(self.name, self.iv, self.delta)
+        return '{0} [IV:{1:0.3f} Delta:{2}{3:0.2f}]'.format(self.name,
+                                                            self.iv,
+                                                            '+' if self.delta >= 0 else '',
+                                                            self.delta)
 
 
 

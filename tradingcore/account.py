@@ -1,3 +1,4 @@
+import warnings
 
 
 class Account:
@@ -8,10 +9,19 @@ class Account:
         self.campaign = campaign
         self.mmclass = mmclass
         self.isactive = isactive
+        if 'instruments' not in acc_dict or len(acc_dict['instruments']) == 0:
+            warnings.warn("'instruments' key is not found or empty in accounts dict")
+            self.instruments = []
+        else:
+            self.instruments = acc_dict['instruments']
+
 
     @property
     def positions(self):
-        return self.mmclass.get_positions(self.campaign.positions)
+        return self.mmclass.get_positions(self.campaign)
+
+    def positions_at_date(self, date=None):
+        return self.mmclass.get_position_at_date(self.campaign, date)
 
     def as_dict(self):
         result = {}
@@ -21,5 +31,6 @@ class Account:
         result['client_name'] = self.client_name
         result['info'] = self.info
         result['isactive'] = self.isactive
+        result['instruments'] = self.instruments
         return result
 

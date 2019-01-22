@@ -11,7 +11,7 @@ import pyximport
 pyximport.install(setup_args={"include_dirs": np.get_include()})
 
 from backtester.backtester_fast import stats_exposure, calc_costs
-from copy import  deepcopy
+from copy import deepcopy, copy
 import inspect
 import pprint
 import warnings
@@ -26,7 +26,7 @@ class Swarm:
         :param context: dict(), strategy setting context
         :return:
         """
-        self.context = context
+        self.context = self.clone_context(context)
         self.global_filter = None
         self._rebalancetime = None
 
@@ -60,7 +60,19 @@ class Swarm:
         self._swarm = None
         self._swarm_exposure = None
 
+    @staticmethod
+    def clone_context(context):
+        storage = None
+        if 'exo_storage' in context['strategy']:
+            storage = context['strategy']['exo_storage']
+            del context['strategy']['exo_storage']
 
+        ctx = deepcopy(context)
+        if storage is not None:
+            ctx['strategy']['exo_storage'] = storage
+            context['strategy']['exo_storage'] = storage
+
+        return ctx
 
     @property
     def raw_equity(self):
@@ -511,7 +523,7 @@ class Swarm:
         :return:
         """
 
-        ctx = strategy_context
+        ctx = Swarm.clone_context(strategy_context)
         ctx['strategy']['opt_preset'] = Swarm._parse_params(state_dict['last_members_list'])
         # Creating new swarm in special mode (used for online updates)
         swm = Swarm(ctx, laststate=True)
@@ -555,7 +567,7 @@ class Swarm:
                              "or len(self._equity) <= 1 ")
 
         if len(swarm_exposure) == 0:
-            warnings.warn("Swarm exposure is zero-length, seems that no members picked after rebalancing.")
+            warnings.warn("Swarm ({0}) exposure is zero-length, seems that no members picked after rebalancing.".format(self.name))
 
         # 1. Filter exo_price and swarm_exposure >= self.last_date
         _exo_price_array = exo_dataframe['exo'][exo_dataframe.index >= self.last_date]
@@ -586,15 +598,25 @@ class Swarm:
             # We have new quote data
             # Similar to backtester_fast.stats_exposure() backtesting algorithm
             if i == 0:
+                # usually PnL for 1-st day will be 0.0, but in case when EXO price recalculated we need to do adjustments
                 profit = (_exo_price_array.values[i] - self.last_exoquote) * self._last_prev_exposure
+
+                # Don't calculate costs at first day (it's assumed that costs already included in price)
+                if self._last_date != _exo_price_array.index[i]:
+                    if costs is not None:
+                        _costs_value = calc_costs(costs['transaction_costs'].values[i],
+                                                  costs['rollover_costs'].values[i],
+                                                  self._last_prev_exposure,           # Prev Exposure
+                                                  _exposure)                    # Current Exposure
+                        profit += _costs_value
             else:
                 profit = (_exo_price_array.values[i] - _exo_price_array.values[i-1]) * self._last_exposure
-            if costs is not None:
-                _costs_value = calc_costs(costs['transaction_costs'].values[i],
-                                          costs['rollover_costs'].values[i],
-                                          self.last_exposure,           # Prev Exposure
-                                          _exposure)                    # Current Exposure
-                profit += _costs_value
+                if costs is not None:
+                    _costs_value = calc_costs(costs['transaction_costs'].values[i],
+                                              costs['rollover_costs'].values[i],
+                                              self.last_exposure,           # Prev Exposure
+                                              _exposure)                    # Current Exposure
+                    profit += _costs_value
 
             # Updating swarm delta value if it exists in EXO dataframe
 
@@ -631,11 +653,8 @@ class Swarm:
 
         # We are using self.raw_exposure instead of self.picked_exposure
         # because in self.update() we are running predefined (i.e. already picked) swarms
-        if len(self.raw_exposure) > 0:
-            # Update equity and another last state values
-            self._laststate_update(self.strategy.data, self.raw_exposure.sum(axis=1), self.strategy.costs)
-        else:
-            raise NotImplementedError("if len(self.raw_exposure) <= 0: decide if it is unexpected case when no systems picked in some reasons?")
+        # Update equity and another last state values
+        self._laststate_update(self.strategy.data, self.raw_exposure.sum(axis=1), self.strategy.costs)
 
     @staticmethod
     def _parse_params(members_list):

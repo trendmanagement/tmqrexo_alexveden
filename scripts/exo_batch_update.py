@@ -26,4 +26,4 @@ except SystemError:
 
 
 for instrument in INSTRUMENTS_LIST:
-    os.system('python3.5 ./exo_builder.py -v -B 2011-06-01 {0}'.format(instrument))
+    os.system('python3.5 ./exo_builder.py --logfile=./logs/exo/exo_batch_build_{0}.log -B 2011-06-01 {0}'.format(instrument))

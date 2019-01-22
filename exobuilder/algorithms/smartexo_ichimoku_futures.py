@@ -1,16 +1,14 @@
-from exobuilder.contracts.futureschain import FuturesChain
-from exobuilder.contracts.futurecontract import FutureContract
-from exobuilder.tests.assetindexdict import AssetIndexDicts
-from datetime import datetime, date, timedelta, time as dttime
-from exobuilder.contracts.instrument import Instrument
+import time
+from datetime import datetime, timedelta, time as dttime
+
+from exobuilder.algorithms.rollover_helper import RolloverHelper
+from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.datasource_mongo import DataSourceMongo
 from exobuilder.data.datasource_sql import DataSourceSQL
-from exobuilder.data.assetindex_mongo import AssetIndexMongo
 from exobuilder.data.exostorage import EXOStorage
 from exobuilder.exo.exoenginebase import ExoEngineBase
 from exobuilder.exo.transaction import Transaction
-import time
-from exobuilder.algorithms.rollover_helper import RolloverHelper
+
 
 class SmartEXOichimokuFutures(ExoEngineBase):
     def __init__(self, symbol, direction, date, datasource, log_file_path=''):
@@ -158,51 +156,3 @@ class SmartEXOichimokuFutures(ExoEngineBase):
 
 
 
-
-if __name__ == "__main__":
-    mongo_connstr = 'mongodb://exowriter:qmWSy4K3@10.0.1.2/tmldb?authMechanism=SCRAM-SHA-1'
-    mongo_db_name = 'tmldb'
-    assetindex = AssetIndexMongo(mongo_connstr, mongo_db_name)
-    exostorage = EXOStorage(mongo_connstr, mongo_db_name)
-
-    base_date = datetime(2011, 6, 13, 12, 45, 0)
-    futures_limit = 3
-    options_limit = 10
-
-    DEBUG = '.'
-
-    datasource = DataSourceMongo(mongo_connstr, mongo_db_name, assetindex, futures_limit, options_limit, exostorage)
-
-    server = 'h9ggwlagd1.database.windows.net'
-    user = 'modelread'
-    password = '4fSHRXwd4u'
-    datasource = DataSourceSQL(server, user, password, assetindex, futures_limit, options_limit, exostorage)
-
-    enddate = datetime.combine(datetime.now().date(), dttime(12, 45, 0))
-    currdate = base_date
-
-    instruments = ['CL', 'ES', 'NG', 'ZC', 'ZS', 'ZW', 'ZN']
-    directions = [1] #[1, -1]
-
-    # for i in range(100):
-    while currdate <= enddate:
-        start_time = time.time()
-        # date = base_date + timedelta(days=i)
-        date = currdate
-
-        for ticker in instruments:
-            asset_info = assetindex.get_instrument_info(ticker)
-            exec_time_end, decision_time_end = AssetIndexMongo.get_exec_time(date, asset_info)
-
-            for dir in directions:
-                with SmartEXOichimokuFutures(ticker, dir, exec_time_end, datasource,log_file_path=DEBUG) as exo_engine:
-                    # Load EXO information from mongo
-                    exo_engine.load()
-                    exo_engine.calculate()
-
-
-        end_time = time.time()
-
-        currdate += timedelta(days=1)
-        print("{0} Elasped: {1}".format(date, end_time-start_time))
-    print('Done')

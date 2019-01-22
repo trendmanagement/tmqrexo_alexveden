@@ -2,6 +2,16 @@ import pandas as pd
 import time
 from tqdm import tqdm, tnrange, tqdm_notebook
 import numpy as np
+import sys
+
+
+def ipython_info():
+    ip = False
+    if 'ipykernel' in sys.modules:
+        ip = 'notebook'
+    elif 'IPython' in sys.modules:
+        ip = 'terminal'
+    return ip
 
 class AlphaSanityChecker:
     def __init__(self, swarm, day_step=5, initial_window=500):
@@ -49,18 +59,115 @@ class AlphaSanityChecker:
 
         return True
 
+    @staticmethod
+    def comp_results_dataframe(full, temp):
+        """
+        Compare results of 2 dataframes
+        :param full:
+        :param temp:
+        :return:
+        """
+        if isinstance(temp, pd.DataFrame):
+            has_errs = False
+
+            for col in temp.columns:
+                if col not in full:
+                    raise ValueError("Column '{0}' doesn't exist in full historical results dataframe".format(col))
+                s_full = full[col].dropna()
+                s_temp = temp[col].dropna()
+
+                if not np.alltrue(s_temp == s_full.ix[s_temp.index]):
+                    print("Column:{0} Results don't match exactly. Future ref suspected.".format(col))
+                    diff = s_temp - s_full.ix[s_temp.index]
+                    print('Difference: ')
+                    print(diff[diff != 0.0].dropna())
+                    has_errs = True
+
+            return not has_errs
+        else:
+            raise ValueError("Result of 'algo_func' should be pandas.DataFrame got {0}".format(type(temp)))
+
+    @staticmethod
+    def comp_results_series(full, temp):
+        """
+        Compare results of 2 Series
+        :param full:
+        :param temp:
+        :return:
+        """
+        if isinstance(temp, pd.Series):
+            if not np.alltrue(temp == full.ix[temp.index]):
+                print("Results don't match exactly. Future ref suspected.")
+                diff = temp - full.ix[temp.index]
+                print('Difference: ')
+                print(diff[diff != 0.0].dropna())
+                return False
+            else:
+                return True
+        else:
+            raise ValueError("Result of 'algo_func' should be pandas.Series got {0}".format(type(temp)))
+
+    @staticmethod
+    def test_algo(data, compare_func, algo_func, *args, **kwargs):
+        """
+        Test future reference problems with algo_func
+        :param data: pd.DataFrame or Series of initial data
+        :param compare_func: Comparison function to check data equality
+        :param algo_func: algorithm to test
+        :param args:  args passed to algorithm
+        :param kwargs: kwargs passed to algorithm
+        :return:
+        """
+        if not isinstance(data, pd.DataFrame) and not isinstance(data, pd.Series):
+            raise ValueError("'data' should be pandas.DataFrame or pandas.Series")
+
+        print('Starting algo sanity checks')
+        day_step = 5
+        nsteps = int((len(data) * 0.8) / day_step)
+        istart = int(len(data) * 0.2)
+
+        algo_result_full = algo_func(data, *args, **kwargs)
+
+        if ipython_info() == 'notebook':
+            pbar = tqdm_notebook(desc="Progress", total=nsteps)
+        else:
+            pbar = tqdm(desc="Progress", total=nsteps)
+
+        haserr = False
+        for i in range(nsteps):
+            data_chunk = data.iloc[:istart + day_step*i]
+            t_algo_result = algo_func(data_chunk, *args, **kwargs)
+            if not compare_func(algo_result_full, t_algo_result):
+                print("Algorithm fut-ref sanity check failed, on step # {0} Date: {1}".format(i, data_chunk.index[-1]))
+                haserr = True
+                break
+            pbar.update(1)
+
+        pbar.close()
+        if haserr:
+            print("Finished: fut-ref check failed")
+        else:
+            print("Finished: algorithm seems to be OK")
+
     def run(self):
         data = self.strategy.data
-
 
         opt_list = self.strategy.slice_opts()
         max_steps = len(self.swarm.raw_swarm.columns)
 
         has_errors = False
 
-        for opt in tqdm_notebook(opt_list, desc="Progress", total=max_steps):
+        if ipython_info() == 'notebook':
+            pbar = tqdm_notebook(desc="Progress", total=max_steps)
+        else:
+            pbar = tqdm(desc="Progress", total=max_steps)
+
+        for opt in opt_list:
             if not self.process_opts(opt, data):
                 has_errors = True
+            pbar.update(1)
+
+        pbar.close()
 
         self.strategy.data = data
         if has_errors:

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXO management &#8212; TMQR framework 1.0 documentation</title>
+    <title>EXO management &mdash; TMQR framework 1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,12 +24,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
     <link rel="top" title="TMQR framework 1.0 documentation" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -45,6 +42,8 @@
   <div class="section" id="exo-management">
 <span id="trading-exo-management"></span><h1>EXO management<a class="headerlink" href="#exo-management" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
 </div>
 <div class="section" id="module-scripts.exo_builder">
 <span id="how-exo-scripts-work"></span><h2>How EXO scripts work<a class="headerlink" href="#module-scripts.exo_builder" title="Permalink to this headline">¶</a></h2>
@@ -114,14 +113,21 @@ line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39
 <ol class="arabic simple">
 <li>Type in new <code class="docutils literal"><span class="pre">exchangesymbol</span></code> name to the <code class="docutils literal"><span class="pre">INSTRUMENTS_LIST</span></code></li>
 <li>Run the <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">scripts/settings_exo.py</span></code> for syntax errors checks (empty output means - <strong>no</strong> syntax errors)</li>
+<li>Check or add new rollover regime for new asset if it is necessary in <code class="docutils literal"><span class="pre">exobuilder/algorithms/rollover_helper.py</span></code> (default regime is rollover each month)</li>
 <li>Commit and push changes to GitHub and log in to the server</li>
 <li>Run deployment process as described at <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a> but without <strong>service supervisor restart</strong> step</li>
+<li>Run EXO batch backfill <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./exo_batch_update.py</span></code> (<strong>important</strong> you need to wait until backfill process is finished)</li>
 <li>Run on the server <code class="docutils literal"><span class="pre">cd</span> <span class="pre">/var/data/tmqrengine/scripts/</span></code> and then <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./install.py</span></code>, this script will clear the logs and deploy new settings for online trading. Also <code class="docutils literal"><span class="pre">supervisor</span> <span class="pre">service</span></code> will be restarted.</li>
 <li>Make sure that new product is present in <code class="docutils literal"><span class="pre">supervisorctl</span> <span class="pre">status</span></code> command output, otherwise try to restart it manually one more time <code class="docutils literal"><span class="pre">service</span> <span class="pre">supervisor</span> <span class="pre">restart</span></code></li>
+<li>Plot EXO graphs in <a class="reference external" href="https://10.0.1.2:8888/notebooks/tools/EXO%20viewer.ipynb">https://10.0.1.2:8888/notebooks/tools/EXO%20viewer.ipynb</a> notebook to make sure that all EXOs have enough historical data and backfilled properly.</li>
 </ol>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Name of the product <strong>must</strong> reflect <code class="docutils literal"><span class="pre">exchangesymbol</span></code> field of <code class="docutils literal"><span class="pre">instruments</span></code> MongoDB collection</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you&#8217;ve forgot to run <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./exo_batch_update.py</span></code>, and EXO series already filled by online data, first of all you need manually remove EXO series from DB and then restart <code class="docutils literal"><span class="pre">exo_batch_update.py</span></code> script.</p>
 </div>
 </div>
 <div class="section" id="to-add-new-exo">
@@ -192,6 +198,7 @@ line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39
 <li>Commit and push changes to GitHub and log in to the server</li>
 <li>Run EXO batch backfill <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./exo_batch_update.py</span></code>. Refer to <a class="reference internal" href="server-code-deployment.html#server-code-deployment"><span class="std std-ref">New code or scripts deployment</span></a> to get information how to execute long-running tasks.</li>
 <li>Run <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./install.py</span></code> to add new SmartEXO to online setup</li>
+<li>Run <code class="docutils literal"><span class="pre">python3.5</span> <span class="pre">./alpha_rebalancer.py</span></code> if you need to get generic alphas for this EXO (for example <em>Buy and hold EXO</em>) ASAP, or wait until scheduled launch of the alpha_rebalancer occurred.</li>
 </ol>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
@@ -278,8 +285,8 @@ line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -293,8 +300,8 @@ line, and specified on the commandline like &#39;exo_builder.py @params.conf&#39
       &copy;2016, TMQR.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.8</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
       
       |
       <a href="_sources/trading-exo-management.txt"
