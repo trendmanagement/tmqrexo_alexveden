@@ -4,5 +4,5 @@ slackclient
 tqdm
 numpy
 quandl
-pandas
+pandas==0.19.2
 lz4
