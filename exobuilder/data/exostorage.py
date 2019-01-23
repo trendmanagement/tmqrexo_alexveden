@@ -18,18 +18,17 @@ class EXOStorage(object):
         :param exo_name: name of EXO index
         :return: (tuple) series_df, exo_dic
         """
-        try:
-            data = self.db.exo_data.find({'name': exo_name}).next()
+        data = self.db.exo_data.find_one({'name': exo_name})
+        if data is None:
+            raise KeyError("No exo series found with name: {0}".format(exo_name))
 
-            # Loading metadata for EXO
-            exo_dic = {'margin': 0, 'underlying': '', 'name': exo_name, 'dbdata': data}
+        # Loading metadata for EXO
+        exo_dic = {'margin': 0, 'underlying': '', 'name': exo_name, 'dbdata': data}
 
-            series_df = pickle.loads(data['series'])
-            series_df.index = pd.to_datetime(series_df.index)
+        series_df = pickle.loads(data['series'])
+        series_df.index = pd.to_datetime(series_df.index)
 
-            return series_df, exo_dic
-        except:
-            return None, None
+        return series_df, exo_dic
 
 
     def load_exo(self, exo_name):
